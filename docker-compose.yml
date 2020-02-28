@@ -24,3 +24,10 @@ services:
       - db
     ports:
       - "8000:8000"
+
+  db-common:
+    build:
+      context: ./database
+    container_name: dependency-observatory-db-common
+    image: dependency-observatory-db-common
+
