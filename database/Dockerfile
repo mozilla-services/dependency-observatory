@@ -3,3 +3,4 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /src
 COPY requirements.txt .
+COPY src/ .
