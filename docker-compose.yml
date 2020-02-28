@@ -31,6 +31,24 @@ services:
     container_name: dependency-observatory-db-common
     image: dependency-observatory-db-common
 
+  # celery worker for scanner
+  worker:
+    build:
+      context: ./scanner
+    container_name: dependency-observatory-scanner-worker
+    image: dependency-observatory-scanner
+    depends_on:
+      - db
+    environment:
+      - BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=dependency_observatory
+    links:
+      - db
+    working_dir: /app/src
+    command: celery -A tasks worker --loglevel=info
+
   # celery task for scanner
   scanner:
     build:
