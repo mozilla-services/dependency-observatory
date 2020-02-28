@@ -14,7 +14,7 @@ TYPES = {
 @moz_do.route('/package/<pkgname>')
 def show_user_profile(pkgname):
     # show the package data for that package
-    return "Package %s" % (pkgname)
+    return "Package %s" % escape(pkgname)
     #package_report = models.get_package_report(pkgname)
     #if None != package_report:
         #Return Response(package_report.to_json(), mimetype=mimetype)
