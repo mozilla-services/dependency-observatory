@@ -17,3 +17,4 @@ ENV PYTHONPATH $PYTHONPATH:/app/depobs
 ENV FLASK_APP moz_do
 
 USER app
+CMD [ "flask", "run", "-h",  "0.0.0.0", "-p", "8000"]
