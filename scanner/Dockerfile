@@ -6,8 +6,25 @@ RUN groupadd --gid 1001 app && \
     useradd --uid 1001 --gid 1001 --shell /usr/sbin/nologin app
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
-	apt-get upgrade -y && \
-	apt-get install --no-install-recommends -y build-essential libpq-dev
+        apt-get upgrade -y && \
+        apt-get install --no-install-recommends -y \
+            apt-transport-https \
+            ca-certificates \
+            curl \
+            gnupg2 \
+            software-properties-common \
+            build-essential \
+            libpq-dev && \
+        curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
+        add-apt-repository \
+            "deb [arch=amd64] https://download.docker.com/linux/debian \
+            $(lsb_release -cs) \
+            stable" && \
+        DEBIAN_FRONTEND=noninteractive apt-get update && \
+        apt-get install --no-install-recommends -y \
+            docker-ce \
+            docker-ce-cli \
+            containerd.io
 
 RUN mkdir -p /app/src
 WORKDIR /app/src
