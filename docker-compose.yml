@@ -46,6 +46,10 @@ services:
       - POSTGRES_DB=dependency_observatory
     links:
       - db
+    # let the worker spin up new docker containers
+    # NB: this essentially runs scanner images as root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /app/src
     command: celery -A tasks worker --loglevel=info
 
