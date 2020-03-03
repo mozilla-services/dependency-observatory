@@ -53,7 +53,7 @@ class PackageReport(Base):
                            secondaryjoin=id==dependency.c.used_by_id,
     )
 
-    def to_json(self):
+    def to_dict(self):
         return dict(package=self.package,
         version=self.version,
         release_date=self.release_date,
@@ -78,9 +78,5 @@ PackageReport.dependencies = relationship('PackageReport',
                        viewonly=True)     
 
 def get_package_report(package_name):
-    for rep in get_package_report('foo'):
-        return rep.to_json()
-
-#if __name__ == "__main__":
-#    for rep in get_package_report('foo'):
-#        print(rep.to_json())
+    for rep in db_session.query(PackageReport).filter(PackageReport.package==package_name):
+        return rep
