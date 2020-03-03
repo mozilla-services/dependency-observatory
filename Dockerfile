@@ -14,6 +14,10 @@ COPY . depobs
 RUN pip install --upgrade --no-cache-dir -r depobs/requirements.txt
 
 ENV PYTHONPATH $PYTHONPATH:/app/depobs
-ENV FLASK_APP moz_do
+
+ENV HOST 0.0.0.0
+ENV PORT 8000
+ENV DEBUG True
+ENV DATABASE_URI postgresql+psycopg2://pguser:pgpass@pghost/dbname
 
 USER app

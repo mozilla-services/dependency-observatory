@@ -45,5 +45,19 @@ def serve_static_file(filename):
         abort(404)
 
 @moz_do.route('/__lbheartbeat__')
+def lbheartbeat():
+    return Response("badum badum", mimetype="text/plain")
+
+@moz_do.route('/__heartbeat__')
 def heartbeat():
     return Response("badum badum", mimetype="text/plain")
+
+@moz_do.route('/__version__')
+def version():
+    # TODO - serve version.json from the filesystem
+    version_info = dict(source = "https://github.com/mozilla-services/dependency-observatory",
+                        version = "0.0.1",
+                        commit = "",
+                        build = ""
+    )
+    return Response(json.dumps(version_info), mimetype="application/json")
