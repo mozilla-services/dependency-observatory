@@ -1,11 +1,13 @@
 from flask import abort, Response
 
-#from moz_do import moz_do, models
-from moz_do import moz_do
+from moz_do import moz_do, models
+#from moz_do import moz_do
 from markupsafe import escape
 
 from os import listdir, getcwd
 from os.path import isfile, join
+
+import json
 
 TYPES = {
     '.js':'text/javascript', '.json':'application/json','.html':'text/html'
@@ -13,14 +15,13 @@ TYPES = {
 
 @moz_do.route('/package/<pkgname>')
 def show_user_profile(pkgname):
-    # show the package data for that package
-    return "Package %s" % escape(pkgname)
-    #package_report = models.get_package_report(pkgname)
-    #if None != package_report:
-        #Return Response(package_report.to_json(), mimetype=mimetype)
-    #else:
-     #   #TODO: we probably want to return data to tell the user that a report is being generated
-    #    abort(404)
+    package_report = models.get_package_report(pkgname)
+    if None != package_report:
+        mimetype = "application/json"
+        return Response(json.dumps(package_report.to_dict()), mimetype=mimetype)
+    else:
+        #TODO: we probably want to return data to tell the user that a report is being generated
+        abort(404)
 
 @moz_do.route('/static/<filename>')
 def serve_static_file(filename):
@@ -30,7 +31,7 @@ def serve_static_file(filename):
 
     # if the requested filename exists in the list of regular filenames, serve it
     if filename in files:
-        mimetype = "test/plain"
+        mimetype = "text/plain"
 
         # Cater for some common mimetypes
         dot_pos = filename.rfind('.')
