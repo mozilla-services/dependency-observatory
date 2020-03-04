@@ -21,3 +21,4 @@ ENV DEBUG True
 ENV DATABASE_URI postgresql+psycopg2://pguser:pgpass@pghost/dbname
 
 USER app
+CMD [ "flask", "run", "-h",  "0.0.0.0", "-p", "8000"]

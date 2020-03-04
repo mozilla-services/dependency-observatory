@@ -1,0 +1,54 @@
+version: "3"
+services:
+  db:
+    container_name: dependency-observatory-db
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=dependency_observatory
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: .
+    container_name: dependency-observatory-api
+    image: dependency-observatory-api
+    volumes:
+      - ./:/app
+    command: flask run -h 0.0.0.0 -p 8000
+    depends_on:
+      - db
+    links:
+      - db
+    ports:
+      - "8000:8000"
+
+  db-common:
+    build:
+      context: ./database
+    container_name: dependency-observatory-db-common
+    image: dependency-observatory-db-common
+
+  # celery worker for scanner
+  worker:
+    build:
+      context: ./scanner
+    container_name: dependency-observatory-scanner-worker
+    image: dependency-observatory-scanner
+    depends_on:
+      - db
+    environment:
+      - BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=dependency_observatory
+    links:
+      - db
+    # let the worker spin up new docker containers
+    # NB: this essentially runs scanner images as root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /app/src
+    command: celery -A tasks worker --loglevel=info
