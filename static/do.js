@@ -11,7 +11,7 @@ let httpRequest;
 function getPackageInfo(pkg, ver) {
     httpRequest = new XMLHttpRequest();
     httpRequest.onreadystatechange = gotPackageInfo;
-    httpRequest.open('GET', 'https://raw.githubusercontent.com/mozilla-services/find-package-rugaru/master/examples/api-v1.json');
+    httpRequest.open('GET', 'https://depobs.dev.mozaws.net/package/' + pkg + '/' + ver);
     httpRequest.send();
 }
 
@@ -21,14 +21,14 @@ function gotPackageInfo() {
             const json = JSON.parse(httpRequest.responseText);
             setElement(json, 'package');
             setElement(json, 'version');
-            setElement(json, 'top-score');
-            setElement(json, 'npms-io-score');
-            setElement(json, 'authors-count');
-            setElement(json, 'contributor-count');
-            setElement(json, 'direct-dep-count');
-            setElement(json, 'all_dep_count'); // TODO fix when #197 merged
+            setElement(json, 'top_score');
+            //setElement(json, 'npms_io_score');
+            setElement(json, 'authors');
+            setElement(json, 'contributors');
+            setElement(json, 'immediate_deps');
+            setElement(json, 'all_deps');
 
-            let depJson = json['direct-dependencies'];
+            let depJson = json['dependencies'];
             for(let i = 0; i < depJson.length; i++) {
                 let table = document.getElementById("deps");
                 let pkg = depJson[i]['package'];
@@ -53,11 +53,11 @@ function gotPackageInfo() {
                 cell.appendChild(a);
 
                 cell = row.insertCell(2);
-                cell.innerText = depJson[i]['top-score'];
+                cell.innerText = depJson[i]['top_score'];
                 cell = row.insertCell(3);
-                cell.innerText = depJson[i]['direct-dep-count'];
+                cell.innerText = depJson[i]['direct_dep_count'];
                 cell = row.insertCell(4);
-                cell.innerText = depJson[i]['all_dep_count']; // TODO fix when #197 merged
+                cell.innerText = depJson[i]['all_dep_count'];
             }
 
         } else {
