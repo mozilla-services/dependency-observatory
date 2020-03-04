@@ -9,7 +9,7 @@ from sqlalchemy.schema import Table
 
 import os
 
-DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql+psycopg2://postgres:postgres@localhost/dependency-observatory')
+DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql+psycopg2://postgres:postgres@localhost/dependency_observatory')
 
 engine = create_engine(DATABASE_URI,
                        convert_unicode=True)
@@ -18,21 +18,18 @@ db_session = scoped_session(sessionmaker(autocommit=False,
                                          autoflush=False,
                                          bind=engine))
 
-Base = declarative_base()
-
-def init_db():
-    Model.metadata.create_all(bind=engine)
+#Base = declarative_base()
 
 Model = declarative_base(name='Model')
 Model.query = db_session.query_property()
 
 dependency = Table(
-    'package_dependencies', Base.metadata,
+    'package_dependencies', Model.metadata,
     Column('depends_on_id', Integer, ForeignKey('reports.id')),
     Column('used_by_id', Integer, ForeignKey('reports.id'))
 )
 
-class PackageReport(Base):
+class PackageReport(Model):
     __tablename__ = 'reports'
 
     id = Column('id', Integer, primary_key=True)
@@ -71,12 +68,21 @@ package_dependencies = select([
                         dependency.c.depends_on_id, 
                         dependency.c.used_by_id
                         ]).alias()
+
 PackageReport.dependencies = relationship('PackageReport',
                        secondary=package_dependencies,
                        primaryjoin=PackageReport.id==package_dependencies.c.used_by_id,
                        secondaryjoin=PackageReport.id==package_dependencies.c.depends_on_id,
-                       viewonly=True)     
+                       viewonly=True)
 
-def get_package_report(package_name):
-    for rep in db_session.query(PackageReport).filter(PackageReport.package==package_name):
-        return rep
+def get_package_report(package, version = None):
+    if None == version:
+        #TODO order by is hard with semver. Think about splitting out versions
+        for rep in db_session.query(PackageReport).filter(PackageReport.package==package):
+            return rep
+    else:
+        for rep in db_session.query(PackageReport).filter(PackageReport.package==package, PackageReport.version==version):
+            return rep
+
+def init_db():
+    Model.metadata.create_all(bind=engine)
