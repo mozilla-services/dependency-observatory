@@ -38,7 +38,7 @@ NPM_PACKAGE_NAME_RE = re.compile(
 # )
 # the images already be built/pulled/present on the worker node
 SCANS: List[Tuple[str, List[Union[str, re.Pattern]]]] = [
-    ("mozilla/dependencyscan", ["analyze_package.sh", NPM_PACKAGE_NAME_RE])
+    ("mozilla/dependencyscan:latest", ["analyze_package.sh", NPM_PACKAGE_NAME_RE])
 ]
 
 # Create the scanner task queue
@@ -68,6 +68,8 @@ def run_image(
     command = [
         "docker",
         "run",
+        "-e",
+        f"DB_URL={os.environ['DB_URL']}",
         "-v",
         "/var/run/docker.sock:/var/run/docker.sock",
         "--rm",
