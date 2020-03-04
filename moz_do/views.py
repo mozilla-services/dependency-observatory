@@ -9,6 +9,10 @@ from os.path import isfile, join
 
 import json
 
+STANDARD_HEADERS = {
+    'Access-Control-Allow-Origin' : '*'
+}
+
 TYPES = {
     '.js':'text/javascript', '.json':'application/json','.html':'text/html'
 }
@@ -18,7 +22,7 @@ def show_user_profile(pkgname):
     package_report = models.get_package_report(pkgname)
     if None != package_report:
         mimetype = "application/json"
-        return Response(json.dumps(package_report.to_dict()), mimetype=mimetype)
+        return Response(json.dumps(package_report.to_dict()), headers=STANDARD_HEADERS, mimetype=mimetype)
     else:
         #TODO: we probably want to return data to tell the user that a report is being generated
         abort(404)
@@ -40,7 +44,7 @@ def serve_static_file(filename):
             if None != mt:
                 mimetype = mt
 
-        return Response(open(join(static_dir, filename), 'r').read(), mimetype=mimetype)
+        return Response(open(join(static_dir, filename), 'r').read(), headers=STANDARD_HEADERS, mimetype=mimetype)
     else:
         abort(404)
 
