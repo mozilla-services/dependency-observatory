@@ -17,7 +17,6 @@ services:
     image: dependency-observatory-api
     volumes:
       - ./:/app
-    command: flask run -h 0.0.0.0 -p 8000
     environment:
       - DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
       - INIT_DB=1
