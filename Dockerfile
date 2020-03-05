@@ -17,8 +17,8 @@ ENV PYTHONPATH $PYTHONPATH:/app/depobs
 
 ENV HOST 0.0.0.0
 ENV PORT 8000
-ENV DEBUG True
+ENV DEBUG
 ENV DATABASE_URI postgresql+psycopg2://pguser:pgpass@pghost/dbname
 
 USER app
-CMD [ "flask", "run", "-h",  "0.0.0.0", "-p", "8000"]
+CMD [ "python", "do.py"]
