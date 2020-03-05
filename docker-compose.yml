@@ -68,4 +68,7 @@ services:
       - DB_URL=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
     volumes:
       - ./scanner/fixtures:/fixtures
-    command: python fpr/run_pipeline.py -v save_to_db --create-tables --input-type postprocessed_repo_task -i /fixtures/postprocessed_repo_tasks.jsonl
+    command: bash -c "
+        python fpr/run_pipeline.py save_to_db --create-tables --input-type postprocessed_repo_task -i /fixtures/postprocessed_repo_tasks.jsonl;
+        python fpr/run_pipeline.py save_to_db --input-type dep_meta_npm_reg -i /fixtures/npm_registry_meta.jsonl;
+      "
