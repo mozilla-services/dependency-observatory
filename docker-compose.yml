@@ -19,6 +19,7 @@ services:
       - ./:/app
     command: flask run -h 0.0.0.0 -p 8000
     environment:
+      - DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
       - FLASK_APP=/app/do.py
     depends_on:
       - db
