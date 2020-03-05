@@ -64,6 +64,40 @@ version     | 1.3.0
 id          | 1
 inserted_at | 2020-03-05 17:49:41.673835
 
+dependency_observatory=# SELECT * FROM npm_registry_entries ORDER BY inserted_at DESC LIMIT 1;
+-[ RECORD 1 ]----------+-----------------------------------------------------------
+id                     | 4
+package_name           | @hapi/bounce
+package_version        | 2.0.0
+shasum                 | e6ef56991c366b1e2738b2cd83b01354d938cf3d
+tarball                | https://registry.npmjs.org/@hapi/bounce/-/bounce-2.0.0.tgz
+git_head               | 444a27bbe7e609d4ce05fc92206569766dc9ba38
+repository_type        | git
+repository_url         | git://github.com/hapijs/bounce.git
+description            | Selective error catching and rewrite rules
+url                    |
+license_type           | BSD-3-Clause
+license_url            |
+keywords               | {error,catch}
+has_shrinkwrap         | f
+bugs_url               | https://github.com/hapijs/bounce/issues
+bugs_email             |
+author_name            |
+author_email           |
+author_url             |
+maintainers            | [{"name": "hueniverse", "email": "eran@hammer.io"}]
+contributors           | null
+publisher_name         | hueniverse
+publisher_email        | eran@hammer.io
+publisher_node_version | 13.0.1
+publisher_npm_version  | 6.12.0
+published_at           | 2020-01-04 22:29:03.109
+package_modified_at    | 2020-01-04 22:29:05.405
+source_url             | https://registry.npmjs.org/@hapi/bounce
+inserted_at            | 2020-03-05 18:34:06.506623
+updated_at             |
+
+dependency_observatory=#
 ```
 
 NB: scan fixture loading runs with `docker-compose up`, but run `docker-compose run scan-fixture-loader` to load more data from `scanner/fixtures/postprocessed_repo_tasks.jsonl`
