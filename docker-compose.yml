@@ -29,12 +29,6 @@ services:
     ports:
       - "8000:8000"
 
-  db-common:
-    build:
-      context: ./database
-    container_name: dependency-observatory-db-common
-    image: dependency-observatory-db-common
-
   # celery worker for scanner
   worker:
     build:
@@ -56,3 +50,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     working_dir: /app/src
     command: celery -A tasks worker --loglevel=info
+
+  # should run then exit on compose up
+  db-common:
+    build:
+      context: ./database
+    container_name: dependency-observatory-db-common
+    image: dependency-observatory-db-common
