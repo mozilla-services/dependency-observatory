@@ -19,4 +19,4 @@ docker-compose up --build -d
 1. visit API and start pages:
 
   * http://localhost:8000/static/index.html
-  * https://localhost:8000/package/foo
+  * http://localhost:8000/package/foo
