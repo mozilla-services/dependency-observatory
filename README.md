@@ -97,7 +97,11 @@ source_url             | https://registry.npmjs.org/@hapi/bounce
 inserted_at            | 2020-03-05 18:34:06.506623
 updated_at             |
 
+dependency_observatory=# SELECT COUNT(1) FROM npmsio_scores;
+-[ RECORD 1 ]
+count | 256
+
 dependency_observatory=#
 ```
 
-NB: scan fixture loading runs with `docker-compose up`, but run `docker-compose run scan-fixture-loader` to load more data from `scanner/fixtures/postprocessed_repo_tasks.jsonl`
+NB: scan fixture loading runs with `docker-compose up`, but run `docker-compose run scan-fixture-loader` to load more data from files in `scanner/fixtures/`
