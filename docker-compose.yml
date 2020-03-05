@@ -71,4 +71,5 @@ services:
     command: bash -c "
         python fpr/run_pipeline.py save_to_db --create-tables --input-type postprocessed_repo_task -i /fixtures/postprocessed_repo_tasks.jsonl;
         python fpr/run_pipeline.py save_to_db --input-type dep_meta_npm_reg -i /fixtures/npm_registry_meta.jsonl;
+        python fpr/run_pipeline.py save_to_db --input-type dep_meta_npmsio -i /fixtures/npmsio_scores.jsonl;
       "
