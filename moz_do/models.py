@@ -1,7 +1,7 @@
 # Placeholder for model code
 
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, \
+from sqlalchemy import create_engine, Column, Integer, Numeric, String, DateTime, \
      ForeignKey, event, select
 from sqlalchemy.orm import scoped_session, sessionmaker, backref, relation, relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -37,6 +37,15 @@ class PackageReport(Model):
     release_date = Column(DateTime)
     scoring_date = Column(DateTime)
     top_score = Column(Integer)
+    npmsio_score = Column(Numeric)
+    directVulnsCritical_score = Column(Integer)
+    directVulnsHigh_score = Column(Integer)
+    directVulnsMedium_score = Column(Integer)
+    directVulnsLow_score = Column(Integer)
+    indirectVulnsCritical_score = Column(Integer)
+    indirectVulnsHigh_score = Column(Integer)
+    indirectVulnsMedium_score = Column(Integer)
+    indirectVulnsLow_score = Column(Integer)
     authors = Column(Integer)
     contributors = Column(Integer)
     immediate_deps = Column(Integer)
@@ -58,6 +67,15 @@ class PackageReport(Model):
             release_date=self.release_date,
             scoring_date=self.scoring_date,
             top_score=self.top_score,
+            npmsio_score=self.npmsio_score,
+            directVulnsCritical_score=self.directVulnsCritical_score,
+            directVulnsHigh_score=self.directVulnsHigh_score,
+            directVulnsMedium_score=self.directVulnsMedium_score,
+            directVulnsLow_score=self.directVulnsLow_score,
+            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
+            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
+            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
+            indirectVulnsLow_score=self.indirectVulnsLow_score,
             authors = self.authors,
             contributors = self.contributors,
             immediate_deps = self.immediate_deps,
@@ -73,6 +91,15 @@ class PackageReport(Model):
             release_date=self.release_date,
             scoring_date=self.scoring_date,
             top_score=self.top_score,
+            npmsio_score=self.npms_io_score,
+            directVulnsCritical_score=self.directVulnsCritical_score,
+            directVulnsHigh_score=self.directVulnsHigh_score,
+            directVulnsMedium_score=self.directVulnsMedium_score,
+            directVulnsLow_score=self.directVulnsLow_score,
+            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
+            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
+            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
+            indirectVulnsLow_score=self.indirectVulnsLow_score,
             authors = self.authors,
             contributors = self.contributors,
             immediate_deps = self.immediate_deps,
