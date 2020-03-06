@@ -1,0 +1,65 @@
+{
+  "package": "foo",
+  "version": "1.1.1",
+  "release_date": null,
+  "scoring_date": null,
+  "top_score": 12,
+  "authors": 1,
+  "contributors": 2,
+  "immediate_deps": 1,
+  "all_deps": 1,
+  "dependencies": [
+    {
+      "package": "blah",
+      "version": "0.1.1",
+      "release_date": null,
+      "scoring_date": null,
+      "top_score": 12,
+      "authors": 1,
+      "contributors": 2,
+      "immediate_deps": 1,
+      "all_deps": 1,
+      "dependencies": [
+        {
+          "package": "cake",
+          "version": "4.1.0",
+          "release_date": null,
+          "scoring_date": null,
+          "top_score": 12,
+          "authors": 1,
+          "contributors": 2,
+          "immediate_deps": 1,
+          "all_deps": 1,
+          "dependencies": [
+          ]
+        }
+      ]
+    },
+    {
+      "package": "bar",
+      "version": "3.1.1",
+      "release_date": null,
+      "scoring_date": null,
+      "top_score": 12,
+      "authors": 1,
+      "contributors": 2,
+      "immediate_deps": 1,
+      "all_deps": 1,
+      "dependencies": [
+      ]
+    },
+    {
+      "package": "wibble",
+      "version": "1.1.3",
+      "release_date": null,
+      "scoring_date": null,
+      "top_score": 12,
+      "authors": 1,
+      "contributors": 2,
+      "immediate_deps": 1,
+      "all_deps": 1,
+      "dependencies": [
+      ]
+    }
+  ]
+}
