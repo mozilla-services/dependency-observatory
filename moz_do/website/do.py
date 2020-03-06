@@ -3,8 +3,8 @@ import logging
 
 from flask import Flask
 
-import moz_do.models
-from moz_do import moz_do as app
+import moz_do.website.models as models
+from moz_do.website import moz_do as app
 
 log = logging.getLogger("do")
 ch = logging.StreamHandler()
@@ -15,7 +15,7 @@ ch.setFormatter(formatter)
 if __name__ == '__main__':
     if os.environ.get('INIT_DB', False) == '1':
         log.info("Initializing DO DB")
-        moz_do.models.init_db()
+        models.init_db()
 
     host = os.environ.get('HOST','0.0.0.0')
     port = int(os.environ.get('PORT','8000'))

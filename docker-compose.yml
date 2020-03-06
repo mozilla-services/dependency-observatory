@@ -12,7 +12,7 @@ services:
 
   api:
     build:
-      context: .
+      context: moz_do/
     container_name: dependency-observatory-api
     image: dependency-observatory-api
     volumes:
@@ -20,7 +20,7 @@ services:
     environment:
       - DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
       - INIT_DB=1
-      - FLASK_APP=/app/do.py
+      - FLASK_APP=/app/moz_do/website/do.py
       - DEBUG=1
     depends_on:
       - db

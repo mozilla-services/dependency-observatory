@@ -1,6 +1,6 @@
 from flask import abort, Response
 
-from moz_do import moz_do, models
+from moz_do.website import moz_do, models
 #from moz_do import moz_do
 from markupsafe import escape
 
