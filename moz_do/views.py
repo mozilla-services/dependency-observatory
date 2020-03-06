@@ -22,7 +22,7 @@ def show_package_by_name_and_version(pkgname, version):
     package_report = models.get_package_report(package = pkgname, version = version)
     if None != package_report:
         mimetype = "application/json"
-        return Response(json.dumps(package_report.to_dict()), headers=STANDARD_HEADERS, mimetype=mimetype)
+        return Response(json.dumps(package_report.json_with_dependencies()), headers=STANDARD_HEADERS, mimetype=mimetype)
     else:
         #TODO: we probably want to return data to tell the user that a report is being generated
         abort(404)
@@ -32,7 +32,17 @@ def show_package_by_name(pkgname):
     package_report = models.get_package_report(package = pkgname)
     if None != package_report:
         mimetype = "application/json"
-        return Response(json.dumps(package_report.to_dict()), headers=STANDARD_HEADERS, mimetype=mimetype)
+        return Response(json.dumps(package_report.json_with_dependencies()), headers=STANDARD_HEADERS, mimetype=mimetype)
+    else:
+        #TODO: we probably want to return data to tell the user that a report is being generated
+        abort(404)
+
+@moz_do.route('/parents/<pkgname>/<version>')
+def get_parents_by_name_and_version(pkgname, version):
+    package_report = models.get_package_report(package = pkgname, version = version)
+    if None != package_report:
+        mimetype = "application/json"
+        return Response(json.dumps(package_report.json_with_parents()), headers=STANDARD_HEADERS, mimetype=mimetype)
     else:
         #TODO: we probably want to return data to tell the user that a report is being generated
         abort(404)
