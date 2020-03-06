@@ -42,7 +42,7 @@ SCANS: List[Tuple[str, List[Union[str, re.Pattern]]]] = [
 ]
 
 # Create the scanner task queue
-scanner = Celery("tasks", broker=os.environ["BROKER_URL"])
+scanner = Celery("tasks", broker=os.environ["CELERY_BROKER_URL"])
 scanner.config_from_object(celeryconfig)
 
 
