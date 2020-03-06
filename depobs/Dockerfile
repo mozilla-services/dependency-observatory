@@ -21,4 +21,4 @@ ENV DEBUG ""
 ENV DATABASE_URI postgresql+psycopg2://pguser:pgpass@pghost/dbname
 
 USER app
-CMD [ "python", "moz_do/website/do.py"]
+CMD [ "python", "depobs/website/do.py"]

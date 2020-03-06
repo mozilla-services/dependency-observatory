@@ -1,7 +1,7 @@
 from flask import abort, Response
 
-from moz_do.website import moz_do, models
-#from moz_do import moz_do
+from depobs.website import depobs, models
+#from depobs import depobs
 from markupsafe import escape
 
 from os import listdir, getcwd
@@ -17,7 +17,7 @@ TYPES = {
     '.js':'text/javascript', '.json':'application/json','.html':'text/html'
 }
 
-@moz_do.route('/package/<pkgname>/<version>')
+@depobs.route('/package/<pkgname>/<version>')
 def show_package_by_name_and_version(pkgname, version):
     package_report = models.get_package_report(package = pkgname, version = version)
     if None != package_report:
@@ -27,7 +27,7 @@ def show_package_by_name_and_version(pkgname, version):
         #TODO: we probably want to return data to tell the user that a report is being generated
         abort(404)
 
-@moz_do.route('/package/<pkgname>')
+@depobs.route('/package/<pkgname>')
 def show_package_by_name(pkgname):
     package_report = models.get_package_report(package = pkgname)
     if None != package_report:
@@ -37,7 +37,7 @@ def show_package_by_name(pkgname):
         #TODO: we probably want to return data to tell the user that a report is being generated
         abort(404)
 
-@moz_do.route('/parents/<pkgname>/<version>')
+@depobs.route('/parents/<pkgname>/<version>')
 def get_parents_by_name_and_version(pkgname, version):
     package_report = models.get_package_report(package = pkgname, version = version)
     if None != package_report:
@@ -47,7 +47,7 @@ def get_parents_by_name_and_version(pkgname, version):
         #TODO: we probably want to return data to tell the user that a report is being generated
         abort(404)
 
-@moz_do.route('/static/<filename>')
+@depobs.route('/static/<filename>')
 def serve_static_file(filename):
     # list the names of regular files that exist in the static dir
     static_dir = "static"
@@ -68,15 +68,15 @@ def serve_static_file(filename):
     else:
         abort(404)
 
-@moz_do.route('/__lbheartbeat__')
+@depobs.route('/__lbheartbeat__')
 def lbheartbeat():
     return Response("badum badum", mimetype="text/plain")
 
-@moz_do.route('/__heartbeat__')
+@depobs.route('/__heartbeat__')
 def heartbeat():
     return Response("badum badum", mimetype="text/plain")
 
-@moz_do.route('/__version__')
+@depobs.route('/__version__')
 def version():
     # TODO - serve version.json from the filesystem
     version_info = dict(source = "https://github.com/mozilla-services/dependency-observatory",

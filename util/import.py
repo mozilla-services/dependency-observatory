@@ -1,4 +1,4 @@
-from moz_do.models import db_session, init_db, PackageReport
+from depobs.models import db_session, init_db, PackageReport
 
 import json
 
@@ -30,5 +30,3 @@ if __name__ == "__main__":
     print(dicts)
     pr = load_object(dicts)
     print(pr.to_dict())
-
-

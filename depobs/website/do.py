@@ -3,8 +3,8 @@ import logging
 
 from flask import Flask
 
-import moz_do.website.models as models
-from moz_do.website import moz_do as app
+import depobs.website.models as models
+from depobs.website import moz_do as app
 
 log = logging.getLogger("do")
 ch = logging.StreamHandler()
