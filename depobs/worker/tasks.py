@@ -13,7 +13,7 @@ from celery.exceptions import (
     WorkerTerminate,
 )
 
-import celeryconfig
+import depobs.worker.celeryconfig as celeryconfig
 
 
 # The name must be less than or equal to 214 characters. This includes the scope for scoped packages.
