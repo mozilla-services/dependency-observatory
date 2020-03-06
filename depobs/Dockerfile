@@ -13,7 +13,7 @@ COPY . depobs
 
 RUN pip install --upgrade --no-cache-dir -r depobs/website_requirements.txt
 
-ENV PYTHONPATH $PYTHONPATH:/app/depobs
+ENV PYTHONPATH $PYTHONPATH:/app
 
 ENV HOST 0.0.0.0
 ENV PORT 8000
