@@ -50,7 +50,7 @@ class PackageReport(Model):
                            backref="parents"
     )
 
-    def json_with_dependencies(self):
+    def json_with_dependencies(self, depth = 1):
         return dict(
             id=self.id,
             package=self.package,
@@ -62,10 +62,10 @@ class PackageReport(Model):
             contributors = self.contributors,
             immediate_deps = self.immediate_deps,
             all_deps = self.all_deps,
-            dependencies = [rep.json_with_dependencies() for rep in self.dependencies]
+            dependencies = [rep.json_with_dependencies(depth - 1) for rep in self.dependencies] if depth > 0 else []
         )
     
-    def json_with_parents(self):
+    def json_with_parents(self, depth = 1):
         return dict(
             id=self.id,
             package=self.package,
@@ -77,7 +77,7 @@ class PackageReport(Model):
             contributors = self.contributors,
             immediate_deps = self.immediate_deps,
             all_deps = self.all_deps,
-            parents = [rep.json_with_parents() for rep in self.parents]
+            parents = [rep.json_with_parents(depth - 1) for rep in self.parents] if depth > 0 else []
         )
 
 def get_package_report(package, version = None):
