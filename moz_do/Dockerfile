@@ -11,7 +11,7 @@ WORKDIR /app
 
 COPY . depobs
 
-RUN pip install --upgrade --no-cache-dir -r depobs/requirements.txt
+RUN pip install --upgrade --no-cache-dir -r depobs/website_requirements.txt
 
 ENV PYTHONPATH $PYTHONPATH:/app/depobs
 
@@ -21,4 +21,4 @@ ENV DEBUG ""
 ENV DATABASE_URI postgresql+psycopg2://pguser:pgpass@pghost/dbname
 
 USER app
-CMD [ "python", "do.py"]
+CMD [ "python", "moz_do/website/do.py"]

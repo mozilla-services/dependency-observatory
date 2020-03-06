@@ -12,7 +12,7 @@ services:
 
   api:
     build:
-      context: .
+      context: moz_do/
     container_name: dependency-observatory-api
     image: dependency-observatory-api
     volumes:
@@ -20,7 +20,7 @@ services:
     environment:
       - DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
       - INIT_DB=1
-      - FLASK_APP=/app/do.py
+      - FLASK_APP=/app/moz_do/website/do.py
       - DEBUG=1
     depends_on:
       - db
@@ -32,9 +32,10 @@ services:
   # celery worker for scanner
   worker:
     build:
-      context: ./scanner
-    container_name: dependency-observatory-scanner-worker
-    image: dependency-observatory-scanner
+      context: moz_do/
+      dockerfile: Dockerfile.worker
+    container_name: dependency-observatory-worker
+    image: dependency-observatory-worker
     depends_on:
       - db
     environment:
@@ -44,19 +45,10 @@ services:
       - POSTGRES_DB=dependency_observatory
     links:
       - db
-    # let the worker spin up new docker containers
-    # NB: this essentially runs scanner images as root
+    # let the worker spin up new sibling docker containers
+    # NB: exposes the docker daemon to those containers
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    working_dir: /app/src
-    command: celery -A tasks worker --loglevel=info
-
-  # should run then exit on compose up
-  db-common:
-    build:
-      context: ./database
-    container_name: dependency-observatory-db-common
-    image: dependency-observatory-db-common
 
   # should run then exit on compose up
   # run it again to load more data from ./scanner/fixtures/postprocessed_repo_tasks.jsonl
@@ -67,7 +59,7 @@ services:
     environment:
       - DB_URL=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
     volumes:
-      - ./scanner/fixtures:/fixtures
+      - ./moz_do/worker/fixtures:/fixtures
     command: bash -c "
         python fpr/run_pipeline.py save_to_db --create-tables --input-type postprocessed_repo_task -i /fixtures/postprocessed_repo_tasks.jsonl;
         python fpr/run_pipeline.py save_to_db --input-type dep_meta_npm_reg -i /fixtures/npm_registry_meta.jsonl;
