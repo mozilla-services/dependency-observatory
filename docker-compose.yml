@@ -51,14 +51,6 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
 
   # should run then exit on compose up
-  db-common:
-    build:
-      context: ./moz_do/
-      dockerfile: Dockerfile.database
-    container_name: dependency-observatory-db-common
-    image: dependency-observatory-db-common
-
-  # should run then exit on compose up
   # run it again to load more data from ./scanner/fixtures/postprocessed_repo_tasks.jsonl
   scan-fixture-loader:
     image: mozilla/dependencyscan:latest
