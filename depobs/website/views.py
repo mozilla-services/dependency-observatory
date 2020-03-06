@@ -1,7 +1,6 @@
 from flask import abort, Response
 
-from depobs.website import depobs, models
-#from depobs import depobs
+from depobs.website import models, moz_do as app
 from markupsafe import escape
 
 from os import listdir, getcwd
@@ -17,7 +16,7 @@ TYPES = {
     '.js':'text/javascript', '.json':'application/json','.html':'text/html'
 }
 
-@depobs.route('/package/<pkgname>/<version>')
+@app.route('/package/<pkgname>/<version>')
 def show_package_by_name_and_version(pkgname, version):
     package_report = models.get_package_report(package = pkgname, version = version)
     if None != package_report:
@@ -27,7 +26,7 @@ def show_package_by_name_and_version(pkgname, version):
         #TODO: we probably want to return data to tell the user that a report is being generated
         abort(404)
 
-@depobs.route('/package/<pkgname>')
+@app.route('/package/<pkgname>')
 def show_package_by_name(pkgname):
     package_report = models.get_package_report(package = pkgname)
     if None != package_report:
@@ -37,7 +36,7 @@ def show_package_by_name(pkgname):
         #TODO: we probably want to return data to tell the user that a report is being generated
         abort(404)
 
-@depobs.route('/parents/<pkgname>/<version>')
+@app.route('/parents/<pkgname>/<version>')
 def get_parents_by_name_and_version(pkgname, version):
     package_report = models.get_package_report(package = pkgname, version = version)
     if None != package_report:
@@ -47,7 +46,7 @@ def get_parents_by_name_and_version(pkgname, version):
         #TODO: we probably want to return data to tell the user that a report is being generated
         abort(404)
 
-@depobs.route('/static/<filename>')
+@app.route('/static/<filename>')
 def serve_static_file(filename):
     # list the names of regular files that exist in the static dir
     static_dir = "static"
@@ -68,15 +67,15 @@ def serve_static_file(filename):
     else:
         abort(404)
 
-@depobs.route('/__lbheartbeat__')
+@app.route('/__lbheartbeat__')
 def lbheartbeat():
     return Response("badum badum", mimetype="text/plain")
 
-@depobs.route('/__heartbeat__')
+@app.route('/__heartbeat__')
 def heartbeat():
     return Response("badum badum", mimetype="text/plain")
 
-@depobs.route('/__version__')
+@app.route('/__version__')
 def version():
     # TODO - serve version.json from the filesystem
     version_info = dict(source = "https://github.com/mozilla-services/dependency-observatory",
