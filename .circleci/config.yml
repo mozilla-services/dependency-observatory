@@ -1,0 +1,20 @@
+version: 2
+jobs:
+  build-images:
+    docker:
+      - image: circleci/python:buster
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: docker-compose build
+          command: docker-compose build
+
+workflows:
+  version: 2
+  check-readme-local-dev:
+    jobs:
+      - build-images:
+          filters:
+            tags:
+              only: /.*/
