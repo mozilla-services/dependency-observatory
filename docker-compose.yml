@@ -12,7 +12,7 @@ services:
 
   api:
     build:
-      context: moz_do/
+      context: depobs/
     container_name: dependency-observatory-api
     image: dependency-observatory-api
     volumes:
@@ -20,7 +20,7 @@ services:
     environment:
       - DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
       - INIT_DB=1
-      - FLASK_APP=/app/moz_do/website/do.py
+      - FLASK_APP=/app/depobs/website/do.py
       - DEBUG=1
     depends_on:
       - db
@@ -32,7 +32,7 @@ services:
   # celery worker for scanner
   worker:
     build:
-      context: moz_do/
+      context: depobs/
       dockerfile: Dockerfile.worker
     container_name: dependency-observatory-worker
     image: dependency-observatory-worker
@@ -59,7 +59,7 @@ services:
     environment:
       - DB_URL=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
     volumes:
-      - ./moz_do/worker/fixtures:/fixtures
+      - ./depobs/worker/fixtures:/fixtures
     command: bash -c "
         python fpr/run_pipeline.py save_to_db --create-tables --input-type postprocessed_repo_task -i /fixtures/postprocessed_repo_tasks.jsonl;
         python fpr/run_pipeline.py save_to_db --input-type dep_meta_npm_reg -i /fixtures/npm_registry_meta.jsonl;
