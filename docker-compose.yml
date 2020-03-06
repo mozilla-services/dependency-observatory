@@ -54,7 +54,8 @@ services:
   # should run then exit on compose up
   db-common:
     build:
-      context: ./database
+      context: ./moz_do/
+      dockerfile: Dockerfile.database
     container_name: dependency-observatory-db-common
     image: dependency-observatory-db-common
 
