@@ -1,6 +1,7 @@
-from flask import abort, Response
+from flask import abort, Response, request
 
 from depobs.website import models, moz_do as app
+from depobs.website.scans import scans_api
 from markupsafe import escape
 
 from os import listdir, getcwd
@@ -15,6 +16,8 @@ STANDARD_HEADERS = {
 TYPES = {
     '.js':'text/javascript', '.json':'application/json','.html':'text/html'
 }
+
+app.register_blueprint(scans_api)
 
 @app.route('/package/<pkgname>/<version>')
 def show_package_by_name_and_version(pkgname, version):

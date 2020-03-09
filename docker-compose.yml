@@ -18,6 +18,7 @@ services:
     volumes:
       - ./:/app
     environment:
+      - CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
       - DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
       - INIT_DB=1
       - FLASK_APP=/app/depobs/website/do.py
@@ -39,7 +40,8 @@ services:
     depends_on:
       - db
     environment:
-      - BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
+      - CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
+      - DB_URL=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=dependency_observatory

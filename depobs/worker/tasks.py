@@ -23,9 +23,7 @@ import depobs.worker.celeryconfig as celeryconfig
 #
 # https://docs.npmjs.com/files/package.json#name
 NPM_PACKAGE_NAME_RE = re.compile(
-    r"""
-[@a-zA-Z0-9][\.-_@/a-zA-Z0-9]{0,213}
-""",
+    r"""[@a-zA-Z0-9][\.-_@/a-zA-Z0-9]{0,213}""",
     re.VERBOSE,
 )
 
@@ -42,7 +40,7 @@ SCANS: List[Tuple[str, List[Union[str, re.Pattern]]]] = [
 ]
 
 # Create the scanner task queue
-scanner = Celery("tasks", broker=os.environ["BROKER_URL"])
+scanner = Celery("tasks", broker=os.environ["CELERY_BROKER_URL"])
 scanner.config_from_object(celeryconfig)
 
 

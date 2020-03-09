@@ -11,9 +11,10 @@ WORKDIR /app
 
 COPY . depobs
 
-RUN pip install --upgrade --no-cache-dir -r depobs/website_requirements.txt
+RUN pip install --upgrade --no-cache-dir -r depobs/website_requirements.txt -r depobs/worker_requirements.txt
 
 ENV PYTHONPATH $PYTHONPATH:/app
+ENV PYTHONUNBUFFERED 1
 
 ENV HOST 0.0.0.0
 ENV PORT 8000
