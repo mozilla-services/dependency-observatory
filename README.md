@@ -3,24 +3,9 @@ Dependency Observatory
 
 ### Running
 
-1. fetch scan images
+1. run `docker pull mozilla/dependencyscan:latest` to fetch the latest scanner image
 
-
-```console
-docker pull mozilla/dependencyscan:latest
-```
-
-1. build and start DB, API, and scanner runner worker
-
-```console
-docker-compose up --build -d
-```
-
-1. visit API and start pages:
-
-  * http://localhost:8000/static/index.html
-  * http://localhost:8000/package/foo (should 404)
-
+1. run `docker-compose up --build -d` to build and start DB, API, and scan runner worker
 
 1. check for loaded scan fixture data:
 
@@ -105,3 +90,10 @@ dependency_observatory=#
 ```
 
 NB: scan fixture loading runs with `docker-compose up`, but run `docker-compose run scan-fixture-loader` to load more data from files in `scanner/fixtures/`
+
+1. visit API and start pages:
+
+  * http://localhost:8000/static/index.html
+  * http://localhost:8000/package/foo (should 404)
+
+1. run `curl -X POST 'http://localhost:8000/scan?package_name=eslint&package_manager=npm'` to kick off a scan
