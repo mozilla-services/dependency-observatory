@@ -107,6 +107,39 @@ class PackageReport(Model):
             parents = [rep.json_with_parents(depth - 1) for rep in self.parents] if depth > 0 else []
         )
 
+class PackageLatestReport(Model):
+    __tablename__ = 'latest_reports'
+
+    id = Column('id', Integer, primary_key=True)
+
+    package = Column(String(200))
+    version = Column(String(200))
+    release_date = Column(DateTime)
+    scoring_date = Column(DateTime)
+    top_score = Column(Integer)
+    npmsio_score = Column(Numeric)
+    directVulnsCritical_score = Column(Integer)
+    directVulnsHigh_score = Column(Integer)
+    directVulnsMedium_score = Column(Integer)
+    directVulnsLow_score = Column(Integer)
+    indirectVulnsCritical_score = Column(Integer)
+    indirectVulnsHigh_score = Column(Integer)
+    indirectVulnsMedium_score = Column(Integer)
+    indirectVulnsLow_score = Column(Integer)
+    authors = Column(Integer)
+    contributors = Column(Integer)
+    immediate_deps = Column(Integer)
+    all_deps = Column(Integer)
+
+    # this relationship is used for persistence
+    dependencies = relationship("PackageLatestReport",
+                           secondary=dependency,
+                           primaryjoin=id==dependency.c.depends_on_id,
+                           secondaryjoin=id==dependency.c.used_by_id,
+                           backref="parents"
+    )
+
+
 def get_package_report(package, version = None):
     if None == version:
         #TODO order-by is hard with semver. Think about splitting out versions
