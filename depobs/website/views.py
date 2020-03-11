@@ -5,7 +5,7 @@ from depobs.website.scans import scans_api
 from markupsafe import escape
 
 from os import listdir, getcwd
-from os.path import isfile, join
+from os.path import exists, isfile, join, dirname
 
 import json
 
@@ -52,8 +52,8 @@ def get_parents_by_name_and_version(pkgname, version):
 @app.route('/static/<filename>')
 def serve_static_file(filename):
     # list the names of regular files that exist in the static dir
-    static_dir = "static"
-    files = [f for f in listdir(static_dir) if isfile(join(static_dir, f))]
+    static_dir = join(dirname(__file__), "static")
+    files = [f for f in listdir(static_dir) if exists(join(static_dir, f)) and isfile(join(static_dir, f))]
 
     # if the requested filename exists in the list of regular filenames, serve it
     if filename in files:
