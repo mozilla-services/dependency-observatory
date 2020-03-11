@@ -67,7 +67,7 @@ def run_image(
         "docker",
         "run",
         "-e",
-        f"DB_URL={os.environ['DB_URL']}",
+        f"DB_URL={os.environ['DATABASE_URI']}",
         "-v",
         "/var/run/docker.sock:/var/run/docker.sock",
         "--rm",

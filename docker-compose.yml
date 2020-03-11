@@ -41,7 +41,7 @@ services:
       - db
     environment:
       - CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
-      - DB_URL=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
+      - DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
     links:
       - db
     # let the worker spin up new sibling docker containers
