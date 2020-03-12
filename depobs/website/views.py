@@ -1,6 +1,6 @@
 from flask import abort, Response, request
 
-from depobs.website import models, moz_do as app
+from depobs.website import models, app
 from depobs.website.scans import scans_api
 from markupsafe import escape
 

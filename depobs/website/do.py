@@ -4,7 +4,7 @@ import logging
 from flask import Flask
 
 import depobs.website.models as models
-from depobs.website import moz_do as app
+from depobs.website import app
 
 log = logging.getLogger("do")
 ch = logging.StreamHandler()

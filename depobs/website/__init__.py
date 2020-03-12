@@ -1,4 +1,4 @@
 from flask import Flask
-moz_do = Flask(__name__)
+app = Flask(__name__)  # depobs.website
 
 from depobs.website import views
