@@ -14,7 +14,10 @@ STANDARD_HEADERS = {
 }
 
 TYPES = {
-    '.js':'text/javascript', '.json':'application/json','.html':'text/html'
+    '.js':'text/javascript',
+    '.json':'application/json',
+    '.html':'text/html',
+    '.css': 'text/css',
 }
 
 app.register_blueprint(scans_api)
