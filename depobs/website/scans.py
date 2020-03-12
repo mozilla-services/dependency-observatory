@@ -5,24 +5,42 @@ from flask import Blueprint, jsonify, make_response, request
 
 import depobs.worker.tasks as tasks
 
-scans_api = api = Blueprint('scans_api', __name__)
+scans_api = api = Blueprint("scans_api", __name__)
 
 
-@api.route('/scan', methods=['POST'])
+@api.route("/scan", methods=["POST"])
 def scan():
-    package_names = request.args.getlist('package_name', str)
+    package_names = request.args.getlist("package_name", str)
+    package_versions = request.args.getlist("package_version", str)
+    package_managers = request.args.getlist("package_manager", str)
     if len(package_names) > 1:
         return dict(error="only one package name supported"), 400
-
-    if not re.match(tasks.NPM_PACKAGE_NAME_RE, package_names[0]):
-        return dict(error=f"package name did not match {tasks.NPM_PACKAGE_NAME_RE.pattern!r}"), 400
-
-    package_managers = request.args.getlist('package_manager', str)
+    if len(package_versions) > 1:
+        return dict(error="only zero or one package version supported"), 400
     if len(package_managers) > 1:
         return dict(error="only one package manager supported"), 400
 
-    if package_managers[0] != 'npm':
-        return dict(error="only package manager 'npm' supported at this time"), 400
+    package_name = package_names[0]
+    package_version = package_versions[0] if len(package_versions) else None
+    package_manager = package_managers[0] if len(package_managers) else "npm"
 
-    result: celery.result.AsyncResult = tasks.run_image.delay("mozilla/dependencyscan:latest", package_names[0])
+    package_name_validation_error = tasks.get_npm_package_name_validation_error(
+        package_name
+    )
+    if package_name_validation_error is not None:
+        return dict(error=validation_error), 400
+
+    if package_version:
+        package_version_validation_error = tasks.get_npm_package_version_validation_error(
+            package_version
+        )
+        if package_version_validation_error is not None:
+            return package_version_validation_error, 400
+
+    if package_manager != "npm":
+        return dict(error="only the package manager 'npm' supported"), 400
+
+    result: celery.result.AsyncResult = tasks.scan_npm_package.delay(
+        package_name, package_version
+    )
     return dict(task_id=result.id)
