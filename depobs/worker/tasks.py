@@ -92,11 +92,12 @@ def scan_npm_package(
     if package_name_validation_error is not None:
         return package_name_validation_error
 
-    package_version_validation_error = get_npm_package_version_validation_error(
-        package_version
-    )
-    if package_version_validation_error is not None:
-        return package_version_validation_error
+    if package_version:
+        package_version_validation_error = get_npm_package_version_validation_error(
+            package_version
+        )
+        if package_version_validation_error is not None:
+            return package_version_validation_error
 
     # mozilla/dependencyscan:latest must already be built/pulled/otherwise
     # present on the worker node
