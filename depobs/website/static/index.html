@@ -1,41 +1,55 @@
 <!DOCTYPE html>
 <html>
-
-<head>
-    <meta charset="utf-8">
-    <title id="title">Mozilla Dependency Observatory</title>
-</head>
-
-<body>
-    <h1>Welcome to Mozilla's Dependency Observatory</h1>
-    <p>TODO enter some blub here:)</p>
-    <h2>Find a package</h2>
-    <form action="results.html" method="get">
-    <table>
-        <tr>
-            <td><label for="manager">Package Manager:</label></td>
-            <td>
-                <select id="manager" name="manager">
-                    <option value="npm">NPM</option>
-                </select>
-            </td>
-        </tr>
-        <tr>
-            <td><label for="package">Package Name:</label></td>
-            <td><input type="text" id="package" name="package"></input></td>
-        </tr>
-        <tr>
-            <td><label for="version">Package Version:</label></td>
-            <td><input type="text" id="version" name="version"></input></td>
-        <tr>
-            <td></td>
-            <td><input type="submit" value="Submit"></input></td>
-        </tr>
-    </table>
-    </form>
-    <h2>Support</h2>
-    <p>For bugs and feature requests, please create <a href="https://github.com/mozilla-services/find-package-rugaru/issues">issues
-            on GitHub</a>.</p>
-</body>
-
+   <head>
+      <meta charset="utf-8">
+      <meta http-equiv="Content-Security-Policy" content="default-src 'self';">
+      <title id="title">Mozilla Dependency Observatory</title>
+      <link href="bootstrap.min.css" rel="stylesheet">
+      <link href="do.css" rel="stylesheet">
+   </head>
+   <body>
+      <header class="mb-0 mb-md-3">
+         <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-primary bg-white">
+               <a class="navbar-brand" href="/"><img id="observatory-wordmark" src="observatory-wordmark.svg" alt="Observatory by Mozilla"></a>
+               <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                  <ul class="navbar-nav ml-auto">
+                     <li class="nav-item text-right">
+                        <a class="nav-link" href="/">Home</a>
+                     </li>
+                     <li class="nav-item text-right">
+                        <a class="nav-link" href="faq.html">FAQ</a>
+                     </li>
+                     <li class="nav-item text-right">
+                        <a class="nav-link" href="https://github.com/mozilla/http-observatory-website/">Contribute at GitHub</a>
+                     </li>
+                  </ul>
+               </div>
+            </nav>
+         </div>
+      </header>
+      <div class="container mb-3">
+         <div class="row">
+            <div class="col-12 col-md-10 offset-md-1 col-xl-8 offset-xl-2">
+               <h1 class="h6 margin-bottom">Welcome to Mozilla's Dependency Observatory - explain more here.</h1>
+               <div class="card mt-3">
+                  <div class="card-header bg-primary text-white"><span class="h3">Find a package</span></div>
+                  <div class="card-body no-popover-mobile pb-4">
+                     <form action="results.html" method="get">
+                        <div class="input-group mt-2 mb-3">
+                           <select id="manager" name="manager">
+                              <option value="npm">NPM</option>
+                           </select>
+                           <input type="text" class="form-control" id="package" placeholder="enter package name here" aria-label="package name" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                           <input type="text" class="form-control" id="version" placeholder="enter package version here" aria-label="package version" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                           <button class="btn btn-primary" type="submit">Find Now</button>
+                        </div>
+                     </form>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      </div>
+   </body>
 </html>
