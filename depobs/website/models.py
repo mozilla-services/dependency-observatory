@@ -1,6 +1,8 @@
 # Placeholder for model code
 
 from datetime import datetime
+from typing import List
+
 from sqlalchemy import create_engine, Column, Integer, Numeric, String, DateTime, \
      ForeignKey, event, select
 from sqlalchemy.orm import scoped_session, sessionmaker, backref, relation, relationship
@@ -13,7 +15,7 @@ DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql+psycopg2://postgres:po
 
 engine = create_engine(DATABASE_URI,
                        convert_unicode=True)
-                       
+
 db_session = scoped_session(sessionmaker(autocommit=False,
                                          autoflush=False,
                                          bind=engine))
@@ -82,7 +84,7 @@ class PackageReport(Model):
             all_deps = self.all_deps,
             dependencies = [rep.json_with_dependencies(depth - 1) for rep in self.dependencies] if depth > 0 else []
         )
-    
+
     def json_with_parents(self, depth = 1):
         return dict(
             id=self.id,
@@ -121,5 +123,25 @@ def get_package_report(package, version = None):
 #def get_parents(id):
 #    return db_session.query(PackageReport).filter(PackageReport.dependemcies.has(PackageReport.id == int(id)))
 
+VIEWS: List[str] = [
+    """
+CREATE OR REPLACE VIEW latest_reports AS
+SELECT * From (
+SELECT r.*, row_number() OVER (PARTITION BY package, version ORDER BY scoring_date desc) AS rn
+       FROM reports r
+     ) r2
+WHERE r2.rn = 1
+    """
+]
+
+
+def create_views(engine):
+    connection = engine.connect()
+    for view_command in VIEWS:
+        _ = connection.execute(view_command)
+    connection.close()
+
+
 def init_db():
     Model.metadata.create_all(bind=engine)
+    create_views(engine)
