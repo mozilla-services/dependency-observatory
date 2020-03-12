@@ -12,7 +12,8 @@ ch.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
 
-if __name__ == '__main__':
+
+def main():
     if os.environ.get('INIT_DB', False) == '1':
         log.info("Initializing DO DB")
         models.init_db()
@@ -21,3 +22,7 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT','8000'))
 
     app.run(host=host, port=port)
+
+
+if __name__ == '__main__':
+    main()
