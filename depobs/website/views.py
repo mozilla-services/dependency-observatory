@@ -46,6 +46,11 @@ def get_parents_by_name_and_version(pkgname, version):
         abort(404)
 
 
+@app.after_request
+def add_standard_headers_to_static_routes(response):
+    if request.path.startswith('/static'):
+        response.headers.update(STANDARD_HEADERS)
+    return response
 
 
 @app.route('/__lbheartbeat__')
