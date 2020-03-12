@@ -22,7 +22,7 @@ services:
       - DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
       - INIT_DB=1
       - FLASK_APP=/app/depobs/website/do.py
-      - DEBUG=1
+      - FLASK_ENV=development
     depends_on:
       - db
     links:

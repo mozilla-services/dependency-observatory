@@ -18,7 +18,7 @@ ENV PYTHONUNBUFFERED 1
 
 ENV HOST 0.0.0.0
 ENV PORT 8000
-ENV DEBUG ""
+ENV FLASK_ENV "production"
 ENV DATABASE_URI postgresql+psycopg2://pguser:pgpass@pghost/dbname
 
 USER app
