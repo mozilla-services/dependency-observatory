@@ -13,13 +13,6 @@ STANDARD_HEADERS = {
     'Access-Control-Allow-Origin' : '*'
 }
 
-TYPES = {
-    '.js':'text/javascript',
-    '.json':'application/json',
-    '.html':'text/html',
-    '.css': 'text/css',
-}
-
 app.register_blueprint(scans_api)
 
 @app.route('/package/<pkgname>/<version>')
@@ -52,26 +45,8 @@ def get_parents_by_name_and_version(pkgname, version):
         #TODO: we probably want to return data to tell the user that a report is being generated
         abort(404)
 
-@app.route('/static/<filename>')
-def serve_static_file(filename):
-    # list the names of regular files that exist in the static dir
-    static_dir = join(dirname(__file__), "static")
-    files = [f for f in listdir(static_dir) if exists(join(static_dir, f)) and isfile(join(static_dir, f))]
 
-    # if the requested filename exists in the list of regular filenames, serve it
-    if filename in files:
-        mimetype = "text/plain"
 
-        # Cater for some common mimetypes
-        dot_pos = filename.rfind('.')
-        if -1 != dot_pos:
-            mt = TYPES.get(filename[dot_pos:])
-            if None != mt:
-                mimetype = mt
-
-        return Response(open(join(static_dir, filename), 'r').read(), headers=STANDARD_HEADERS, mimetype=mimetype)
-    else:
-        abort(404)
 
 @app.route('/__lbheartbeat__')
 def lbheartbeat():
