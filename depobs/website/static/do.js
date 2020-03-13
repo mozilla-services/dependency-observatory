@@ -25,18 +25,25 @@ function gotPackageInfo() {
             const json = JSON.parse(httpRequest.responseText);
             setElement(json, 'package');
             setElement(json, 'version');
-            setElement(json, 'top_score');
-            //setElement(json, 'npms_io_score');
+            setElement(json, 'npms_io_score');
             setElement(json, 'authors');
             setElement(json, 'contributors');
             setElement(json, 'immediate_deps');
             setElement(json, 'all_deps');
+
+            let score = calculate_score(json);
+            document.getElementById('top_score').innerText = score;
+            let grade = get_grade(score);
+            document.getElementById("scan-grade-letter").innerText = grade;
+            document.getElementById("scan-grade-container").className += " grade-" + grade.toLowerCase();
 
             let table = document.getElementById("deps");
             let depJson = json['dependencies'];
             for(let i = 0; i < depJson.length; i++) {
                 let pkg = depJson[i]['package'];
                 let ver = depJson[i]['version'];
+                let score = calculate_score(depJson[i]);
+                let grade = get_grade(score);
 
                 let row = table.insertRow(i+1);
                 let cell = row.insertCell(0);
@@ -57,11 +64,11 @@ function gotPackageInfo() {
                 cell.appendChild(a);
 
                 cell = row.insertCell(2);
-                cell.innerText = depJson[i]['top_score'];
+                cell.innerText = grade + " (" + score + ")";
                 cell = row.insertCell(3);
                 cell.innerText = depJson[i]['direct_dep_count'];
                 cell = row.insertCell(4);
-                cell.innerText = depJson[i]['all_dep_count'];
+                cell.innerText = depJson[i]['all_deps'];
             }
 
         } else {
@@ -73,6 +80,55 @@ function gotPackageInfo() {
     }
 }
 
+function calculate_score(json) {
+    let score = json["npms_io_score"] * 100;
+    let all_deps = json["all_deps"];
+    if (all_deps <= 5) {
+        score +=20;
+    } else if (all_deps <= 20) {
+        score +=10;
+    } else if (all_deps >= 500) {
+        score -=20;
+    } else if (all_deps >= 100) {
+        score -=10;
+    }
+    if (json["direct_vuln_critical_count"] > 0) {
+        score -=20;
+    }
+    if (json["direct_vuln_high_count"] > 0) {
+        score -=10;
+    }
+    if (json["direct_vuln_moderate_count"] > 0) {
+        score -=5;
+    }
+    if (json["indirect_vuln_critical_count"] > 0) {
+        score -=10;
+    }
+    if (json["indirect_vuln_high_count"] > 0) {
+        score -=7;
+    }
+    if (json["indirect_vuln_moderate_count"] > 0) {
+        score -=3;
+    }
+    return parseInt(score);
+}
+
+function get_grade(score) {
+    let grade;
+    if (score >= 80) {
+        grade = "A";
+    } else if (score >= 60) {
+        grade = "B";
+    } else if (score >= 40) {
+        grade = "C";
+    } else if (score >= 20) {
+        grade = "D";
+    } else {
+        grade = "E";
+    }
+    return grade;
+}
+
 function toggleParents() {
     let table = document.getElementById("parenttable");
     if (table.rows.length === 0) {
@@ -81,8 +137,7 @@ function toggleParents() {
         let ver = urlParams.get('version');
         parentsRequest = new XMLHttpRequest();
         parentsRequest.onreadystatechange = gotParentsInfo;
-        //parentsRequest.open('GET', 'https://depobs.dev.mozaws.net/package/' + pkg + '/' + ver);
-        parentsRequest.open('GET', 'parents-v1.json');
+        parentsRequest.open('GET', PARENTS_PREFIX + pkg + '/' + ver);
         parentsRequest.send();
     } else {
         while(table.hasChildNodes()) {
