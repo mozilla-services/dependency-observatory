@@ -1,4 +1,10 @@
-version: 2
+# These environment variables must be set in CircleCI UI
+#
+# DOCKERHUB_REPO - docker hub repo, format: <username>/<repo>
+# DOCKER_USER
+# DOCKER_PASS
+#
+version: 2.1
 jobs:
   build-images:
     docker:
@@ -7,8 +13,50 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
+          name: write a version.json in depobs/
+          command: |
+            # create a version.json per https://github.com/mozilla-services/Dockerflow/blob/master/docs/version_object.md
+            printf '{"commit":"%s","version":"%s","source":"https://github.com/%s/%s","build":"%s"}\n' \
+            "$CIRCLE_SHA1" \
+            "$CIRCLE_TAG" \
+            "$CIRCLE_PROJECT_USERNAME" \
+            "$CIRCLE_PROJECT_REPONAME" \
+            "$CIRCLE_BUILD_URL" > depobs/version.json
+      - run:
           name: docker-compose build
           command: docker-compose build
+      - run:
+          name: save built image to cache
+          command: docker save "${DOCKERHUB_REPO}:latest" | gzip -c > /tmp/docker.tgz
+      - save_cache:
+          key: v1-{{ .Branch }}-{{ epoch }}
+          paths:
+            - /tmp/docker.tgz
+
+  deploy:
+    docker:
+      - image: circleci/python:buster
+    steps:
+      - checkout
+      - restore_cache:
+          key: v1-{{.Branch}}
+      - run:
+          name: Restore Docker image cache
+          command: gunzip -c /tmp/docker.tgz | docker load
+      - run:
+          name: deploy to Dockerhub
+          command: |
+            # deploy master
+            if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              docker login -u $DOCKER_USER -p $DOCKER_PASS
+              docker-compose push api
+            elif  [ ! -z "${CIRCLE_TAG}" ]; then
+              # deploy a release tag
+              docker login -u $DOCKER_USER -p $DOCKER_PASS
+              echo "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
+              docker tag "${DOCKERHUB_REPO}:latest" "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
+              docker push "${DOCKERHUB_REPO}:${CIRCLE_TAG}"
+            fi
 
 workflows:
   version: 2
@@ -18,3 +66,13 @@ workflows:
           filters:
             tags:
               only: /.*/
+
+      - deploy:
+          requires:
+            - build-images
+          filters:
+            tags:
+              # only upload the docker container on semver tags
+              only: /[0-9]\.[0-9]+\.[0-9]+/
+            branches:
+              only: master
