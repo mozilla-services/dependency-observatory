@@ -47,11 +47,11 @@
                      <div class="col-xs-12 col-xl-8 pl-xl-0 table-responsive">
                         <table class="table table-striped table-sm scan-summary-table">
                            <tr>
-                              <td>Package:</td>
+                              <td>Package</td>
                               <td id="package"></td>
                            </tr>
                            <tr>
-                              <td>Version:</td>
+                              <td>Version</td>
                               <td id="version"></td>
                            </tr>
                            <tr>
@@ -95,10 +95,43 @@
          <div class="col-xs-12 col-lg-6">
             <div class="card card-primary summary summary-condensed" id="scan-summary">
                <div class="card-header bg-primary text-center text-md-left text-white">
-                  <span class="h3">Test Scores</span>
+                  <span class="h3">Known Vulnerabilities</span>
                </div>
                <div class="card-body pb-1">
-                  TBA - detail the scoring here?
+                        <table class="table table-striped table-sm scan-summary-table">
+                           <tr>
+                              <td>This package - critical priority</td>
+                              <td id="direct_vuln_critical_count"></td>
+                           </tr>
+                           <tr>
+                              <td>This package - high priority</td>
+                              <td id="direct_vuln_high_count"></td>
+                           </tr>
+                           <tr>
+                              <td>This package - moderate priority</td>
+                              <td id="direct_vuln_moderate_count"></td>
+                           </tr>
+                           <tr>
+                              <td>This package - low priority</td>
+                              <td id="direct_vuln_low_count"></td>
+                           </tr>
+                           <tr>
+                              <td>Dependencies - critical priority</td>
+                              <td id="indirect_vuln_critical_count"></td>
+                           </tr>
+                           <tr>
+                              <td>Dependencies - high priority</td>
+                              <td id="indirect_vuln_high_count"></td>
+                           </tr>
+                           <tr>
+                              <td>Dependencies - moderate priority</td>
+                              <td id="indirect_vuln_moderate_count"></td>
+                           </tr>
+                           <tr>
+                              <td>Dependencies - low priority</td>
+                              <td id="indirect_vuln_low_count"></td>
+                           </tr>
+                        </table>
                </div>
             </div>
          </div>
