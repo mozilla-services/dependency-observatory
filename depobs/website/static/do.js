@@ -30,6 +30,15 @@ function gotPackageInfo() {
             setElement(json, 'contributors');
             setElement(json, 'immediate_deps');
             setElement(json, 'all_deps');
+            setElement(json, 'direct_vuln_critical_count');
+            setElement(json, 'direct_vuln_high_count');
+            setElement(json, 'direct_vuln_moderate_count');
+            setElement(json, 'direct_vuln_low_count');
+            setElement(json, 'indirect_vuln_critical_count');
+            setElement(json, 'indirect_vuln_high_count');
+            setElement(json, 'indirect_vuln_moderate_count');
+            setElement(json, 'indirect_vuln_low_count');
+
 
             let score = calculate_score(json);
             document.getElementById('top_score').innerText = score;
