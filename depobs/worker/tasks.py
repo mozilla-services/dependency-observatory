@@ -154,7 +154,7 @@ def score_package(package_name: str, package_version: str):
     plr.package = package_name
     plr.version = package_version
 
-    stmt = get_npms_io_score(session, package_name, package_version)
+    stmt = get_npms_io_score(package_name, package_version)
     pr.npmsio_score = stmt.first()
 
     pr.directVulnsCritical_score = 0
@@ -163,7 +163,7 @@ def score_package(package_name: str, package_version: str):
     pr.directVulnsLow_score = 0
 
     # Direct vulnerability counts
-    stmt = get_vulnerability_counts(session, package_name, package_version)
+    stmt = get_vulnerability_counts(package_name, package_version)
     for package, version, severity, count in stmt:
         # This is not yet tested - need real data
         print('\t' + package + '\t' + version + '\t' + severity + '\t' + str(count))
@@ -178,7 +178,7 @@ def score_package(package_name: str, package_version: str):
         else:
             log.error(f"unexpected severity {severity} for package {package} / version {version}")
 
-    stmt = get_npm_registry_data(session, package_name, package_version)
+    stmt = get_npm_registry_data(package_name, package_version)
     for published_at, maintainers, contributors in stmt:
         pr.release_date = published_at
         if maintainers is not None:
@@ -190,11 +190,11 @@ def score_package(package_name: str, package_version: str):
         else:
             pr.contributors = 0
 
-    pr.immediate_deps = get_direct_dependencies(session, package_name, package_version).count()
+    pr.immediate_deps = get_direct_dependencies(package_name, package_version).count()
 
     # Indirect counts
     pr.all_deps = 0
-    stmt = get_direct_dependency_reports(session, package_name, package_version)
+    stmt = get_direct_dependency_reports(package_name, package_version)
     pr.indirectVulnsCritical_score = 0
     pr.indirectVulnsHigh_score = 0
     pr.indirectVulnsMedium_score = 0
