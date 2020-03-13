@@ -97,3 +97,34 @@ NB: scan fixture loading runs with `docker-compose up`, but run `docker-compose 
   * http://localhost:8000/package/foo (should 404)
 
 1. run `curl -X POST 'http://localhost:8000/scan?package_name=eslint&package_manager=npm'` to kick off a scan
+
+### Local Development
+
+#### API
+
+Flask is configured with `FLASK_ENV=development`, which will reload on
+valid python code changes.
+
+### Worker tasks
+
+1. run `docker-compose stop worker` to stop the daemonized worker if it's running
+
+2. On `util/call_task_with_result.sh` line 6 change the task name and
+   JSON serialized args and kwargs e.g. from
+   `celery -A depobs.worker.tasks call depobs.worker.tasks.add --args '[2, 2]' --kwargs '{}'`
+   to
+   `celery -A depobs.worker.tasks call depobs.worker.tasks.scan_npm_package --args '["@hapi/topo", "3.1.0"]' --kwargs '{}'`
+
+3. run `docker-compose up run-task` to mount in local changes, start a
+   worker, and wait for it to terminate. Example output with the
+   default add task terminates with:
+
+```console
+dependency-observatory-run-task | [2020-03-13 15:05:17,985: INFO/MainProcess] Connected to sqla+postgresql://postgres:**@db/dependency_observatory
+dependency-observatory-run-task | [2020-03-13 15:05:18,077: INFO/MainProcess] celery@78fc0c1a453c ready.
+dependency-observatory-run-task | [2020-03-13 15:05:18,090: INFO/MainProcess] Received task: depobs.worker.tasks.add[9dae8ef3-515a-4adf-a176-fa185da3fd20]
+dependency-observatory-run-task | [2020-03-13 15:05:18,093: INFO/ForkPoolWorker-1] Task depobs.worker.tasks.add[9dae8ef3-515a-4adf-a176-fa185da3fd20] succeeded in 0.00041552004404366016s: 4
+dependency-observatory-run-task |
+dependency-observatory-run-task | worker: Warm shutdown (MainProcess)
+dependency-observatory-run-task exited with code 0
+```

@@ -49,6 +49,27 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
+  # celery worker that runs one task and exits
+  run-task:
+    build:
+      context: depobs/
+      dockerfile: Dockerfile.worker
+    container_name: dependency-observatory-run-task
+    image: dependency-observatory-worker
+    depends_on:
+      - db
+    environment:
+      - CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
+      - DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
+    links:
+      - db
+    # let the worker spin up new sibling docker containers
+    # NB: exposes the docker daemon to those containers
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/app
+    command: bash /app/util/call_task_with_result.sh
+
   # should run then exit on compose up
   # run it again to load more data from ./scanner/fixtures/postprocessed_repo_tasks.jsonl
   scan-fixture-loader:
