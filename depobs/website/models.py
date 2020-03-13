@@ -158,6 +158,7 @@ def get_package_report(package, version = None):
     else:
         for rep in db_session.query(PackageReport).filter(PackageReport.package==package, PackageReport.version==version):
             return rep
+    return None
 
 def get_npms_io_score(package: str, version: str):
     return db_session.query(NPMSIOScore.score).filter_by(package_name=package, package_version=version)
