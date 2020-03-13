@@ -13,8 +13,8 @@ ENV FLASK_ENV "production"
 ENV DATABASE_URI postgresql+psycopg2://pguser:pgpass@pghost/dbname
 ENV CELERY_BROKER_URL sqla+postgresql://pguser:pgpass@pghost/dbname
 
-RUN groupadd --gid 1001 app && \
-    useradd --uid 1001 --gid 1001 --shell /usr/sbin/nologin app
+RUN groupadd --gid 10001 app && \
+    useradd --uid 10001 --gid 10001 --shell /usr/sbin/nologin app
 RUN install -o app -g app -d /var/run/depobs /var/log/depobs
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
@@ -46,4 +46,5 @@ RUN mv /app/depobs/version.json /app/version.json && \
       pip install --upgrade --no-cache-dir -r depobs/requirements.txt
 
 USER app
-CMD [ "python", "depobs/website/do.py"]
+ENTRYPOINT [ ]
+CMD [ "python", "depobs/website/do.py" ]
