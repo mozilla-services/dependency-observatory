@@ -194,6 +194,21 @@ def get_ordered_package_deps(name, version):
         pr = PackageReport()
         pr.package = name
         pr.version = version
+        top_score = 0
+        npmsio_score = 0
+        directVulnsCritical_score = 0
+        directVulnsHigh_score = 0
+        directVulnsMedium_score = 0
+        directVulnsLow_score = 0
+        indirectVulnsCritical_score = 0
+        indirectVulnsHigh_score = 0
+        indirectVulnsMedium_score = 0
+        indirectVulnsLow_score = 0
+        authors = 0
+        contributors = 0
+        immediate_deps = 0
+        all_deps = 0
+
         for report in reports:
             pr.dependencies.append(report)
         db_session.add(pr)
