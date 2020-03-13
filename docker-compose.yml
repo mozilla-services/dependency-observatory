@@ -14,7 +14,7 @@ services:
     build:
       context: depobs/
     container_name: dependency-observatory-api
-    image: dependency-observatory-api
+    image: dependency-observatory
     volumes:
       - ./:/app
     environment:
@@ -34,9 +34,8 @@ services:
   worker:
     build:
       context: depobs/
-      dockerfile: Dockerfile.worker
     container_name: dependency-observatory-worker
-    image: dependency-observatory-worker
+    image: dependency-observatory
     depends_on:
       - db
     environment:
@@ -48,14 +47,14 @@ services:
     # NB: exposes the docker daemon to those containers
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    command: celery -A depobs.worker.tasks worker --loglevel=info
 
   # celery worker that runs one task and exits
   run-task:
     build:
       context: depobs/
-      dockerfile: Dockerfile.worker
     container_name: dependency-observatory-run-task
-    image: dependency-observatory-worker
+    image: dependency-observatory
     depends_on:
       - db
     environment:
