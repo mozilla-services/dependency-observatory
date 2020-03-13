@@ -1,7 +1,7 @@
 from flask import abort, Response, request
 
 from depobs.website import models, app
-from depobs.website.scans import scans_api
+from depobs.website.scans import tasks_api
 from markupsafe import escape
 
 from os import listdir, getcwd
@@ -13,7 +13,8 @@ STANDARD_HEADERS = {
     'Access-Control-Allow-Origin' : '*'
 }
 
-app.register_blueprint(scans_api)
+app.register_blueprint(tasks_api)
+
 
 @app.route('/package/<pkgname>/<version>')
 def show_package_by_name_and_version(pkgname, version):
