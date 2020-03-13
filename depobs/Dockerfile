@@ -4,6 +4,15 @@ FROM python:3.8-slim-buster
 
 MAINTAINER https://github.com/mozilla-services/dependency-observatory
 
+ENV PYTHONPATH $PYTHONPATH:/app
+ENV PYTHONUNBUFFERED 1
+
+ENV HOST 0.0.0.0
+ENV PORT 8000
+ENV FLASK_ENV "production"
+ENV DATABASE_URI postgresql+psycopg2://pguser:pgpass@pghost/dbname
+ENV CELERY_BROKER_URL sqla+postgresql://pguser:pgpass@pghost/dbname
+
 RUN groupadd --gid 1001 app && \
     useradd --uid 1001 --gid 1001 --shell /usr/sbin/nologin app
 RUN install -o app -g app -d /var/run/depobs /var/log/depobs
@@ -35,14 +44,6 @@ COPY . depobs
 
 RUN pip install --upgrade --no-cache-dir -r depobs/requirements.txt
 
-ENV PYTHONPATH $PYTHONPATH:/app
-ENV PYTHONUNBUFFERED 1
-
-ENV HOST 0.0.0.0
-ENV PORT 8000
-ENV FLASK_ENV "production"
-ENV DATABASE_URI postgresql+psycopg2://pguser:pgpass@pghost/dbname
-ENV CELERY_BROKER_URL sqla+postgresql://pguser:pgpass@pghost/dbname
 
 USER app
 CMD [ "python", "depobs/website/do.py"]
