@@ -16,6 +16,7 @@ services:
     container_name: dependency-observatory-api
     image: gguthemoz/dependency-observatory
     volumes:
+      - ./depobs/version.json:/app/version.json
       - ./:/app
     environment:
       - CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
