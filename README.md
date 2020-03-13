@@ -116,8 +116,7 @@ valid python code changes.
    `celery -A depobs.worker.tasks call depobs.worker.tasks.scan_npm_package --args '["@hapi/topo", "3.1.0"]' --kwargs '{}'`
 
 3. run `docker-compose up run-task` to mount in local changes, start a
-   worker, and wait for it to terminate. Example output with the
-   default add task terminates with:
+   worker, and wait for it to terminate. Example output with the add task as called above terminates with:
 
 ```console
 dependency-observatory-run-task | [2020-03-13 15:05:17,985: INFO/MainProcess] Connected to sqla+postgresql://postgres:**@db/dependency_observatory
@@ -128,3 +127,24 @@ dependency-observatory-run-task |
 dependency-observatory-run-task | worker: Warm shutdown (MainProcess)
 dependency-observatory-run-task exited with code 0
 ```
+
+### Deployment
+
+1. fetch the relevant images e.g.
+
+```console
+docker pull mozilla/dependencyscan:latest
+docker pull gguthemoz/dependency-observatory:latest
+```
+
+1. Assuming a postgres database is accessible at
+   `postgresql://pguser:pgpass@pghost/dbname`, run the following:
+
+```console
+export DATABASE_URI=postgresql+psycopg2://pguser:pgpass@pghost/dbname
+export CELERY_BROKER_URL=sqla+postgresql://pguser:pgpass@pghost/dbname
+docker run -d --rm --name depobs-api -e "DATABASE_URI=$DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "INIT_DB=1" -e "FLASK_APP=/app/depobs/website/do.py" -p 8000:8000 gguthemoz/dependency-observatory
+docker run -d -u 0 --rm -v /var/run/docker.sock:/var/run/docker.sock --net=host --name dep-obs-worker -e "DATABASE_URI=$DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" gguthemoz/dependency-observatory /bin/bash -c "celery -A depobs.worker.tasks worker --loglevel=info"
+```
+
+Note that you'll probably want to derive from the image to properly deamonize the worker.
