@@ -100,7 +100,7 @@ class PackageReport(Model):
             release_date=self.release_date,
             scoring_date=self.scoring_date,
             top_score=self.top_score,
-            npmsio_score=self.npms_io_score,
+            npmsio_score=self.npmsio_score,
             directVulnsCritical_score=self.directVulnsCritical_score,
             directVulnsHigh_score=self.directVulnsHigh_score,
             directVulnsMedium_score=self.directVulnsMedium_score,
