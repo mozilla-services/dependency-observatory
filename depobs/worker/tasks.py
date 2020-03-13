@@ -18,7 +18,7 @@ from celery.exceptions import (
 import depobs.worker.celeryconfig as celeryconfig
 
 from depobs.website.models import (
-    PackageReport, 
+    PackageReport,
     PackageLatestReport,
     get_package_report,
     get_npms_io_score,
@@ -210,7 +210,7 @@ def score_package(package_name: str, package_version: str):
         pr.indirectVulnsLow_score += directVulnsLow_score + indirectVulnsLow_score
 
     if dep_rep_count != pr.immediate_deps:
-        log.error(f"expected {pr.immediate_deps} dependencies but got {dep_rep_count} for package {package} / version {version}")
+        log.error(f"expected {pr.immediate_deps} dependencies but got {dep_rep_count} for package {package_name} / version {package_version}")
 
     pr.scoring_date = datetime.datetime.now()
 
