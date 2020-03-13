@@ -78,14 +78,6 @@
                               <td>Total Number of Dependencies</td>
                               <td id="all_deps"></td>
                            </tr>
-                           <tr>
-                              <td>Number of Direct Parents</td>
-                              <td>
-                                 <a id="parents" href="#" onclick="toggleParents();">TBA</a>
-                                 <table id="parenttable">
-                                 </table>
-                              </td>
-                           </tr>
                         </table>
                      </div>
                   </div>
@@ -154,18 +146,12 @@
       </div>
       <div class="card card-primary mt-4" id="direct-dependencies">
       <div class="card-header bg-primary text-center text-md-left text-white">
-         <span class="h3">Direct Parents (click to view?)</span>
+         <span class="h3">Direct Parents </span>
       </div>
       <div class="card-body pb-1">
-         <table id="parents" class="table table-striped table-sm scan-summary-table">
-            <tr>
-               <th>Package</th>
-               <th>Version</th>
-               <th>Score</th>
-               <th>Direct deps</th>
-               <th>All deps</th>
-            </tr>
-         </table>
+          <a id="parents" href="#" onclick="toggleParents();">(click to view)</a>
+          <table id="parenttable" class="table table-striped table-sm scan-summary-table">
+          </table>
       </div>
       </dev>
    </body>
