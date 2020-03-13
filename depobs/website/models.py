@@ -68,6 +68,54 @@ class PackageReport(Model):
                            backref="parents"
     )
 
+    def json_with_dependencies(self, depth = 1):
+        return dict(
+            id=self.id,
+            package=self.package,
+            version=self.version,
+            release_date=self.release_date,
+            scoring_date=self.scoring_date,
+            top_score=self.top_score,
+            npmsio_score=self.npmsio_score,
+            directVulnsCritical_score=self.directVulnsCritical_score,
+            directVulnsHigh_score=self.directVulnsHigh_score,
+            directVulnsMedium_score=self.directVulnsMedium_score,
+            directVulnsLow_score=self.directVulnsLow_score,
+            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
+            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
+            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
+            indirectVulnsLow_score=self.indirectVulnsLow_score,
+            authors = self.authors,
+            contributors = self.contributors,
+            immediate_deps = self.immediate_deps,
+            all_deps = self.all_deps,
+            dependencies = [rep.json_with_dependencies(depth - 1) for rep in self.dependencies] if depth > 0 else []
+        )
+
+    def json_with_parents(self, depth = 1):
+        return dict(
+            id=self.id,
+            package=self.package,
+            version=self.version,
+            release_date=self.release_date,
+            scoring_date=self.scoring_date,
+            top_score=self.top_score,
+            npmsio_score=self.npms_io_score,
+            directVulnsCritical_score=self.directVulnsCritical_score,
+            directVulnsHigh_score=self.directVulnsHigh_score,
+            directVulnsMedium_score=self.directVulnsMedium_score,
+            directVulnsLow_score=self.directVulnsLow_score,
+            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
+            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
+            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
+            indirectVulnsLow_score=self.indirectVulnsLow_score,
+            authors = self.authors,
+            contributors = self.contributors,
+            immediate_deps = self.immediate_deps,
+            all_deps = self.all_deps,
+            parents = [rep.json_with_parents(depth - 1) for rep in self.parents] if depth > 0 else []
+        )
+
 class PackageLatestReport(View_only):
     __tablename__ = 'latest_reports'
 
