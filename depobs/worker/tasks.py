@@ -29,6 +29,7 @@ from depobs.website.models import (
     get_vulnerability_counts,
     get_direct_dependency_reports,
     store_package_report,
+    get_ordered_package_deps
 )
 
 from depobs.database.schema import (
@@ -215,3 +216,9 @@ def score_package(package_name: str, package_version: str):
     pr.scoring_date = datetime.datetime.now()
 
     store_package_report(pr)
+
+@scanner.task()
+def build_report_tree(package_name: str, package_version: str):
+    deps = get_ordered_package_deps(package_name, package_version)
+    for (dep_name, dep_version) in deps:
+        build_report_tree.delay(dep_name, dep_version)

@@ -160,6 +160,46 @@ def get_package_report(package, version = None):
             return rep
     return None
 
+def get_ordered_package_deps(name, version):
+    def get_package_from_id(db_session, id):
+        print("get_package_id for %i" % (id))
+        pv = db_session.query(PackageVersion).filter(PackageVersion.id == id)
+        return pv[0]
+
+    def get_package_from_name_and_version(db_session, name, version):
+        pv = db_session.query(PackageVersion).filter(PackageVersion.name == name, PackageVersion.version == version)
+        return pv[0]
+    deps = []
+    incomplete = False
+
+    subject = db_session.query(PackageVersion).filter(PackageVersion.name == name, PackageVersion.version == version)[0]
+    print("subject  %s %s %i" % (subject.name, subject.version, subject.id))
+    dependency_ids = [link.child_package_id for link in db_session.query(PackageLink).filter(PackageLink.parent_package_id == subject.id)]
+    print(dependency_ids)
+    dependencies = [get_package_from_id(db_session, dependency_id) for dependency_id in dependency_ids]
+    reports = []
+    for dependency in dependencies:
+        print("dependency  %s %s" % (dependency.name, dependency.version))
+        report = get_package_report(dependency.name, dependency.version)
+        if None == report:
+            incomplete = True
+            deps.append((dependency.name, dependency.version))
+        else:
+            reports.append(report)
+    if incomplete:
+        print("dependencies for %s, %s incomplete, re-adding to the queue" % (name, version))
+        deps.append((name, version))
+    else:
+        print("dependencies complete for %s %s adding to the graph" % (name, version))
+        pr = PackageReport()
+        pr.package = name
+        pr.version = version
+        for report in reports:
+            pr.dependencies.append(report)
+        db_session.add(pr)
+        db_session.commit()
+    return deps
+
 def get_npms_io_score(package: str, version: str):
     return db_session.query(NPMSIOScore.score).filter_by(package_name=package, package_version=version)
 
