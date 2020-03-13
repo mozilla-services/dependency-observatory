@@ -220,5 +220,9 @@ def score_package(package_name: str, package_version: str):
 @scanner.task()
 def build_report_tree(package_name: str, package_version: str):
     deps = get_ordered_package_deps(package_name, package_version)
-    for (dep_name, dep_version) in deps:
-        build_report_tree.delay(dep_name, dep_version)
+    if len(deps) == 0:
+        score_package.delay(package_name, package_version)
+    else:
+        for (dep_name, dep_version) in deps:
+            print("will build report tree  for %s %s", (dep_name, dep_version))
+            build_report_tree.delay(dep_name, dep_version)
