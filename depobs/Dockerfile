@@ -1,17 +1,8 @@
 # dependency-observatory
 
-FROM python:3.8-buster
+FROM python:3.8-slim-buster
+
 MAINTAINER https://github.com/mozilla-services/dependency-observatory
-
-RUN groupadd --gid 1001 app && \
-    useradd --uid 1001 --gid 1001 --shell /usr/sbin/nologin app
-RUN install -o app -g app -d /var/run/depobs /var/log/depobs
-
-WORKDIR /app
-
-COPY . depobs
-
-RUN pip install --upgrade --no-cache-dir -r depobs/website_requirements.txt -r depobs/worker_requirements.txt -r depobs/database_requirements.txt
 
 ENV PYTHONPATH $PYTHONPATH:/app
 ENV PYTHONUNBUFFERED 1
@@ -20,6 +11,39 @@ ENV HOST 0.0.0.0
 ENV PORT 8000
 ENV FLASK_ENV "production"
 ENV DATABASE_URI postgresql+psycopg2://pguser:pgpass@pghost/dbname
+ENV CELERY_BROKER_URL sqla+postgresql://pguser:pgpass@pghost/dbname
+
+RUN groupadd --gid 1001 app && \
+    useradd --uid 1001 --gid 1001 --shell /usr/sbin/nologin app
+RUN install -o app -g app -d /var/run/depobs /var/log/depobs
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
+        apt-get upgrade -y && \
+        apt-get install --no-install-recommends -y \
+            apt-transport-https \
+            ca-certificates \
+            curl \
+            gnupg2 \
+            software-properties-common \
+            build-essential \
+            libpq-dev && \
+        curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
+        add-apt-repository \
+            "deb [arch=amd64] https://download.docker.com/linux/debian \
+            $(lsb_release -cs) \
+            stable" && \
+        DEBIAN_FRONTEND=noninteractive apt-get update && \
+        apt-get install --no-install-recommends -y \
+            docker-ce \
+            docker-ce-cli \
+            containerd.io
+
+WORKDIR /app
+
+COPY . depobs
+
+RUN mv /app/depobs/version.json /app/version.json && \
+      pip install --upgrade --no-cache-dir -r depobs/requirements.txt
 
 USER app
 CMD [ "python", "depobs/website/do.py"]

@@ -1,4 +1,4 @@
-from flask import abort, Response, request
+from flask import abort, Response, request, send_from_directory
 
 from depobs.website import models, app
 from depobs.website.scans import tasks_api
@@ -64,10 +64,4 @@ def heartbeat():
 
 @app.route('/__version__')
 def version():
-    # TODO - serve version.json from the filesystem
-    version_info = dict(source = "https://github.com/mozilla-services/dependency-observatory",
-                        version = "0.0.1",
-                        commit = "",
-                        build = ""
-    )
-    return Response(json.dumps(version_info), mimetype="application/json")
+    return send_from_directory('/app', 'version.json')
