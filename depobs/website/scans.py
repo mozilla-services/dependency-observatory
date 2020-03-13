@@ -55,3 +55,21 @@ def scan():
         package_name, package_version
     )
     return dict(task_id=result.id)
+
+
+@api.route("/build_report_tree", methods=["POST"])
+def build_report_tree():
+    package_name, package_version, _ = validate_npm_package_version_query_params()
+    result: celery.result.AsyncResult = tasks.build_report_tree.delay(
+        package_name, package_version
+    )
+    return dict(task_id=result.id)
+
+
+@api.route("/score", methods=["POST"])
+def score():
+    package_name, package_version, _ = validate_npm_package_version_query_params()
+    result: celery.result.AsyncResult = tasks.score_package.delay(
+        package_name, package_version
+    )
+    return dict(task_id=result.id)
