@@ -21,6 +21,7 @@ db_session = scoped_session(sessionmaker(autocommit=False,
                                          bind=engine))
 
 Model = declarative_base()
+View_only = declarative_base()
 # Model.query = db_session.query_property()
 
 dependency = Table(
@@ -61,7 +62,7 @@ class PackageReport(Model):
                            backref="parents"
     )
 
-class PackageLatestReport(Model):
+class PackageLatestReport(View_only):
     __tablename__ = 'latest_reports'
 
     id = Column('id', Integer, primary_key=True)
@@ -151,6 +152,52 @@ def get_package_report(package, version = None):
     else:
         for rep in db_session.query(PackageReport).filter(PackageReport.package==package, PackageReport.version==version):
             return rep
+
+def get_npms_io_score(package: str, version: str):
+    return db_session.query(NPMSIOScore.score).filter_by(package_name=package, package_version=version)
+
+def get_NPMRegistryEntry(package: str, version: str):
+    return db_session.query(NPMRegistryEntry).filter_by(package_name=package, package_version=version)
+
+def get_maintainers_contributors(package: str, version: str):
+    return db_session.query(NPMRegistryEntry.maintainers, NPMRegistryEntry.contributors).filter_by(package_name=package, package_version=version)
+
+def get_npm_registry_data(package: str, version: str):
+    return db_session.query(NPMRegistryEntry.published_at, NPMRegistryEntry.maintainers, NPMRegistryEntry.contributors).filter_by(package_name=package, package_version=version)
+
+def get_direct_dependencies(package: str, version: str):
+    palias = aliased(PackageVersion)
+    calias = aliased(PackageVersion)
+    return db_session.query(calias.name, calias.version
+    ).filter(PackageLink.parent_package_id==palias.id
+    ).filter(palias.name==package
+    ).filter(palias.version==version
+    ).filter(PackageLink.child_package_id==calias.id)
+
+def get_vulnerability_counts(package: str, version: str):
+    return db_session.query(Advisory.package_name, PackageVersion.version, Advisory.severity, 
+        func.count(Advisory.severity)
+    ).filter_by(package_name=package
+    ).filter(PackageVersion.version==version
+    ).filter(Advisory.package_name==PackageVersion.name
+    ).group_by(Advisory.package_name, PackageVersion.version, Advisory.severity)
+
+def get_direct_dependency_reports(package: str, version: str):
+    palias = aliased(PackageVersion)
+    calias = aliased(PackageVersion)
+    return db_session.query(calias.name, calias.version, PackageLatestReport.scoring_date, PackageLatestReport.top_score, PackageLatestReport.all_deps,
+        PackageLatestReport.directVulnsCritical_score, PackageLatestReport.directVulnsHigh_score, PackageLatestReport.directVulnsMedium_score, PackageLatestReport.directVulnsLow_score,
+        PackageLatestReport.indirectVulnsCritical_score, PackageLatestReport.indirectVulnsHigh_score, PackageLatestReport.indirectVulnsMedium_score, PackageLatestReport.indirectVulnsLow_score
+    ).filter(PackageLink.parent_package_id==palias.id
+    ).filter(palias.name==package
+    ).filter(palias.version==version
+    ).filter(PackageLink.child_package_id==calias.id
+    ).filter(PackageLatestReport.package==calias.name
+    ).filter(PackageLatestReport.version==calias.version)
+
+def store_package_report(pr):
+    db_session.add(pr)
+    db_session.commit()
 
 #def get_parents(id):
 #    return db_session.query(PackageReport).filter(PackageReport.dependemcies.has(PackageReport.id == int(id)))
