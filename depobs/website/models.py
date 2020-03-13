@@ -9,6 +9,8 @@ from sqlalchemy.orm import scoped_session, sessionmaker, backref, relation, rela
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import Table
 
+from depobs.database.schema import NPMSIOScore
+
 import os
 
 DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql+psycopg2://postgres:postgres@localhost/dependency_observatory')
