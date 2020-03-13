@@ -11,7 +11,7 @@ WORKDIR /app
 
 COPY . depobs
 
-RUN pip install --upgrade --no-cache-dir -r depobs/website_requirements.txt -r depobs/worker_requirements.txt -r depobs/database_requirements.txt
+RUN pip install --upgrade --no-cache-dir -r depobs/requirements.txt
 
 ENV PYTHONPATH $PYTHONPATH:/app
 ENV PYTHONUNBUFFERED 1

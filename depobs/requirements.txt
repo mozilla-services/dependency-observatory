@@ -1,0 +1,4 @@
+Flask==1.1.1
+SQLAlchemy
+celery==4.4.1
+psycopg2==2.8.4

@@ -31,7 +31,7 @@ WORKDIR /app/
 COPY . depobs
 
 RUN pip install --no-cache-dir --upgrade pip && \
-        pip install --no-cache-dir -r depobs/worker_requirements.txt -r depobs/database_requirements.txt -r depobs/website_requirements.txt
+        pip install --no-cache-dir -r depobs/requirements.txt
 
 USER app
 CMD [ "celery", "-A", "depobs.worker.tasks", "worker", "--loglevel=info" ]
