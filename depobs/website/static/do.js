@@ -1,8 +1,8 @@
 let httpRequest;
 let parentsRequest;
 
-const PACKAGE_PREFIX = 'https://depobs.dev.mozaws.net/package/';
-const PARENTS_PREFIX = 'https://depobs.dev.mozaws.net/parents/';
+const PACKAGE_PREFIX = '/package/';
+const PARENTS_PREFIX = '/parents/';
 
 window.onload = function() {
     let urlParams = new URLSearchParams(window.location.search);
