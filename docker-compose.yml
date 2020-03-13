@@ -14,7 +14,7 @@ services:
     build:
       context: depobs/
     container_name: dependency-observatory-api
-    image: dependency-observatory
+    image: gguthemoz/dependency-observatory
     volumes:
       - ./:/app
     environment:
@@ -35,7 +35,7 @@ services:
     build:
       context: depobs/
     container_name: dependency-observatory-worker
-    image: dependency-observatory
+    image: gguthemoz/dependency-observatory
     depends_on:
       - db
     environment:
@@ -54,7 +54,7 @@ services:
     build:
       context: depobs/
     container_name: dependency-observatory-run-task
-    image: dependency-observatory
+    image: gguthemoz/dependency-observatory
     depends_on:
       - db
     environment:
