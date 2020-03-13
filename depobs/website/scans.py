@@ -5,7 +5,7 @@ from flask import Blueprint, jsonify, make_response, request
 
 import depobs.worker.tasks as tasks
 
-scans_api = api = Blueprint("scans_api", __name__)
+tasks_api = api = Blueprint("tasks_api", __name__)
 
 
 @api.route("/scan", methods=["POST"])
