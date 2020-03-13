@@ -8,8 +8,12 @@ from sqlalchemy import create_engine, Column, Integer, Numeric, String, DateTime
 from sqlalchemy.orm import scoped_session, sessionmaker, backref, relation, relationship
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.schema import Table
+from sqlalchemy import func, tuple_
+from sqlalchemy.orm import aliased, Load, load_only
 
-from depobs.database.schema import NPMSIOScore
+from depobs.database.schema import Advisory, NPMRegistryEntry, NPMSIOScore, PackageVersion, PackageLink
+
+
 
 import os
 
@@ -177,7 +181,7 @@ def get_direct_dependencies(package: str, version: str):
     ).filter(PackageLink.child_package_id==calias.id)
 
 def get_vulnerability_counts(package: str, version: str):
-    return db_session.query(Advisory.package_name, PackageVersion.version, Advisory.severity, 
+    return db_session.query(Advisory.package_name, PackageVersion.version, Advisory.severity,
         func.count(Advisory.severity)
     ).filter_by(package_name=package
     ).filter(PackageVersion.version==version
