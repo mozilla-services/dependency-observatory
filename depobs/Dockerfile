@@ -46,4 +46,5 @@ RUN mv /app/depobs/version.json /app/version.json && \
       pip install --upgrade --no-cache-dir -r depobs/requirements.txt
 
 USER app
-CMD [ "python", "depobs/website/do.py"]
+ENTRYPOINT [ ]
+CMD [ "python", "depobs/website/do.py" ]
