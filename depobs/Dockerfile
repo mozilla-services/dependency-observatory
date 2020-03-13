@@ -1,6 +1,6 @@
 # dependency-observatory
 
-FROM python:3.7
+FROM python:3.8-buster
 MAINTAINER https://github.com/mozilla-services/dependency-observatory
 
 RUN groupadd --gid 1001 app && \
