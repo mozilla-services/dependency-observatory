@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import create_engine, Column, Integer, Numeric, String, DateTime, \
+from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, \
      ForeignKey, event, select
 from sqlalchemy.orm import scoped_session, sessionmaker, backref, relation, relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -46,7 +46,7 @@ class PackageReport(Model):
     release_date = Column(DateTime)
     scoring_date = Column(DateTime)
     top_score = Column(Integer)
-    npmsio_score = Column(Numeric)
+    npmsio_score = Column(Float)
     directVulnsCritical_score = Column(Integer)
     directVulnsHigh_score = Column(Integer)
     directVulnsMedium_score = Column(Integer)
@@ -126,7 +126,7 @@ class PackageLatestReport(View_only):
     release_date = Column(DateTime)
     scoring_date = Column(DateTime)
     top_score = Column(Integer)
-    npmsio_score = Column(Numeric)
+    npmsio_score = Column(Float)
     directVulnsCritical_score = Column(Integer)
     directVulnsHigh_score = Column(Integer)
     directVulnsMedium_score = Column(Integer)
