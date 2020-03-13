@@ -68,6 +68,54 @@ class PackageReport(Model):
                            backref="parents"
     )
 
+    def json_with_dependencies(self, depth = 1):
+        return dict(
+            id=self.id,
+            package=self.package,
+            version=self.version,
+            release_date=self.release_date,
+            scoring_date=self.scoring_date,
+            top_score=self.top_score,
+            npmsio_score=self.npmsio_score,
+            directVulnsCritical_score=self.directVulnsCritical_score,
+            directVulnsHigh_score=self.directVulnsHigh_score,
+            directVulnsMedium_score=self.directVulnsMedium_score,
+            directVulnsLow_score=self.directVulnsLow_score,
+            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
+            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
+            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
+            indirectVulnsLow_score=self.indirectVulnsLow_score,
+            authors = self.authors,
+            contributors = self.contributors,
+            immediate_deps = self.immediate_deps,
+            all_deps = self.all_deps,
+            dependencies = [rep.json_with_dependencies(depth - 1) for rep in self.dependencies] if depth > 0 else []
+        )
+
+    def json_with_parents(self, depth = 1):
+        return dict(
+            id=self.id,
+            package=self.package,
+            version=self.version,
+            release_date=self.release_date,
+            scoring_date=self.scoring_date,
+            top_score=self.top_score,
+            npmsio_score=self.npms_io_score,
+            directVulnsCritical_score=self.directVulnsCritical_score,
+            directVulnsHigh_score=self.directVulnsHigh_score,
+            directVulnsMedium_score=self.directVulnsMedium_score,
+            directVulnsLow_score=self.directVulnsLow_score,
+            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
+            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
+            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
+            indirectVulnsLow_score=self.indirectVulnsLow_score,
+            authors = self.authors,
+            contributors = self.contributors,
+            immediate_deps = self.immediate_deps,
+            all_deps = self.all_deps,
+            parents = [rep.json_with_parents(depth - 1) for rep in self.parents] if depth > 0 else []
+        )
+
 class PackageLatestReport(View_only):
     __tablename__ = 'latest_reports'
 
@@ -158,6 +206,62 @@ def get_package_report(package, version = None):
     else:
         for rep in db_session.query(PackageReport).filter(PackageReport.package==package, PackageReport.version==version):
             return rep
+    return None
+
+def get_ordered_package_deps(name, version):
+    def get_package_from_id(db_session, id):
+        print("get_package_id for %i" % (id))
+        pv = db_session.query(PackageVersion).filter(PackageVersion.id == id)
+        return pv[0]
+
+    def get_package_from_name_and_version(db_session, name, version):
+        pv = db_session.query(PackageVersion).filter(PackageVersion.name == name, PackageVersion.version == version)
+        return pv[0]
+    deps = []
+    incomplete = False
+
+    subject = db_session.query(PackageVersion).filter(PackageVersion.name == name, PackageVersion.version == version)[0]
+    print("subject  %s %s %i" % (subject.name, subject.version, subject.id))
+    dependency_ids = [link.child_package_id for link in db_session.query(PackageLink).filter(PackageLink.parent_package_id == subject.id)]
+    print(dependency_ids)
+    dependencies = [get_package_from_id(db_session, dependency_id) for dependency_id in dependency_ids]
+    reports = []
+    for dependency in dependencies:
+        print("dependency  %s %s" % (dependency.name, dependency.version))
+        report = get_package_report(dependency.name, dependency.version)
+        if None == report:
+            incomplete = True
+            deps.append((dependency.name, dependency.version))
+        else:
+            reports.append(report)
+    if incomplete:
+        print("dependencies for %s, %s incomplete, re-adding to the queue" % (name, version))
+        deps.append((name, version))
+    else:
+        print("dependencies complete for %s %s adding to the graph" % (name, version))
+        pr = PackageReport()
+        pr.package = name
+        pr.version = version
+        pr.top_score = 0
+        pr.npmsio_score = 0
+        pr.directVulnsCritical_score = 0
+        pr.directVulnsHigh_score = 0
+        pr.directVulnsMedium_score = 0
+        pr.directVulnsLow_score = 0
+        pr.indirectVulnsCritical_score = 0
+        pr.indirectVulnsHigh_score = 0
+        pr.indirectVulnsMedium_score = 0
+        pr.indirectVulnsLow_score = 0
+        pr.authors = 0
+        pr.contributors = 0
+        pr.immediate_deps = 0
+        pr.all_deps = 0
+
+        for report in reports:
+            pr.dependencies.append(report)
+        db_session.add(pr)
+        db_session.commit()
+    return deps
 
 def get_npms_io_score(package: str, version: str):
     return db_session.query(NPMSIOScore.score).filter_by(package_name=package, package_version=version)
