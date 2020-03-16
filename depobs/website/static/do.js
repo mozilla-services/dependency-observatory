@@ -25,19 +25,19 @@ function gotPackageInfo() {
             const json = JSON.parse(httpRequest.responseText);
             setElement(json, 'package');
             setElement(json, 'version');
-            setElement(json, 'npms_io_score');
+            setElement(json, 'npmsio_score');
             setElement(json, 'authors');
             setElement(json, 'contributors');
             setElement(json, 'immediate_deps');
             setElement(json, 'all_deps');
-            setElement(json, 'direct_vuln_critical_count');
-            setElement(json, 'direct_vuln_high_count');
-            setElement(json, 'direct_vuln_moderate_count');
-            setElement(json, 'direct_vuln_low_count');
-            setElement(json, 'indirect_vuln_critical_count');
-            setElement(json, 'indirect_vuln_high_count');
-            setElement(json, 'indirect_vuln_moderate_count');
-            setElement(json, 'indirect_vuln_low_count');
+            setElement(json, 'directVulnsCritical_count');
+            setElement(json, 'directVulnsHigh_count');
+            setElement(json, 'directVulnsModerate_count');
+            setElement(json, 'directVulnsLow_count');
+            setElement(json, 'indirectVulnsCritical_count');
+            setElement(json, 'indirectVulnsHigh_count');
+            setElement(json, 'indirectVulnsModerate_count');
+            setElement(json, 'indirectVulnsLow_count');
 
 
             let score = calculate_score(json);
@@ -75,7 +75,7 @@ function gotPackageInfo() {
                 cell = row.insertCell(2);
                 cell.innerText = grade + " (" + score + ")";
                 cell = row.insertCell(3);
-                cell.innerText = depJson[i]['direct_dep_count'];
+                cell.innerText = depJson[i]['immediate_deps'];
                 cell = row.insertCell(4);
                 cell.innerText = depJson[i]['all_deps'];
             }
@@ -90,7 +90,7 @@ function gotPackageInfo() {
 }
 
 function calculate_score(json) {
-    let score = json["npms_io_score"] * 100;
+    let score = json["npmsio_score"] * 100;
     let all_deps = json["all_deps"];
     if (all_deps <= 5) {
         score +=20;
@@ -101,22 +101,22 @@ function calculate_score(json) {
     } else if (all_deps >= 100) {
         score -=10;
     }
-    if (json["direct_vuln_critical_count"] > 0) {
+    if (json["directVulnsCritical_count"] > 0) {
         score -=20;
     }
-    if (json["direct_vuln_high_count"] > 0) {
+    if (json["directVulnsHigh_count"] > 0) {
         score -=10;
     }
-    if (json["direct_vuln_moderate_count"] > 0) {
+    if (json["directVulnsModerate_count"] > 0) {
         score -=5;
     }
-    if (json["indirect_vuln_critical_count"] > 0) {
+    if (json["indirectVulnsCritical_count"] > 0) {
         score -=10;
     }
-    if (json["indirect_vuln_high_count"] > 0) {
+    if (json["indirectVulnsHigh_count"] > 0) {
         score -=7;
     }
-    if (json["indirect_vuln_moderate_count"] > 0) {
+    if (json["indirectVulnsModerate_count"] > 0) {
         score -=3;
     }
     return parseInt(score);
