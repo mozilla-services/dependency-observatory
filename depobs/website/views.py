@@ -21,7 +21,7 @@ def handle_bad_request(e):
     return dict(description=e.description), 400
 
 
-@app.route('/packages', methods=["GET"])
+@app.route('/package', methods=["GET"])
 def show_package_by_name_and_version_if_available():
     package_name, package_version, _ = validate_npm_package_version_query_params()
 

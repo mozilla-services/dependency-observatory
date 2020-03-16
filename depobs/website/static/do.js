@@ -1,7 +1,7 @@
 let httpRequest;
 let parentsRequest;
 
-const PACKAGES_PREFIX = '/packages';
+const PACKAGES_PREFIX = '/package';
 const PARENTS_PREFIX = '/parents';
 
 window.onload = function() {
