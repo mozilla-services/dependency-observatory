@@ -25,7 +25,7 @@ function gotPackageInfo() {
             const json = JSON.parse(httpRequest.responseText);
             setElement(json, 'package');
             setElement(json, 'version');
-            setElement(json, 'npmsio_score');
+            setElement(json, 'npms_io_score');
             setElement(json, 'authors');
             setElement(json, 'contributors');
             setElement(json, 'immediate_deps');
@@ -90,7 +90,7 @@ function gotPackageInfo() {
 }
 
 function calculate_score(json) {
-    let score = json["npmsio_score"] * 100;
+    let score = json["npms_io_score"] * 100;
     let all_deps = json["all_deps"];
     if (all_deps <= 5) {
         score +=20;
