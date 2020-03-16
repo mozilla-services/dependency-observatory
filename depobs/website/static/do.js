@@ -25,19 +25,19 @@ function gotPackageInfo() {
             const json = JSON.parse(httpRequest.responseText);
             setElement(json, 'package');
             setElement(json, 'version');
-            setElement(json, 'npms_io_score');
+            setElement(json, 'npmsio_score');
             setElement(json, 'authors');
             setElement(json, 'contributors');
             setElement(json, 'immediate_deps');
             setElement(json, 'all_deps');
-            setElement(json, 'directVulnsCritical_count');
-            setElement(json, 'directVulnsHigh_count');
-            setElement(json, 'directVulnsModerate_count');
-            setElement(json, 'directVulnsLow_count');
-            setElement(json, 'indirectVulnsCritical_count');
-            setElement(json, 'indirectVulnsHigh_count');
-            setElement(json, 'indirectVulnsModerate_count');
-            setElement(json, 'indirectVulnsLow_count');
+            setElement(json, 'directVulnsCritical_score');
+            setElement(json, 'directVulnsHigh_score');
+            setElement(json, 'directVulnsMedium_score');
+            setElement(json, 'directVulnsLow_score');
+            setElement(json, 'indirectVulnsCritical_score');
+            setElement(json, 'indirectVulnsHigh_score');
+            setElement(json, 'indirectVulnsMedium_score');
+            setElement(json, 'indirectVulnsLow_score');
 
 
             let score = calculate_score(json);
@@ -90,7 +90,7 @@ function gotPackageInfo() {
 }
 
 function calculate_score(json) {
-    let score = json["npms_io_score"] * 100;
+    let score = json["npmsio_score"] * 100;
     let all_deps = json["all_deps"];
     if (all_deps <= 5) {
         score +=20;
@@ -101,22 +101,22 @@ function calculate_score(json) {
     } else if (all_deps >= 100) {
         score -=10;
     }
-    if (json["directVulnsCritical_count"] > 0) {
+    if (json["directVulnsCritical_score"] > 0) {
         score -=20;
     }
-    if (json["directVulnsHigh_count"] > 0) {
+    if (json["directVulnsHigh_score"] > 0) {
         score -=10;
     }
-    if (json["directVulnsModerate_count"] > 0) {
+    if (json["directVulnsModerate_score"] > 0) {
         score -=5;
     }
-    if (json["indirectVulnsCritical_count"] > 0) {
+    if (json["indirectVulnsCritical_score"] > 0) {
         score -=10;
     }
-    if (json["indirectVulnsHigh_count"] > 0) {
+    if (json["indirectVulnsHigh_score"] > 0) {
         score -=7;
     }
-    if (json["indirectVulnsModerate_count"] > 0) {
+    if (json["indirectVulnsModerate_score"] > 0) {
         score -=3;
     }
     return parseInt(score);
