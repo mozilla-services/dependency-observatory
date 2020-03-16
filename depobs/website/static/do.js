@@ -1,8 +1,8 @@
 let httpRequest;
 let parentsRequest;
 
-const PACKAGE_PREFIX = '/package/';
-const PARENTS_PREFIX = '/parents/';
+const PACKAGES_PREFIX = '/packages';
+const PARENTS_PREFIX = '/parents';
 
 window.onload = function() {
     let urlParams = new URLSearchParams(window.location.search);
@@ -15,7 +15,7 @@ window.onload = function() {
 function getPackageInfo(pkg, ver) {
     httpRequest = new XMLHttpRequest();
     httpRequest.onreadystatechange = gotPackageInfo;
-    httpRequest.open('GET', PACKAGE_PREFIX + pkg + '/' + ver);
+    httpRequest.open('GET', PACKAGES_PREFIX + '?' + 'package_name=' + encodeURIComponent(pkg) + '&package_version=' + encodeURIComponent(ver));
     httpRequest.send();
 }
 
@@ -146,7 +146,7 @@ function toggleParents() {
         let ver = urlParams.get('version');
         parentsRequest = new XMLHttpRequest();
         parentsRequest.onreadystatechange = gotParentsInfo;
-        parentsRequest.open('GET', PARENTS_PREFIX + pkg + '/' + ver);
+        parentsRequest.open('GET', PARENTS_PREFIX + '?' + 'package_name=' + encodeURIComponent(pkg) + '&package_version=' + encodeURIComponent(ver));
         parentsRequest.send();
     } else {
         while(table.hasChildNodes()) {
