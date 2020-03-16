@@ -8,7 +8,6 @@ from markupsafe import escape
 from os import listdir, getcwd
 from os.path import exists, isfile, join, dirname
 
-import json
 
 STANDARD_HEADERS = {
     'Access-Control-Allow-Origin' : '*'
@@ -28,8 +27,7 @@ def show_package_by_name_and_version_if_available():
 
     package_report = models.get_package_report(package = package_name, version = package_version)
     if None != package_report:
-        mimetype = "application/json"
-        return Response(json.dumps(package_report.json_with_dependencies()), headers=STANDARD_HEADERS, mimetype=mimetype)
+        return package_report.json_with_dependencies()
     else:
         #TODO: we probably want to return data to tell the user that a report is being generated
         abort(404)
@@ -41,8 +39,7 @@ def get_parents_by_name_and_version():
 
     package_report = models.get_package_report(package = package_name, version = package_version)
     if None != package_report:
-        mimetype = "application/json"
-        return Response(json.dumps(package_report.json_with_parents()), headers=STANDARD_HEADERS, mimetype=mimetype)
+        return package_report.json_with_parents()
     else:
         #TODO: we probably want to return data to tell the user that a report is being generated
         abort(404)
@@ -50,8 +47,7 @@ def get_parents_by_name_and_version():
 
 @app.after_request
 def add_standard_headers_to_static_routes(response):
-    if request.path.startswith('/static'):
-        response.headers.update(STANDARD_HEADERS)
+    response.headers.update(STANDARD_HEADERS)
     return response
 
 
