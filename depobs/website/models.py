@@ -11,7 +11,7 @@ from sqlalchemy.schema import Table
 from sqlalchemy import func, tuple_
 from sqlalchemy.orm import aliased, Load, load_only
 
-from depobs.database.schema import Advisory, NPMRegistryEntry, NPMSIOScore, PackageVersion, PackageLink
+from depobs.database.schema import Advisory, NPMRegistryEntry, NPMSIOScore, PackageVersion, PackageLink, TaskIDMixin
 
 
 
@@ -36,7 +36,7 @@ dependency = Table(
     Column('used_by_id', Integer, ForeignKey('reports.id'), primary_key=True)
 )
 
-class PackageReport(Model):
+class PackageReport(TaskIDMixin, Model):
     __tablename__ = 'reports'
 
     id = Column('id', Integer, primary_key=True)
