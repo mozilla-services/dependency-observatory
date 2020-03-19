@@ -5,8 +5,13 @@ window.onload = function() {
     let urlParams = new URLSearchParams(window.location.search);
     let pkg = urlParams.get('package');
     let ver = urlParams.get('version');
-    // TODO do some sanity checking here?
-    getPackageInfo(pkg, ver);
+    // TODO do some more sanity checking here?
+    if (pkg == null) {
+        // No request, show the form
+        document.getElementById('no-scan').className = "";
+    } else {
+        getPackageInfo(pkg, ver);
+    }
 }
 
 function getPackageInfo(pkg, ver) {
@@ -16,10 +21,14 @@ function getPackageInfo(pkg, ver) {
                 response.json().then(function(pkgInfo) {
                     gotPackageInfo(pkgInfo);
                 });
-            } else if (response.status == 404) {
+            } else if (response.status == 202) {
                 document.getElementById('scan-started').className = "";
+            } else if (response.status == 404) {
+                // Show an error an the form
+                document.getElementById('no-package').className = "";
+                document.getElementById('no-scan').className = "";
             } else {
-                console.log(response);
+                document.getElementById('scan-error').className = "";
             }
          })
         .then((data) => {
@@ -62,7 +71,7 @@ function gotPackageInfo(pkgInfo) {
 
         let row = table.insertRow(i+1);
         let cell = row.insertCell(0);
-        let linkUrl = 'results.html?manager=npm&package=' + pkg + '&version=' + ver;
+        let linkUrl = 'index.html?manager=npm&package=' + pkg + '&version=' + ver;
         let a = document.createElement('a');
         let linkText = document.createTextNode(pkg);
         a.appendChild(linkText);
@@ -174,7 +183,7 @@ function gotParentsInfo(parInfo) {
 
         let row = table.insertRow(i);
         let cell = row.insertCell(0);
-        let linkUrl = 'results.html?manager=npm&package=' + pkg + '&version=' + ver;
+        let linkUrl = 'index.html?manager=npm&package=' + pkg + '&version=' + ver;
         let a = document.createElement('a');
         let linkText = document.createTextNode(pkg);
         a.appendChild(linkText);
