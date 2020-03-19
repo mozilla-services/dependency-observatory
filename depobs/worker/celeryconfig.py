@@ -10,6 +10,16 @@ CELERY_TASK_TRACK_STARTED = True
 
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 
+# Whether to store the task return values or not (tombstones).
+#
+# https://docs.celeryproject.org/en/stable/userguide/configuration.html#task-ignore-result
+CELERY_TASK_IGNORE_RESULT = True
+
+# If set, the worker stores all task errors in the result store even if Task.ignore_result is on.
+#
+# https://docs.celeryproject.org/en/stable/userguide/configuration.html#task-store-errors-even-if-ignored
+CELERY_TASK_STORE_ERRORS_EVEN_IF_IGNORED = True
+
 # Send task-related events so that tasks can be monitored using tools like flower. Sets the default value for the workers -E argument.
 CELERY_WORKER_SEND_TASK_EVENTS = True
 
