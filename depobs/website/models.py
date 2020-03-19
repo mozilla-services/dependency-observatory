@@ -1,7 +1,7 @@
 # Placeholder for model code
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, \
      ForeignKey, event, select
@@ -67,6 +67,14 @@ class PackageReport(TaskIDMixin, Model):
                            secondaryjoin=id==dependency.c.used_by_id,
                            backref="parents"
     )
+
+    def json_with_task(self) -> Dict:
+        return dict(
+            id=self.id,
+            task_id=self.task_id,
+            package=self.package,
+            version=self.version,
+        )
 
     def json_with_dependencies(self, depth = 1):
         return dict(
