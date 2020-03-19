@@ -48,6 +48,7 @@ services:
     # NB: exposes the docker daemon to those containers
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    user: "root"
     command: celery -A depobs.worker.tasks worker --loglevel=info
 
   # celery worker that runs one task and exits
