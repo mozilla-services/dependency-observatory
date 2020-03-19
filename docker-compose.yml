@@ -20,6 +20,7 @@ services:
       - ./:/app
     environment:
       - CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
+      - CELERY_RESULT_BACKEND=db+postgresql://postgres:postgres@db/dependency_observatory
       - DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
       - INIT_DB=1
       - FLASK_APP=/app/depobs/website/do.py
@@ -41,6 +42,7 @@ services:
       - db
     environment:
       - CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
+      - CELERY_RESULT_BACKEND=db+postgresql://postgres:postgres@db/dependency_observatory
       - DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
     links:
       - db
@@ -61,6 +63,7 @@ services:
       - db
     environment:
       - CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
+      - CELERY_RESULT_BACKEND=db+postgresql://postgres:postgres@db/dependency_observatory
       - DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
     links:
       - db
