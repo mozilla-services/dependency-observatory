@@ -1,7 +1,4 @@
-let httpRequest;
-let parentsRequest;
-
-const PACKAGES_PREFIX = '/package';
+const PACKAGE_PREFIX = '/package';
 const PARENTS_PREFIX = '/parents';
 
 window.onload = function() {
@@ -13,79 +10,80 @@ window.onload = function() {
 }
 
 function getPackageInfo(pkg, ver) {
-    httpRequest = new XMLHttpRequest();
-    httpRequest.onreadystatechange = gotPackageInfo;
-    httpRequest.open('GET', PACKAGES_PREFIX + '?' + 'package_name=' + encodeURIComponent(pkg) + '&package_version=' + encodeURIComponent(ver));
-    httpRequest.send();
+    fetch(PACKAGE_PREFIX + '?' + 'package_name=' + encodeURIComponent(pkg) + '&package_version=' + encodeURIComponent(ver))
+        .then((response) => {
+            if (response.status == 200) {
+                response.json().then(function(pkgInfo) {
+                    gotPackageInfo(pkgInfo);
+                });
+            } else if (response.status == 404) {
+                document.getElementById('scan-started').className = "";
+            } else {
+                console.log(response);
+            }
+         })
+        .then((data) => {
+            console.log(data);
+         });
 }
 
-function gotPackageInfo() {
-    if (httpRequest.readyState === XMLHttpRequest.DONE) {
-        if (httpRequest.status === 200) {
-            const json = JSON.parse(httpRequest.responseText);
-            setElement(json, 'package');
-            setElement(json, 'version');
-            setElement(json, 'npmsio_score');
-            setElement(json, 'authors');
-            setElement(json, 'contributors');
-            setElement(json, 'immediate_deps');
-            setElement(json, 'all_deps');
-            setElement(json, 'directVulnsCritical_score');
-            setElement(json, 'directVulnsHigh_score');
-            setElement(json, 'directVulnsMedium_score');
-            setElement(json, 'directVulnsLow_score');
-            setElement(json, 'indirectVulnsCritical_score');
-            setElement(json, 'indirectVulnsHigh_score');
-            setElement(json, 'indirectVulnsMedium_score');
-            setElement(json, 'indirectVulnsLow_score');
+function gotPackageInfo(pkgInfo) {
+    document.getElementById('scan-results').className = "";
+    setElement(pkgInfo, 'package');
+    setElement(pkgInfo, 'version');
+    setElement(pkgInfo, 'npmsio_score');
+    setElement(pkgInfo, 'authors');
+    setElement(pkgInfo, 'contributors');
+    setElement(pkgInfo, 'immediate_deps');
+    setElement(pkgInfo, 'all_deps');
+    setElement(pkgInfo, 'directVulnsCritical_score');
+    setElement(pkgInfo, 'directVulnsHigh_score');
+    setElement(pkgInfo, 'directVulnsMedium_score');
+    setElement(pkgInfo, 'directVulnsLow_score');
+    setElement(pkgInfo, 'indirectVulnsCritical_score');
+    setElement(pkgInfo, 'indirectVulnsHigh_score');
+    setElement(pkgInfo, 'indirectVulnsMedium_score');
+    setElement(pkgInfo, 'indirectVulnsLow_score');
 
 
-            let score = calculate_score(json);
-            document.getElementById('top_score').innerText = score;
-            let grade = get_grade(score);
-            document.getElementById("scan-grade-letter").innerText = grade;
-            document.getElementById("scan-grade-container").className += " grade-" + grade.toLowerCase();
+    let score = calculate_score(pkgInfo);
+    document.getElementById('top_score').innerText = score;
+    let grade = get_grade(score);
+    document.getElementById("scan-grade-letter").innerText = grade;
+    document.getElementById("scan-grade-container").className += " grade-" + grade.toLowerCase();
 
-            let table = document.getElementById("deps");
-            let depJson = json['dependencies'];
-            for(let i = 0; i < depJson.length; i++) {
-                let pkg = depJson[i]['package'];
-                let ver = depJson[i]['version'];
-                let score = calculate_score(depJson[i]);
-                let grade = get_grade(score);
+    let table = document.getElementById("deps");
+    let depJson = pkgInfo['dependencies'];
+    for(let i = 0; i < depJson.length; i++) {
+        let pkg = depJson[i]['package'];
+        let ver = depJson[i]['version'];
+        let score = calculate_score(depJson[i]);
+        let grade = get_grade(score);
 
-                let row = table.insertRow(i+1);
-                let cell = row.insertCell(0);
-                let linkUrl = 'results.html?manager=npm&package=' + pkg + '&version=' + ver;
-                let a = document.createElement('a');
-                let linkText = document.createTextNode(pkg);
-                a.appendChild(linkText);
-                a.title = "See package / version details";
-                a.href = linkUrl;
-                cell.appendChild(a);
+        let row = table.insertRow(i+1);
+        let cell = row.insertCell(0);
+        let linkUrl = 'results.html?manager=npm&package=' + pkg + '&version=' + ver;
+        let a = document.createElement('a');
+        let linkText = document.createTextNode(pkg);
+        a.appendChild(linkText);
+        a.title = "See package / version details";
+        a.href = linkUrl;
+        cell.appendChild(a);
 
-                cell = row.insertCell(1);
-                a = document.createElement('a');
-                linkText = document.createTextNode(ver);
-                a.appendChild(linkText);
-                a.title = "See package / version details";
-                a.href = linkUrl;
-                cell.appendChild(a);
+        cell = row.insertCell(1);
+        a = document.createElement('a');
+        linkText = document.createTextNode(ver);
+        a.appendChild(linkText);
+        a.title = "See package / version details";
+        a.href = linkUrl;
+        cell.appendChild(a);
 
-                cell = row.insertCell(2);
-                cell.innerText = grade + " (" + score + ")";
-                cell = row.insertCell(3);
-                cell.innerText = depJson[i]['immediate_deps'];
-                cell = row.insertCell(4);
-                cell.innerText = depJson[i]['all_deps'];
-            }
-
-        } else {
-            let node = document.getElementById('div1');
-            let newNode = document.createElement('p');
-            newNode.appendChild(document.createTextNode('There was a problem with the request.'));
-            node.appendChild(newNode);
-        }
+        cell = row.insertCell(2);
+        cell.innerText = grade + " (" + score + ")";
+        cell = row.insertCell(3);
+        cell.innerText = depJson[i]['immediate_deps'];
+        cell = row.insertCell(4);
+        cell.innerText = depJson[i]['all_deps'];
     }
 }
 
@@ -144,10 +142,22 @@ function toggleParents() {
         let urlParams = new URLSearchParams(window.location.search);
         let pkg = urlParams.get('package');
         let ver = urlParams.get('version');
-        parentsRequest = new XMLHttpRequest();
-        parentsRequest.onreadystatechange = gotParentsInfo;
-        parentsRequest.open('GET', PARENTS_PREFIX + '?' + 'package_name=' + encodeURIComponent(pkg) + '&package_version=' + encodeURIComponent(ver));
-        parentsRequest.send();
+	    fetch(PARENTS_PREFIX + '?' + 'package_name=' + encodeURIComponent(pkg) + '&package_version=' + encodeURIComponent(ver))
+	        .then((response) => {
+	            if (response.status == 200) {
+	                console.log(response);
+                    response.json().then(function(parInfo) {
+    	                gotParentsInfo(parInfo);
+                    });
+	            } else {
+	                console.log(response);
+	            }
+	         })
+	        .then((data) => {
+	            console.log(data);
+	         });
+
+
     } else {
         while(table.hasChildNodes()) {
            table.removeChild(table.firstChild);
@@ -155,41 +165,30 @@ function toggleParents() {
     }
 }
 
-function gotParentsInfo() {
-    if (parentsRequest.readyState === XMLHttpRequest.DONE) {
-        if (parentsRequest.status === 200) {
-            let table = document.getElementById("parenttable");
-            const json = JSON.parse(parentsRequest.responseText);
-            let parentsJson = json['parents'];
-            for(let i = 0; i < parentsJson.length; i++) {
-                let pkg = parentsJson[i]['package'];
-                let ver = parentsJson[i]['version'];
+function gotParentsInfo(parInfo) {
+    let table = document.getElementById("parenttable");
+    let parentsJson = parInfo['parents'];
+    for(let i = 0; i < parentsJson.length; i++) {
+        let pkg = parentsJson[i]['package'];
+        let ver = parentsJson[i]['version'];
 
-                let row = table.insertRow(i);
-                let cell = row.insertCell(0);
-                let linkUrl = 'results.html?manager=npm&package=' + pkg + '&version=' + ver;
-                let a = document.createElement('a');
-                let linkText = document.createTextNode(pkg);
-                a.appendChild(linkText);
-                a.title = "See package / version details";
-                a.href = linkUrl;
-                cell.appendChild(a);
+        let row = table.insertRow(i);
+        let cell = row.insertCell(0);
+        let linkUrl = 'results.html?manager=npm&package=' + pkg + '&version=' + ver;
+        let a = document.createElement('a');
+        let linkText = document.createTextNode(pkg);
+        a.appendChild(linkText);
+        a.title = "See package / version details";
+        a.href = linkUrl;
+        cell.appendChild(a);
 
-                cell = row.insertCell(1);
-                a = document.createElement('a');
-                linkText = document.createTextNode(ver);
-                a.appendChild(linkText);
-                a.title = "See package / version details";
-                a.href = linkUrl;
-                cell.appendChild(a);
-            }
-
-        } else {
-            let node = document.getElementById('div1');
-            let newNode = document.createElement('p');
-            newNode.appendChild(document.createTextNode('There was a problem with the request.'));
-            node.appendChild(newNode);
-        }
+        cell = row.insertCell(1);
+        a = document.createElement('a');
+        linkText = document.createTextNode(ver);
+        a.appendChild(linkText);
+        a.title = "See package / version details";
+        a.href = linkUrl;
+        cell.appendChild(a);
     }
 }
 
