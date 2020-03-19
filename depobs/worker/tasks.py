@@ -49,7 +49,11 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 ch.setFormatter(formatter)
 
 # Create the scanner task queue
-scanner = Celery("tasks", broker=os.environ["CELERY_BROKER_URL"])
+scanner = Celery(
+    "tasks",
+    broker=os.environ["CELERY_BROKER_URL"],
+    result_backend=os.environ["CELERY_RESULT_BACKEND"],
+)
 scanner.config_from_object(celeryconfig)
 
 
