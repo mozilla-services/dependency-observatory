@@ -60,7 +60,7 @@ def handle_pakage_report_not_found(e):
         package_name, package_version
     )
     # NB: use transaction concurrent calls e.g. another query inserts after select
-    package_report = models.insert_package_report_placeholer_or_update_task_id(
+    package_report = models.insert_package_report_placeholder_or_update_task_id(
         package_name, package_version, result.id
     )
     return package_report.json_with_task(), 202

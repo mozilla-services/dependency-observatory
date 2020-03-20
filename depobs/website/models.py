@@ -326,7 +326,7 @@ def get_direct_dependency_reports(package: str, version: str):
     ).filter(PackageLatestReport.version==calias.version)
 
 
-def insert_package_report_placeholer_or_update_task_id(package_name: str, package_version: str, task_id: str) -> PackageReport:
+def insert_package_report_placeholder_or_update_task_id(package_name: str, package_version: str, task_id: str) -> PackageReport:
     # if the package version was scored at any time
     pr: Optional[PackageReport] = get_most_recently_scored_package_report(package_name, package_version)
     if pr is not None:
