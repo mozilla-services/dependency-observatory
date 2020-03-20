@@ -147,7 +147,7 @@ def scan_npm_package(
 
     log.info(f"running {command} for package_name {package_name}@{package_version}")
     subprocess.run(command, encoding="utf-8", capture_output=True).check_returncode()
-    return
+    return package_name, package_version
 
 
 @scanner.task()
