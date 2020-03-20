@@ -143,8 +143,10 @@ docker pull mozilla/dependency-observatory:latest
 ```console
 export DATABASE_URI=postgresql+psycopg2://pguser:pgpass@pghost/dbname
 export CELERY_BROKER_URL=sqla+postgresql://pguser:pgpass@pghost/dbname
-docker run -d --rm --name depobs-api -e "DATABASE_URI=$DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "INIT_DB=1" -e "FLASK_APP=/app/depobs/website/do.py" -p 8000:8000 mozilla/dependency-observatory
-docker run -d -u 0 --rm -v /var/run/docker.sock:/var/run/docker.sock --net=host --name dep-obs-worker -e "DATABASE_URI=$DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" mozilla/dependency-observatory /bin/bash -c "celery -A depobs.worker.tasks worker --loglevel=info"
+export CELERY_RESULT_BACKEND=db+postgresql://pguser:pgpass@pghost/dbname
+
+docker run -d --rm --name depobs-api -e "DATABASE_URI=$DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" -e "INIT_DB=1" -e "FLASK_APP=/app/depobs/website/do.py" -p 8000:8000 mozilla/dependency-observatory
+docker run -d -u 0 --rm -v /var/run/docker.sock:/var/run/docker.sock --net=host --name dep-obs-worker -e "DATABASE_URI=$DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" mozilla/dependency-observatory /bin/bash -c "celery -A depobs.worker.tasks worker --loglevel=info"
 ```
 
 Note that you'll probably want to derive from the image to properly deamonize the worker.
