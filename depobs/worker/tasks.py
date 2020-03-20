@@ -6,7 +6,7 @@ import subprocess
 from typing import List, Tuple, Union, Optional
 import logging
 
-from celery import Celery
+from celery import Celery, chain
 from celery.exceptions import (
     SoftTimeLimitExceeded,
     TimeLimitExceeded,
@@ -116,17 +116,17 @@ def add(x, y):
 @scanner.task()
 def scan_npm_package(
     package_name: str, package_version: Optional[str] = None
-) -> Optional[Exception]:
+) -> None:
     package_name_validation_error = get_npm_package_name_validation_error(package_name)
     if package_name_validation_error is not None:
-        return package_name_validation_error
+        raise package_name_validation_error
 
     if package_version:
         package_version_validation_error = get_npm_package_version_validation_error(
             package_version
         )
         if package_version_validation_error is not None:
-            return package_version_validation_error
+            raise package_version_validation_error
 
     # mozilla/dependencyscan:latest must already be built/pulled/otherwise
     # present on the worker node
@@ -146,7 +146,8 @@ def scan_npm_package(
         command.append(package_version)
 
     log.info(f"running {command} for package_name {package_name}@{package_version}")
-    return subprocess.run(command, encoding="utf-8", capture_output=True)
+    subprocess.run(command, encoding="utf-8", capture_output=True).check_returncode()
+    return
 
 
 @scanner.task()
@@ -253,3 +254,14 @@ def build_report_tree(package_name: str, package_version: str):
         for (dep_name, dep_version) in deps:
             print("will build report tree  for %s %s", (dep_name, dep_version))
             build_report_tree.delay(dep_name, dep_version)
+
+
+@scanner.task()
+def scan_npm_package_then_build_report_tree(
+    package_name: str, package_version: Optional[str] = None
+) -> None:
+    chain(
+        scan_npm_package.s(package_name, package_version),
+        build_report_tree.s(package_name, package_version),
+    )()
+    return

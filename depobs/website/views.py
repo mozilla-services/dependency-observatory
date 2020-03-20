@@ -55,9 +55,10 @@ def handle_package_report_not_found(e):
     package_name, package_version = e.package_name, e.package_version
 
     # start a task to scan the package
-    result: celery.result.AsyncResult = tasks.scan_npm_package.delay(
+    result: celery.result.AsyncResult = tasks.scan_npm_package_then_build_report_tree.delay(
         package_name, package_version
     )
+
     # NB: use transaction concurrent calls e.g. another query inserts after select
     package_report = models.insert_package_report_placeholder_or_update_task_id(
         package_name, package_version, result.id
