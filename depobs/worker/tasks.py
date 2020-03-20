@@ -6,7 +6,7 @@ import subprocess
 from typing import List, Tuple, Union, Optional
 import logging
 
-from celery import Celery
+from celery import Celery, chain
 from celery.exceptions import (
     SoftTimeLimitExceeded,
     TimeLimitExceeded,
@@ -254,3 +254,14 @@ def build_report_tree(package_name: str, package_version: str):
         for (dep_name, dep_version) in deps:
             print("will build report tree  for %s %s", (dep_name, dep_version))
             build_report_tree.delay(dep_name, dep_version)
+
+
+@scanner.task()
+def scan_npm_package_then_build_report_tree(
+    package_name: str, package_version: Optional[str] = None
+) -> None:
+    chain(
+        scan_npm_package.s(package_name, package_version),
+        build_report_tree.s(package_name, package_version),
+    )()
+    return
