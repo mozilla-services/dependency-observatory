@@ -52,7 +52,6 @@ def handle_bad_request(e):
 
 @app.errorhandler(PackageReportNotFound)
 def handle_package_report_not_found(e):
-    print(f"missing package report! {e}")
     package_name, package_version = e.package_name, e.package_version
 
     # start a task to scan the package
