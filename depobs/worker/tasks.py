@@ -6,7 +6,7 @@ import subprocess
 from typing import List, Tuple, Union, Optional
 import logging
 
-from celery import Celery, chain
+from celery import Celery
 from celery.exceptions import (
     SoftTimeLimitExceeded,
     TimeLimitExceeded,
@@ -14,6 +14,7 @@ from celery.exceptions import (
     WorkerShutdown,
     WorkerTerminate,
 )
+import celery.result
 
 import depobs.worker.celeryconfig as celeryconfig
 
@@ -147,7 +148,7 @@ def scan_npm_package(
 
     log.info(f"running {command} for package_name {package_name}@{package_version}")
     subprocess.run(command, encoding="utf-8", capture_output=True).check_returncode()
-    return package_name, package_version
+    return (package_name, package_version)
 
 
 @scanner.task()
@@ -246,22 +247,19 @@ def score_package(package_name: str, package_version: str):
 
 
 @scanner.task()
-def build_report_tree(package_name: str, package_version: str):
+def build_report_tree(package_version_tuple: Tuple[str, str]):
+    package_name, package_version = package_version_tuple
     deps = get_ordered_package_deps(package_name, package_version)
     if len(deps) == 0:
         score_package.delay(package_name, package_version)
     else:
         for (dep_name, dep_version) in deps:
             print("will build report tree  for %s %s", (dep_name, dep_version))
-            build_report_tree.delay(dep_name, dep_version)
+            build_report_tree.delay((dep_name, dep_version))
 
 
 @scanner.task()
 def scan_npm_package_then_build_report_tree(
     package_name: str, package_version: Optional[str] = None
-) -> None:
-    chain(
-        scan_npm_package.s(package_name, package_version),
-        build_report_tree.s(package_name, package_version),
-    )()
-    return
+) -> celery.result.AsyncResult:
+    return scan_npm_package.apply_async(args=(package_name, package_version), link=build_report_tree.signature())

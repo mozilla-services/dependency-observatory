@@ -61,7 +61,7 @@ def scan():
 def build_report_tree():
     package_name, package_version, _ = validate_npm_package_version_query_params()
     result: celery.result.AsyncResult = tasks.build_report_tree.delay(
-        package_name, package_version
+        (package_name, package_version)
     )
     return dict(task_id=result.id)
 
