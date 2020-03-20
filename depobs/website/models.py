@@ -1,7 +1,7 @@
 # Placeholder for model code
 
 from datetime import datetime
-from typing import List
+from typing import Dict, List, Optional
 
 from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, \
      ForeignKey, event, select
@@ -11,7 +11,7 @@ from sqlalchemy.schema import Table
 from sqlalchemy import func, tuple_
 from sqlalchemy.orm import aliased, Load, load_only
 
-from depobs.database.schema import Advisory, NPMRegistryEntry, NPMSIOScore, PackageVersion, PackageLink
+from depobs.database.schema import Advisory, NPMRegistryEntry, NPMSIOScore, PackageVersion, PackageLink, TaskIDMixin
 
 
 
@@ -36,7 +36,7 @@ dependency = Table(
     Column('used_by_id', Integer, ForeignKey('reports.id'), primary_key=True)
 )
 
-class PackageReport(Model):
+class PackageReport(TaskIDMixin, Model):
     __tablename__ = 'reports'
 
     id = Column('id', Integer, primary_key=True)
@@ -67,6 +67,14 @@ class PackageReport(Model):
                            secondaryjoin=id==dependency.c.used_by_id,
                            backref="parents"
     )
+
+    def json_with_task(self) -> Dict:
+        return dict(
+            id=self.id,
+            task_id=self.task_id,
+            package=self.package,
+            version=self.version,
+        )
 
     def json_with_dependencies(self, depth = 1):
         return dict(
@@ -208,6 +216,18 @@ def get_package_report(package, version = None):
             return rep
     return None
 
+
+def get_most_recently_scored_package_report(package_name: str, package_version: Optional[str]=None, scored_after: Optional[datetime]=None) -> Optional[PackageReport]:
+    "Get the most recently scored PackageReport with package_name, optional package_version, and optionally scored_after the scored_after datetime or None"
+    query = db_session.query(PackageReport).filter_by(package=package_name)
+    if package_version is not None:
+        query = query.filter_by(version=package_version)
+    if scored_after is not None:
+        query = query.filter_by(scoring_date >= scored_after)
+    print("Query is %s" % str(query))
+    return query.order_by(PackageReport.scoring_date.desc()).limit(1).one_or_none()
+
+
 def get_ordered_package_deps(name, version):
     def get_package_from_id(db_session, id):
         print("get_package_id for %i" % (id))
@@ -304,6 +324,22 @@ def get_direct_dependency_reports(package: str, version: str):
     ).filter(PackageLink.child_package_id==calias.id
     ).filter(PackageLatestReport.package==calias.name
     ).filter(PackageLatestReport.version==calias.version)
+
+
+def insert_package_report_placeholder_or_update_task_id(package_name: str, package_version: str, task_id: str) -> PackageReport:
+    # if the package version was scored at any time
+    pr: Optional[PackageReport] = get_most_recently_scored_package_report(package_name, package_version)
+    if pr is not None:
+        # update its scan task id
+        ps.task_id = task_id
+    else:
+        pr = PackageReport()
+        pr.package = package_name
+        pr.version = package_version
+        pr.task_id = task_id
+    store_package_report(pr)
+    return pr
+
 
 def store_package_report(pr):
     db_session.add(pr)

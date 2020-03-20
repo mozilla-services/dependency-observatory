@@ -29,7 +29,7 @@ from depobs.website.models import (
     get_vulnerability_counts,
     get_direct_dependency_reports,
     store_package_report,
-    get_ordered_package_deps
+    get_ordered_package_deps,
 )
 
 from depobs.database.schema import (
@@ -49,9 +49,12 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 ch.setFormatter(formatter)
 
 # Create the scanner task queue
-scanner = Celery("tasks", broker=os.environ["CELERY_BROKER_URL"])
+scanner = Celery(
+    "tasks",
+    broker=os.environ["CELERY_BROKER_URL"],
+    result_backend=os.environ["CELERY_RESULT_BACKEND"],
+)
 scanner.config_from_object(celeryconfig)
-
 
 # The name must be less than or equal to 214 characters. This includes the scope for scoped packages.
 # The name can’t start with a dot or an underscore.
@@ -145,6 +148,7 @@ def scan_npm_package(
     log.info(f"running {command} for package_name {package_name}@{package_version}")
     return subprocess.run(command, encoding="utf-8", capture_output=True)
 
+
 @scanner.task()
 def score_package(package_name: str, package_version: str):
     pr = PackageReport()
@@ -167,17 +171,19 @@ def score_package(package_name: str, package_version: str):
     stmt = get_vulnerability_counts(package_name, package_version)
     for package, version, severity, count in stmt:
         # This is not yet tested - need real data
-        print('\t' + package + '\t' + version + '\t' + severity + '\t' + str(count))
-        if severity == 'critical':
+        print("\t" + package + "\t" + version + "\t" + severity + "\t" + str(count))
+        if severity == "critical":
             pr.directVulnsCritical_score = count
-        elif severity == 'high':
+        elif severity == "high":
             pr.directVulnsHigh_score = count
-        elif severity == 'medium':
+        elif severity == "medium":
             pr.directVulnsMedium_score = count
-        elif severity == 'low':
+        elif severity == "low":
             pr.directVulnsLow_score = count
         else:
-            log.error(f"unexpected severity {severity} for package {package} / version {version}")
+            log.error(
+                f"unexpected severity {severity} for package {package} / version {version}"
+            )
 
     stmt = get_npm_registry_data(package_name, package_version)
     for published_at, maintainers, contributors in stmt:
@@ -202,20 +208,41 @@ def score_package(package_name: str, package_version: str):
     pr.indirectVulnsLow_score = 0
 
     dep_rep_count = 0
-    for package, version, scoring_date, top_score, all_deps, directVulnsCritical_score, directVulnsHigh_score, directVulnsMedium_score, directVulnsLow_score, indirectVulnsCritical_score, indirectVulnsHigh_score, indirectVulnsMedium_score, indirectVulnsLow_score in stmt:
+    for (
+        package,
+        version,
+        scoring_date,
+        top_score,
+        all_deps,
+        directVulnsCritical_score,
+        directVulnsHigh_score,
+        directVulnsMedium_score,
+        directVulnsLow_score,
+        indirectVulnsCritical_score,
+        indirectVulnsHigh_score,
+        indirectVulnsMedium_score,
+        indirectVulnsLow_score,
+    ) in stmt:
         dep_rep_count += 1
         pr.all_deps += 1 + all_deps
-        pr.indirectVulnsCritical_score += directVulnsCritical_score + indirectVulnsCritical_score
+        pr.indirectVulnsCritical_score += (
+            directVulnsCritical_score + indirectVulnsCritical_score
+        )
         pr.indirectVulnsHigh_score += directVulnsHigh_score + indirectVulnsHigh_score
-        pr.indirectVulnsMedium_score += directVulnsMedium_score + indirectVulnsMedium_score
+        pr.indirectVulnsMedium_score += (
+            directVulnsMedium_score + indirectVulnsMedium_score
+        )
         pr.indirectVulnsLow_score += directVulnsLow_score + indirectVulnsLow_score
 
     if dep_rep_count != pr.immediate_deps:
-        log.error(f"expected {pr.immediate_deps} dependencies but got {dep_rep_count} for package {package_name} / version {package_version}")
+        log.error(
+            f"expected {pr.immediate_deps} dependencies but got {dep_rep_count} for package {package_name} / version {package_version}"
+        )
 
     pr.scoring_date = datetime.datetime.now()
 
     store_package_report(pr)
+
 
 @scanner.task()
 def build_report_tree(package_name: str, package_version: str):
