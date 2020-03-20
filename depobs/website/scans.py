@@ -66,6 +66,15 @@ def build_report_tree():
     return dict(task_id=result.id)
 
 
+@api.route("/scan_then_build_report_tree", methods=["POST"])
+def scan_npm_package_then_build_report_tree():
+    package_name, package_version, _ = validate_npm_package_version_query_params()
+    result: celery.result.AsyncResult = tasks.scan_npm_package_then_build_report_tree.delay(
+        package_name, package_version
+    )
+    return dict(task_id=result.id)
+
+
 @api.route("/score", methods=["POST"])
 def score():
     package_name, package_version, _ = validate_npm_package_version_query_params()
