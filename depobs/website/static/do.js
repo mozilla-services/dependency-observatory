@@ -55,7 +55,7 @@ function gotPackageInfo(pkgInfo) {
     setElement(pkgInfo, 'indirectVulnsLow_score');
 
 
-    let score = calculate_score(pkgInfo);
+    let score = calculate_score(pkgInfo, document.getElementById("scoring"));
     document.getElementById('top_score').innerText = score;
     let grade = get_grade(score);
     document.getElementById("scan-grade-letter").innerText = grade;
@@ -96,37 +96,60 @@ function gotPackageInfo(pkgInfo) {
     }
 }
 
-function calculate_score(json) {
-    let score = json["npmsio_score"] * 100;
+function calculate_element_score(json, total, score, scoringElem, i, descText) {
+    total += score;
+    if (scoringElem) {
+        row = scoringElem.insertRow(i);
+        cell = row.insertCell(0);
+        cell.appendChild(document.createTextNode(descText));
+        cell = row.insertCell(1);
+        if (score > 0) {
+            cell.appendChild(document.createTextNode('+' + score));
+        } else {
+            cell.appendChild(document.createTextNode(score));
+        }
+    }
+    return total;
+}
+
+function calculate_score(json, scoringElem) {
+    let i = 0;
+    let row;
+    let cell;
+    let total = calculate_element_score(json, 0, parseInt(json["npmsio_score"] * 100), scoringElem, i++, 'NPMSIO Score x 100')
     let all_deps = json["all_deps"];
     if (all_deps <= 5) {
-        score +=20;
+        total = calculate_element_score(json, total, 20, scoringElem, i++, 'All dependencies <= 5')
     } else if (all_deps <= 20) {
-        score +=10;
+        total = calculate_element_score(json, total, 10, scoringElem, i++, 'All dependencies <= 20')
     } else if (all_deps >= 500) {
-        score -=20;
+        total = calculate_element_score(json, total, -20, scoringElem, i++, 'All dependencies >= 500')
     } else if (all_deps >= 100) {
-        score -=10;
+        total = calculate_element_score(json, total, -10, scoringElem, i++, 'All dependencies >= 100')
     }
+
     if (json["directVulnsCritical_score"] > 0) {
-        score -=20;
+        total = calculate_element_score(json, total, -20, scoringElem, i++, 'Critical vulnerability in package')
     }
     if (json["directVulnsHigh_score"] > 0) {
-        score -=10;
+        total = calculate_element_score(json, total, -10, scoringElem, i++, 'High vulnerability in package')
     }
-    if (json["directVulnsModerate_score"] > 0) {
-        score -=5;
+    if (json["directVulnsMedium_score"] > 0) {
+        total = calculate_element_score(json, total, -5, scoringElem, i++, 'Medium vulnerability in package')
     }
     if (json["indirectVulnsCritical_score"] > 0) {
-        score -=10;
+        total = calculate_element_score(json, total, -10, scoringElem, i++, 'Critical vulnerability in dependency')
     }
     if (json["indirectVulnsHigh_score"] > 0) {
-        score -=7;
+        total = calculate_element_score(json, total, -7, scoringElem, i++, 'High vulnerability in dependency')
     }
-    if (json["indirectVulnsModerate_score"] > 0) {
-        score -=3;
+    if (json["indirectVulnsMedium_score"] > 0) {
+        total = calculate_element_score(json, total, -3, scoringElem, i++, 'Medium vulnerability in dependency')
     }
-    return parseInt(score);
+    if (scoringElem) {
+        calculate_element_score(json, 0, total, scoringElem, i++, 'Total')
+    }
+    return total;
 }
 
 function get_grade(score) {
@@ -165,8 +188,6 @@ function toggleParents() {
 	        .then((data) => {
 	            console.log(data);
 	         });
-
-
     } else {
         while(table.hasChildNodes()) {
            table.removeChild(table.firstChild);
@@ -202,5 +223,10 @@ function gotParentsInfo(parInfo) {
 }
 
 function setElement(json, elem) {
-    document.getElementById(elem).innerText = json[elem];
+    const el = document.getElementById(elem);
+    if (el) {
+        el.innerText = json[elem];
+    } else {
+        console.log('No element for id: ' + elem);
+    }
 }
