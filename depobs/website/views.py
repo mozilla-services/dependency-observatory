@@ -5,7 +5,7 @@ from flask import abort, Response, request, send_from_directory
 from werkzeug.exceptions import BadRequest, NotFound
 
 from depobs.website import models, app
-from depobs.website.scans import tasks_api, validate_npm_package_version_query_params, validate_after_ts_query_param
+from depobs.website.scans import tasks_api, validate_npm_package_version_query_params, validate_scored_after_ts_query_param
 import depobs.worker.tasks as tasks
 
 
@@ -68,7 +68,7 @@ def handle_package_report_not_found(e):
 
 @app.route('/package', methods=["GET"])
 def show_package_by_name_and_version_if_available():
-    scored_after = validate_after_ts_query_param()
+    scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
     # TODO: fetch all package versions
 
@@ -78,7 +78,7 @@ def show_package_by_name_and_version_if_available():
 
 @app.route('/parents', methods=["GET"])
 def get_parents_by_name_and_version():
-    scored_after = validate_after_ts_query_param()
+    scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
     # TODO: fetch all package versions
 
