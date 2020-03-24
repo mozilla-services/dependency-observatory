@@ -5,7 +5,7 @@ from flask import abort, Response, request, send_from_directory
 from werkzeug.exceptions import BadRequest, NotFound
 
 from depobs.website import models, app
-from depobs.website.scans import tasks_api, validate_npm_package_version_query_params
+from depobs.website.scans import tasks_api, validate_npm_package_version_query_params, validate_after_ts_query_param
 import depobs.worker.tasks as tasks
 
 
@@ -36,11 +36,11 @@ class PackageReportNotFound(NotFound):
         return msg + " not found."
 
 
-def get_most_recently_scored_package_report_or_raise(package_name: str, package_version: str) -> models.PackageReport:
+def get_most_recently_scored_package_report_or_raise(package_name: str, package_version: str, scored_after: datetime) -> models.PackageReport:
     "Returns a PackageReport or "
-    package_report = models.get_most_recently_scored_package_report(package_name, package_version)
+    package_report = models.get_most_recently_scored_package_report(package_name, package_version, scored_after)
     if package_report is None:
-        raise PackageReportNotFound(package_name=package_name, package_version=package_version)
+        raise PackageReportNotFound(package_name=package_name, package_version=package_version, scored_after=scored_after)
 
     return package_report
 
@@ -68,21 +68,21 @@ def handle_package_report_not_found(e):
 
 @app.route('/package', methods=["GET"])
 def show_package_by_name_and_version_if_available():
+    scored_after = validate_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
     # TODO: fetch all package versions
-    # TODO: parsed scored_after_s query param
 
-    package_report = get_most_recently_scored_package_report_or_raise(package_name, package_version)
+    package_report = get_most_recently_scored_package_report_or_raise(package_name, package_version, scored_after)
     return package_report.json_with_dependencies()
 
 
 @app.route('/parents', methods=["GET"])
 def get_parents_by_name_and_version():
+    scored_after = validate_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
     # TODO: fetch all package versions
-    # TODO: parsed scored_after_s query param
 
-    package_report = get_most_recently_scored_package_report_or_raise(package_name, package_version)
+    package_report = get_most_recently_scored_package_report_or_raise(package_name, package_version, scored_after)
     return package_report.json_with_parents()
 
 
