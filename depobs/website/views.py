@@ -103,3 +103,7 @@ def heartbeat():
 @app.route('/__version__')
 def version():
     return send_from_directory('/app', 'version.json')
+
+@app.route('/')
+def index_page():
+    return send_from_directory('static/', 'index.html')
