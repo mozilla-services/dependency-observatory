@@ -66,19 +66,13 @@ class PackageReport(TaskIDMixin, Model):
                            backref="parents"
     )
 
-    def json_with_task(self) -> Dict:
+    @property
+    def report_json(self) -> Dict:
         return dict(
             id=self.id,
             task_id=self.task_id,
             package=self.package,
             version=self.version,
-        )
-
-    def json_with_dependencies(self, depth = 1):
-        return dict(
-            id=self.id,
-            package=self.package,
-            version=self.version,
             release_date=self.release_date,
             scoring_date=self.scoring_date,
             top_score=self.top_score,
@@ -95,32 +89,22 @@ class PackageReport(TaskIDMixin, Model):
             contributors = self.contributors,
             immediate_deps = self.immediate_deps,
             all_deps = self.all_deps,
-            dependencies = [rep.json_with_dependencies(depth - 1) for rep in self.dependencies] if depth > 0 else []
         )
 
-    def json_with_parents(self, depth = 1):
+    def json_with_task(self) -> Dict:
         return dict(
-            id=self.id,
-            package=self.package,
-            version=self.version,
-            release_date=self.release_date,
-            scoring_date=self.scoring_date,
-            top_score=self.top_score,
-            npmsio_score=self.npmsio_score,
-            directVulnsCritical_score=self.directVulnsCritical_score,
-            directVulnsHigh_score=self.directVulnsHigh_score,
-            directVulnsMedium_score=self.directVulnsMedium_score,
-            directVulnsLow_score=self.directVulnsLow_score,
-            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
-            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
-            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
-            indirectVulnsLow_score=self.indirectVulnsLow_score,
-            authors = self.authors,
-            contributors = self.contributors,
-            immediate_deps = self.immediate_deps,
-            all_deps = self.all_deps,
-            parents = [rep.json_with_parents(depth - 1) for rep in self.parents] if depth > 0 else []
+             id=self.id,
+             task_id=self.task_id,
+             task_status=
+             package=self.package,
+             version=self.version,
         )
+
+    def json_with_dependencies(self, depth: int = 1) -> Dict:
+        return {'dependencies': [rep.json_with_dependencies(depth - 1) for rep in self.dependencies] if depth > 0 else [], **self.report_json}
+
+    def json_with_parents(self, depth: int = 1) -> Dict:
+        return {'parents': [rep.json_with_parents(depth - 1) for rep in self.parents] if depth > 0 else [], **self.report_json}
 
 class PackageLatestReport(View_only):
     __tablename__ = 'latest_reports'
