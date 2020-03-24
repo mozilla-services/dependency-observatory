@@ -327,8 +327,6 @@ def store_package_report(pr):
     db_session.add(pr)
     db_session.commit()
 
-#def get_parents(id):
-#    return db_session.query(PackageReport).filter(PackageReport.dependemcies.has(PackageReport.id == int(id)))
 
 VIEWS: List[str] = [
     """
