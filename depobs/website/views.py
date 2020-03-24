@@ -63,7 +63,7 @@ def handle_package_report_not_found(e):
     package_report = models.insert_package_report_placeholder_or_update_task_id(
         package_name, package_version, result.id
     )
-    return package_report.json_with_task(), 202
+    return package_report.report_json, 202
 
 
 @app.route('/package', methods=["GET"])

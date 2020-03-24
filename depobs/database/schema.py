@@ -512,6 +512,5 @@ class TaskIDMixin:
 
     # https://docs.celeryproject.org/en/stable/userguide/tasks.html#built-in-states
     @property
-    def task_result():
-        result = AsyncResult(id=self.task_id)
-        return result.get()
+    def task_status(self) -> str:
+        return AsyncResult(id=self.task_id).status
