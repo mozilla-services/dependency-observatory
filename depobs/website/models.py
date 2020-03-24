@@ -71,6 +71,8 @@ class PackageReport(TaskIDMixin, Model):
         return dict(
             id=self.id,
             task_id=self.task_id,
+            # from database.schema.TaskIDMixin
+            task_status=self.task_status,
             package=self.package,
             version=self.version,
             release_date=self.release_date,
