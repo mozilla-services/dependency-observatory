@@ -1,5 +1,6 @@
 # Placeholder for model code
 
+import os
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -13,9 +14,6 @@ from sqlalchemy.orm import aliased, Load, load_only
 
 from depobs.database.schema import Advisory, NPMRegistryEntry, NPMSIOScore, PackageVersion, PackageLink, TaskIDMixin
 
-
-
-import os
 
 DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql+psycopg2://postgres:postgres@localhost/dependency_observatory')
 
