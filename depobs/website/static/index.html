@@ -47,8 +47,8 @@
                               <select id="manager" name="manager">
                                  <option value="npm">NPM</option>
                               </select>
-                              <input type="text" class="form-control" id="package" name="package" placeholder="enter package name here" aria-label="package name" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
-                              <input type="text" class="form-control" id="version" name="version" placeholder="enter package version here" aria-label="package version" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                              <input type="text" class="form-control" id="packageName" name="package" placeholder="enter package name here" aria-label="package name" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                              <input type="text" class="form-control" id="versionName" name="version" placeholder="enter package version here" aria-label="package version" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
                               <button class="btn btn-primary" type="submit">Find Now</button>
                            </div>
                         </form>
@@ -123,45 +123,47 @@
                <div class="col-xs-12 col-lg-6">
                   <div class="card card-primary summary summary-condensed" id="scan-summary">
                      <div class="card-header bg-primary text-center text-md-left text-white">
-                        <span class="h3">Known Vulnerabilities</span>
+                        <span class="h3">Scoring</span>
                      </div>
                      <div class="card-body pb-1">
-                        <table class="table table-striped table-sm scan-summary-table">
-                           <tr>
-                              <td>This package - critical priority</td>
-                              <td id="directVulnsCritical_score"></td>
-                           </tr>
-                           <tr>
-                              <td>This package - high priority</td>
-                              <td id="directVulnsHigh_score"></td>
-                           </tr>
-                           <tr>
-                              <td>This package - moderate priority</td>
-                              <td id="directVulnsMedium_score"></td>
-                           </tr>
-                           <tr>
-                              <td>This package - low priority</td>
-                              <td id="directVulnsLow_score"></td>
-                           </tr>
-                           <tr>
-                              <td>Dependencies - critical priority</td>
-                              <td id="indirectVulnsCritical_score"></td>
-                           </tr>
-                           <tr>
-                              <td>Dependencies - high priority</td>
-                              <td id="indirectVulnsHigh_score"></td>
-                           </tr>
-                           <tr>
-                              <td>Dependencies - moderate priority</td>
-                              <td id="indirectVulnsMedium_score"></td>
-                           </tr>
-                           <tr>
-                              <td>Dependencies - low priority</td>
-                              <td id="indirectVulnsLow_score"></td>
-                           </tr>
+                        <table id="scoring" class="table table-striped table-sm scan-summary-table">
                         </table>
                      </div>
                   </div>
+               </div>
+            </div>
+            <div class="card card-primary mt-4" id="known-vulnerabilities">
+               <div class="card-header bg-primary text-center text-md-left text-white">
+                  <span class="h3">Known Vulnerabilities</span>
+               </div>
+               <div class="card-body pb-1">
+                  <table id="vulnable" class="table table-striped table-sm scan-summary-table">
+                     <tr>
+                        <th></th>
+                        <th>Critical</th>
+                        <th>High</th>
+                        <th>Medium</th>
+                        <th>Low</th>
+                     </tr>
+                     <tr>
+                        <td>This package</td>
+                        <td id="directVulnsCritical_score"></td>
+                        <td id="directVulnsHigh_score"></td>
+                        <td id="directVulnsMedium_score"></td>
+                        <td id="directVulnsLow_score"></td>
+                     </tr>
+                     <tr>
+                        <td>Dependencies</td>
+                        <td id="indirectVulnsCritical_score"></td>
+                        <td id="indirectVulnsHigh_score"></td>
+                        <td id="indirectVulnsMedium_score"></td>
+                        <td id="indirectVulnsLow_score"></td>
+                     </tr>
+                  </table>
+               </div>
+               <div class="card-body pb-1">
+                  <table id="vulns" class="table table-striped table-sm vulnerabilities-table">
+                  </table>
                </div>
             </div>
             <div class="card card-primary mt-4" id="direct-dependencies">
