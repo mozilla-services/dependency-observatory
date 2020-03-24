@@ -306,7 +306,7 @@ def insert_package_report_placeholder_or_update_task_id(package_name: str, packa
     pr: Optional[PackageReport] = get_most_recently_scored_package_report(package_name, package_version)
     if pr is not None:
         # update its scan task id
-        ps.task_id = task_id
+        pr.task_id = task_id
     else:
         pr = PackageReport()
         pr.package = package_name
