@@ -93,15 +93,6 @@ class PackageReport(TaskIDMixin, Model):
             all_deps = self.all_deps,
         )
 
-    def json_with_task(self) -> Dict:
-        return dict(
-             id=self.id,
-             task_id=self.task_id,
-             task_status=
-             package=self.package,
-             version=self.version,
-        )
-
     def json_with_dependencies(self, depth: int = 1) -> Dict:
         return {'dependencies': [rep.json_with_dependencies(depth - 1) for rep in self.dependencies] if depth > 0 else [], **self.report_json}
 
