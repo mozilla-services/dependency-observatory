@@ -1,4 +1,6 @@
+from datetime import datetime, timedelta
 import re
+from typing import Tuple
 
 from celery import Celery
 from flask import Blueprint, jsonify, make_response, request
@@ -14,7 +16,16 @@ def handle_bad_request(e):
     return dict(description=e.description), 400
 
 
-def validate_npm_package_version_query_params():
+def validate_scored_after_ts_query_param() -> datetime:
+    param_values = request.args.getlist("scored_after_ts", int)
+    if len(param_values) > 1:
+        raise BadRequest(description="only one scored_after_ts param supported")
+    param_value = param_values[0] if len(param_values) else None
+    # utcfromtimestamp might raise https://docs.python.org/3/library/exceptions.html#OverflowError
+    return datetime.utcfromtimestamp(param_value) if param_value else (datetime.now() - timedelta(days=90))
+
+
+def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
     package_names = request.args.getlist("package_name", str)
     package_versions = request.args.getlist("package_version", str)
     package_managers = request.args.getlist("package_manager", str)

@@ -198,7 +198,7 @@ def get_most_recently_scored_package_report(package_name: str, package_version: 
     if package_version is not None:
         query = query.filter_by(version=package_version)
     if scored_after is not None:
-        query = query.filter_by(scoring_date >= scored_after)
+        query = query.filter(PackageReport.scoring_date >= scored_after)
     print("Query is %s" % str(query))
     return query.order_by(PackageReport.scoring_date.desc()).limit(1).one_or_none()
 
@@ -306,7 +306,7 @@ def insert_package_report_placeholder_or_update_task_id(package_name: str, packa
     pr: Optional[PackageReport] = get_most_recently_scored_package_report(package_name, package_version)
     if pr is not None:
         # update its scan task id
-        ps.task_id = task_id
+        pr.task_id = task_id
     else:
         pr = PackageReport()
         pr.package = package_name
