@@ -27,7 +27,7 @@ class PackageReportNotFound(NotFound):
         self.scored_after = scored_after
 
     @property
-    def description(self: NotFound) -> str:
+    def description(self) -> str:
         msg = f"PackageReport {self.package_name}"
         if self.package_version is not None:
             msg += f"@{self.package_version}"
