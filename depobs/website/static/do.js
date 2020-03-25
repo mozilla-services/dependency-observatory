@@ -38,6 +38,8 @@ function getPackageInfo(pkg, ver) {
 
 function gotPackageInfo(pkgInfo) {
     document.getElementById('scan-results').className = "";
+    let fail = 0;
+    let warn = 0;
     setElement(pkgInfo, 'package');
     setElement(pkgInfo, 'version');
     setElement(pkgInfo, 'npmsio_score');
@@ -45,15 +47,24 @@ function gotPackageInfo(pkgInfo) {
     setElement(pkgInfo, 'contributors');
     setElement(pkgInfo, 'immediate_deps');
     setElement(pkgInfo, 'all_deps');
-    setElement(pkgInfo, 'directVulnsCritical_score');
-    setElement(pkgInfo, 'directVulnsHigh_score');
-    setElement(pkgInfo, 'directVulnsMedium_score');
-    setElement(pkgInfo, 'directVulnsLow_score');
-    setElement(pkgInfo, 'indirectVulnsCritical_score');
-    setElement(pkgInfo, 'indirectVulnsHigh_score');
-    setElement(pkgInfo, 'indirectVulnsMedium_score');
-    setElement(pkgInfo, 'indirectVulnsLow_score');
+    fail += setElement(pkgInfo, 'directVulnsCritical_score');
+    fail += setElement(pkgInfo, 'directVulnsHigh_score');
+    warn += setElement(pkgInfo, 'directVulnsMedium_score');
+    warn += setElement(pkgInfo, 'directVulnsLow_score');
+    fail += setElement(pkgInfo, 'indirectVulnsCritical_score');
+    fail += setElement(pkgInfo, 'indirectVulnsHigh_score');
+    warn += setElement(pkgInfo, 'indirectVulnsMedium_score');
+    warn += setElement(pkgInfo, 'indirectVulnsLow_score');
 
+    const vulnHeader = document.getElementById("vuln-header");
+    console.log('Fail ' + fail + ' warn ' + warn);
+    if (fail > 0) {
+        vulnHeader.className += " bg-danger text-white";
+    } else if (warn > 0) {
+        vulnHeader.className += " bg-warning text-dark";
+    } else {
+        vulnHeader.className += " bg-success text-white";
+    }
 
     let score = calculate_score(pkgInfo, document.getElementById("scoring"));
     document.getElementById('top_score').innerText = score;
@@ -103,6 +114,7 @@ function calculate_element_score(json, total, score, scoringElem, i, descText) {
         cell = row.insertCell(0);
         cell.appendChild(document.createTextNode(descText));
         cell = row.insertCell(1);
+        cell.className = "text-right";
         if (score > 0) {
             cell.appendChild(document.createTextNode('+' + score));
         } else {
@@ -224,9 +236,11 @@ function gotParentsInfo(parInfo) {
 
 function setElement(json, elem) {
     const el = document.getElementById(elem);
+    const val = json[elem];
     if (el) {
-        el.innerText = json[elem];
+        el.innerText = val;
     } else {
         console.log('No element for id: ' + elem);
     }
+    return val;
 }
