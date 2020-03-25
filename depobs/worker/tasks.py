@@ -33,7 +33,7 @@ from depobs.website.models import (
     get_ordered_package_deps,
 )
 
-from depobs.database.schema import (
+from fpr.db.schema import (
     Base,
     Advisory,
     PackageVersion,
