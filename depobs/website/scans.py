@@ -37,21 +37,21 @@ def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
         raise BadRequest(description="only one package manager supported")
 
     package_name = package_names[0]
-    package_version = package_versions[0] if len(package_versions) else None
+    package_version = package_versions[0] if (len(package_versions) and package_versions[0] != "") else None
     package_manager = package_managers[0] if len(package_managers) else "npm"
 
     package_name_validation_error = tasks.get_npm_package_name_validation_error(
         package_name
     )
     if package_name_validation_error is not None:
-        raise BadRequest(description=validation_error)
+        raise BadRequest(description=str(package_name_validation_error))
 
     if package_version:
         package_version_validation_error = tasks.get_npm_package_version_validation_error(
             package_version
         )
         if package_version_validation_error is not None:
-            raise BadRequest(description=package_version_validation_error)
+            raise BadRequest(description=str(package_version_validation_error))
 
     if package_manager != "npm":
         raise BadRequest(description="only the package manager 'npm' supported")

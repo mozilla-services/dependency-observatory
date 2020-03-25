@@ -1,9 +1,11 @@
+import argparse
+import asyncio
 import datetime
 import os
 import sys
 import re
 import subprocess
-from typing import List, Tuple, Union, Optional
+from typing import Callable, Dict, List, Tuple, Union, Optional
 import logging
 
 from celery import Celery
@@ -33,6 +35,11 @@ from depobs.website.models import (
     get_ordered_package_deps,
 )
 
+# import exc_to_str to resolve import cycle for the following fpr.clients
+from fpr.pipelines.util import exc_to_str as _
+from fpr.clients.npmsio import fetch_npmsio_scores
+from fpr.clients.npm_registry import fetch_npm_registry_metadata
+
 from fpr.db.schema import (
     Base,
     Advisory,
@@ -48,6 +55,28 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
+
+# http client config
+# an npm registry access token for fetch_npm_registry_metadata. Defaults NPM_PAT env var. Should be read-only.
+NPM_PAT = os.environ.get("NPM_PAT", None)
+
+# celery will try to import these if they're public vars (no _ prefix)
+_NPM_CLIENT_CONFIG = argparse.Namespace(
+    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+fpr@mozilla.com)",
+    total_timeout=30,
+    max_connections=1,
+    max_retries=1,
+    package_batch_size=1,
+    dry_run=False,
+    npm_auth_token=NPM_PAT,
+)
+_NPMSIO_CLIENT_CONFIG = argparse.Namespace(
+    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+fpr@mozilla.com)",
+    total_timeout=10,
+    max_connections=1,
+    package_batch_size=1,
+    dry_run=False,
+)
 
 # Create the scanner task queue
 scanner = Celery(
@@ -263,3 +292,46 @@ def scan_npm_package_then_build_report_tree(
     package_name: str, package_version: Optional[str] = None
 ) -> celery.result.AsyncResult:
     return scan_npm_package.apply_async(args=(package_name, package_version), link=build_report_tree.signature())
+
+
+async def fetch_and_save_package_data(
+    fetcher: Callable[[argparse.Namespace, List[str], int], Dict],
+    args: argparse.Namespace,
+    package_names: List[str]
+) -> Dict:
+    async for package_result in fetcher(args, package_names, len(package_names)):
+        if isinstance(package_result, Exception):
+            raise package_result
+        # TODO: save to db
+        # TODO: return multiple results
+        return package_result
+
+
+@scanner.task()
+def check_package_name_in_npmsio(package_name: str) -> bool:
+    npmsio_score = asyncio.run(fetch_and_save_package_data(fetch_npmsio_scores, _NPMSIO_CLIENT_CONFIG, [package_name]), debug=False)
+    print(f"package: {package_name} on npms.io? {npmsio_score is not None}")
+    return npmsio_score is not None
+
+
+@scanner.task()
+def check_package_in_npm_registry(package_name: str, package_version: Optional[str] = None) -> Dict:
+    npm_registry_entry = asyncio.run(fetch_and_save_package_data(fetch_npm_registry_metadata, _NPM_CLIENT_CONFIG, [package_name]), debug=False)
+
+    package_name_exists = npm_registry_entry is not None
+    print(f"package: {package_name} on npm registry? {package_name_exists}")
+    if package_version is not None:
+        package_version_exists = npm_registry_entry.get("versions", {}).get(package_version, False)
+        print(f"package: {package_name}@{package_version!r} on npm registry? {package_version_exists}")
+        return package_name_exists and package_version_exists
+    return package_name_exists
+
+
+@scanner.task()
+def check_npm_package_exists(package_name: str, package_version: Optional[str] = None) -> bool:
+    """
+    Check that an npm package name has a score on npms.io and is published on
+    the npm registry if a version is provided check that it's in the npm registry
+    """
+    # check npms.io first because it's usually faster (smaller response sizes)
+    return check_package_name_in_npmsio(package_name) and check_package_in_npm_registry(package_name, package_version)
