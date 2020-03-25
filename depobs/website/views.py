@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Dict, Optional
 
 from flask import abort, Response, request, send_from_directory
 from werkzeug.exceptions import BadRequest, NotFound
@@ -27,7 +27,7 @@ class PackageReportNotFound(NotFound):
         self.scored_after = scored_after
 
     @property
-    def description(self: NotFound) -> str:
+    def description(self) -> str:
         msg = f"PackageReport {self.package_name}"
         if self.package_version is not None:
             msg += f"@{self.package_version}"
@@ -67,7 +67,7 @@ def handle_package_report_not_found(e):
 
 
 @app.route('/package', methods=["GET"])
-def show_package_by_name_and_version_if_available():
+def show_package_by_name_and_version_if_available() -> Dict:
     scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
     # TODO: fetch all package versions
@@ -77,7 +77,7 @@ def show_package_by_name_and_version_if_available():
 
 
 @app.route('/parents', methods=["GET"])
-def get_parents_by_name_and_version():
+def get_parents_by_name_and_version() -> Dict:
     scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
     # TODO: fetch all package versions
