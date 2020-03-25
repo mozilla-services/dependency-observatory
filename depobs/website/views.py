@@ -53,6 +53,8 @@ def handle_bad_request(e):
 @app.errorhandler(PackageReportNotFound)
 def handle_package_report_not_found(e):
     package_name, package_version = e.package_name, e.package_version
+    if not tasks.check_npm_package_exists(package_name, package_version):
+        return dict(description=f"{e.description} Unable to find package on npm registry and npms.io."), 404
 
     # start a task to scan the package
     result: celery.result.AsyncResult = tasks.scan_npm_package_then_build_report_tree.delay(
