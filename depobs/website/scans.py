@@ -44,14 +44,14 @@ def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
         package_name
     )
     if package_name_validation_error is not None:
-        raise BadRequest(description=package_name_validation_error)
+        raise BadRequest(description=str(package_name_validation_error))
 
     if package_version:
         package_version_validation_error = tasks.get_npm_package_version_validation_error(
             package_version
         )
         if package_version_validation_error is not None:
-            raise BadRequest(description=package_version_validation_error)
+            raise BadRequest(description=str(package_version_validation_error))
 
     if package_manager != "npm":
         raise BadRequest(description="only the package manager 'npm' supported")
