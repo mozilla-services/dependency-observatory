@@ -12,8 +12,8 @@ from sqlalchemy.schema import Table
 from sqlalchemy import func, tuple_
 from sqlalchemy.orm import aliased, Load, load_only
 
+from fpr.db.schema import Advisory, NPMRegistryEntry, NPMSIOScore, PackageVersion, PackageLink
 from depobs.database.mixins import TaskIDMixin
-from depobs.database.schema import Advisory, NPMRegistryEntry, NPMSIOScore, PackageVersion, PackageLink
 
 
 DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql+psycopg2://postgres:postgres@localhost/dependency_observatory')
