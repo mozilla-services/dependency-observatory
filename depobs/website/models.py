@@ -259,6 +259,20 @@ def get_ordered_package_deps(name, version):
         db_session.commit()
     return deps
 
+def get_vulnerabilities_report(package: str, version: str) -> Dict:
+    vulns = []
+    for package_name, version, severity, url, title in get_vulnerabilities(package, version):
+        vulns.append(dict(
+            severity=severity,
+            url=url,
+            title=title
+            ))
+    return dict(
+        package=package,
+        version=version,
+        vulnerabilities=vulns
+        )
+
 def get_npms_io_score(package: str, version: str):
     return db_session.query(NPMSIOScore.score).filter_by(package_name=package, package_version=version)
 
@@ -287,6 +301,12 @@ def get_vulnerability_counts(package: str, version: str):
     ).filter(PackageVersion.version==version
     ).filter(Advisory.package_name==PackageVersion.name
     ).group_by(Advisory.package_name, PackageVersion.version, Advisory.severity)
+
+def get_vulnerabilities(package: str, version: str):
+    return db_session.query(Advisory.package_name, PackageVersion.version, Advisory.severity, Advisory.url, Advisory.title
+    ).filter_by(package_name=package
+    ).filter(PackageVersion.version==version
+    ).filter(Advisory.package_name==PackageVersion.name)
 
 def get_direct_dependency_reports(package: str, version: str):
     palias = aliased(PackageVersion)
