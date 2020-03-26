@@ -88,6 +88,12 @@ def get_parents_by_name_and_version() -> Dict:
     return package_report.json_with_parents()
 
 
+@app.route('/vulnerabilities', methods=["GET"])
+def get_vulnerabilities_by_name_and_version() -> Dict:
+    package_name, package_version, _ = validate_npm_package_version_query_params()
+    return models.get_vulnerabilities_report(package_name, package_version)
+
+
 @app.after_request
 def add_standard_headers_to_static_routes(response):
     response.headers.update(STANDARD_HEADERS)
