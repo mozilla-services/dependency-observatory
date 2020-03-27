@@ -211,8 +211,7 @@ def get_ordered_package_deps(name, version):
         return pv[0]
 
     def get_package_from_name_and_version(db_session, name, version):
-        pv = db_session.query(PackageVersion).filter(PackageVersion.name == name, PackageVersion.version == version)
-        return pv[0]
+        return db_session.query(PackageVersion).filter_by(name=name, version=version).first()
     deps = []
     incomplete = False
 
