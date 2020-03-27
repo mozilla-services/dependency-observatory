@@ -215,8 +215,8 @@ def get_ordered_package_deps(name, version):
     deps = []
     incomplete = False
 
-    subject = db_session.query(PackageVersion).filter(PackageVersion.name == name, PackageVersion.version == version)[0]
-    print("subject  %s %s %i" % (subject.name, subject.version, subject.id))
+    subject = get_package_from_name_and_version(db_session, name, version)
+    print("subject is %s %s %i" % (subject.name, subject.version, subject.id))
     dependency_ids = [link.child_package_id for link in db_session.query(PackageLink).filter(PackageLink.parent_package_id == subject.id)]
     print(dependency_ids)
     dependencies = [get_package_from_id(db_session, dependency_id) for dependency_id in dependency_ids]
