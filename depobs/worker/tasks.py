@@ -280,11 +280,11 @@ def build_report_tree(package_version_tuple: Tuple[str, str]):
     package_name, package_version = package_version_tuple
     deps = get_ordered_package_deps(package_name, package_version)
     if len(deps) == 0:
-        score_package.delay(package_name, package_version)
+        score_package(package_name, package_version)
     else:
         for (dep_name, dep_version) in deps:
             print("will build report tree  for %s %s", (dep_name, dep_version))
-            build_report_tree.delay((dep_name, dep_version))
+            build_report_tree((dep_name, dep_version))
 
 
 @scanner.task()
