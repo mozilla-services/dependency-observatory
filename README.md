@@ -107,25 +107,37 @@ valid python code changes.
 
 ### Worker tasks
 
-1. run `docker-compose stop worker` to stop the daemonized worker if it's running
+The worker image mounts in local changes, but requires a restart to
+reflect them.
 
-2. On `util/call_task_with_result.sh` line 6 change the task name and
-   JSON serialized args and kwargs e.g. from
-   `celery -A depobs.worker.tasks call depobs.worker.tasks.add --args '[2, 2]' --kwargs '{}'`
-   to
-   `celery -A depobs.worker.tasks call depobs.worker.tasks.scan_npm_package --args '["@hapi/topo", "3.1.0"]' --kwargs '{}'`
-
-3. run `docker-compose up run-task` to mount in local changes, start a
-   worker, and wait for it to terminate. Example output with the add task as called above terminates with:
+Run `./util/call_task_in_worker.sh` with the task name and JSON-serialized args and kwargs. For example:
 
 ```console
-dependency-observatory-run-task | [2020-03-13 15:05:17,985: INFO/MainProcess] Connected to sqla+postgresql://postgres:**@db/dependency_observatory
-dependency-observatory-run-task | [2020-03-13 15:05:18,077: INFO/MainProcess] celery@78fc0c1a453c ready.
-dependency-observatory-run-task | [2020-03-13 15:05:18,090: INFO/MainProcess] Received task: depobs.worker.tasks.add[9dae8ef3-515a-4adf-a176-fa185da3fd20]
-dependency-observatory-run-task | [2020-03-13 15:05:18,093: INFO/ForkPoolWorker-1] Task depobs.worker.tasks.add[9dae8ef3-515a-4adf-a176-fa185da3fd20] succeeded in 0.00041552004404366016s: 4
-dependency-observatory-run-task |
-dependency-observatory-run-task | worker: Warm shutdown (MainProcess)
-dependency-observatory-run-task exited with code 0
+./util/call_task_in_worker.sh add --args "[2,2]" --kwargs "{}"
+Starting dependency-observatory-db ... done
+running: celery -A depobs.worker.tasks call depobs.worker.tasks.add --args [2,2] --kwargs {}
+3e8da0b9-7d9e-4e31-9a79-ec1e3987fc93
+
+ -------------- celery@6e495a16cbc8 v4.4.2 (cliffs)
+
+...
+
+[tasks]
+  . depobs.worker.tasks.add
+  . depobs.worker.tasks.build_report_tree
+  . depobs.worker.tasks.check_npm_package_exists
+  . depobs.worker.tasks.check_package_in_npm_registry
+  . depobs.worker.tasks.check_package_name_in_npmsio
+  . depobs.worker.tasks.scan_npm_package
+  . depobs.worker.tasks.scan_npm_package_then_build_report_tree
+  . depobs.worker.tasks.score_package
+
+[2020-03-27 17:35:07,131: INFO/MainProcess] Connected to sqla+postgresql://postgres:**@db/dependency_observatory
+[2020-03-27 17:35:07,233: INFO/MainProcess] celery@6e495a16cbc8 ready.
+[2020-03-27 17:35:07,244: INFO/MainProcess] Received task: depobs.worker.tasks.add[3e8da0b9-7d9e-4e31-9a79-ec1e3987fc93]
+[2020-03-27 17:35:07,292: INFO/ForkPoolWorker-1] Task depobs.worker.tasks.add[3e8da0b9-7d9e-4e31-9a79-ec1e3987fc93] succeeded in 0.04597374200238846s: 4
+
+worker: Warm shutdown (MainProcess)
 ```
 
 ### Deployment
@@ -149,4 +161,4 @@ docker run -d --rm --name depobs-api -e "DATABASE_URI=$DATABASE_URI" -e "CELERY_
 docker run -d -u 0 --rm -v /var/run/docker.sock:/var/run/docker.sock --net=host --name dep-obs-worker -e "DATABASE_URI=$DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" mozilla/dependency-observatory /bin/bash -c "celery -A depobs.worker.tasks worker --loglevel=info"
 ```
 
-Note that you'll probably want to derive from the image to properly deamonize the worker.
+Note that you'll probably want to derive from the image to properly deamonize the worker and web server.
