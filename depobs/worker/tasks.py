@@ -283,7 +283,7 @@ def build_report_tree(package_version_tuple: Tuple[str, str]):
         score_package(package_name, package_version)
     else:
         for (dep_name, dep_version) in deps:
-            print("will build report tree  for %s %s", (dep_name, dep_version))
+            print("will build report tree for %s %s" % (dep_name, dep_version))
             build_report_tree((dep_name, dep_version))
 
 
