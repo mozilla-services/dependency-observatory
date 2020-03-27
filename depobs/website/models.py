@@ -211,12 +211,16 @@ def get_ordered_package_deps(name, version):
         return pv[0]
 
     def get_package_from_name_and_version(db_session, name, version):
-        return db_session.query(PackageVersion).filter_by(name=name, version=version).first()
+        return db_session.query(PackageVersion).filter_by(name=name, version=version).one_or_none()
     deps = []
     incomplete = False
 
     subject = get_package_from_name_and_version(db_session, name, version)
+    if subject is None:
+        print("subject %s %s not found returning empty deps" % (name, version))
+        return []
     print("subject is %s %s %i" % (subject.name, subject.version, subject.id))
+
     dependency_ids = [link.child_package_id for link in db_session.query(PackageLink).filter(PackageLink.parent_package_id == subject.id)]
     print(dependency_ids)
     dependencies = [get_package_from_id(db_session, dependency_id) for dependency_id in dependency_ids]
