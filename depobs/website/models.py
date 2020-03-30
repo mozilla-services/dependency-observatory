@@ -206,9 +206,10 @@ def get_most_recently_scored_package_report(package_name: str, package_version: 
 
 def get_ordered_package_deps(name, version):
     def get_package_from_id(db_session, id):
-        print(f"get_package_id for {id}")
-        pv = db_session.query(PackageVersion).filter(PackageVersion.id == id)
-        return pv[0]
+        package_version = db_session.query(PackageVersion).filter(PackageVersion.id == id).one_or_none()
+        if package_version is None:
+            print(f"no package found for get_package_id {id}")
+        return package_version
 
     def get_package_from_name_and_version(db_session, name, version):
         return db_session.query(PackageVersion).filter_by(name=name, version=version).one_or_none()
@@ -223,7 +224,8 @@ def get_ordered_package_deps(name, version):
 
     dependency_ids = [link.child_package_id for link in db_session.query(PackageLink).filter(PackageLink.parent_package_id == subject.id)]
     print(dependency_ids)
-    dependencies = [get_package_from_id(db_session, dependency_id) for dependency_id in dependency_ids]
+    maybe_dependencies = [get_package_from_id(db_session, dependency_id) for dependency_id in dependency_ids]
+    dependencies = [dep for dep in maybe_dependencies if dep is not None]
     reports = []
     for dependency in dependencies:
         print(f"dependency {dependency.name} {dependency.version}")
