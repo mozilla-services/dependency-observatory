@@ -288,10 +288,10 @@ def build_report_tree(package_version_tuple: Tuple[str, str], visited=None):
     else:
         for (dep_name, dep_version) in deps:
             if tuple([dep_name, dep_version]) in visited:
-                print("skipping building report tree for visited dep %s %s" % (dep_name, dep_version))
+                print(f"skipping building report tree for visited dep  {dep_name} {dep_version}")
                 continue
 
-            print("will build report tree for dep %s %s" % (dep_name, dep_version))
+            print(f"building report tree for dep {dep_name} {dep_version}")
             build_report_tree((dep_name, dep_version), visited)
 
 
