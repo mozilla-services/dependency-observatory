@@ -204,6 +204,19 @@ def get_most_recently_scored_package_report(package_name: str, package_version: 
     return query.order_by(PackageReport.scoring_date.desc()).limit(1).one_or_none()
 
 
+def get_most_recently_inserted_package_from_name_and_version(
+        package_name: str,
+        package_version: Optional[str]=None,
+        inserted_after: Optional[datetime]=None
+):
+    query = db_session.query(PackageVersion).filter_by(name=package_name)
+    if package_version is not None:
+        query = query.filter_by(version=package_version)
+    if inserted_after is not None:
+        query = query.filter(PackageVersion.inserted_at >= inserted_after)
+    return query.order_by(PackageVersion.inserted_at.desc()).limit(1).one_or_none()
+
+
 def get_ordered_package_deps(name, version):
     def get_package_from_id(db_session, id):
         package_version = db_session.query(PackageVersion).filter(PackageVersion.id == id).one_or_none()
