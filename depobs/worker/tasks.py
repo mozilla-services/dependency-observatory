@@ -276,15 +276,23 @@ def score_package(package_name: str, package_version: str):
 
 
 @scanner.task()
-def build_report_tree(package_version_tuple: Tuple[str, str]):
+def build_report_tree(package_version_tuple: Tuple[str, str], visited=None):
+    if visited is None:
+        visited = set()
+    visited.add(tuple(package_version_tuple))
+
     package_name, package_version = package_version_tuple
     deps = get_ordered_package_deps(package_name, package_version)
     if len(deps) == 0:
         score_package(package_name, package_version)
     else:
         for (dep_name, dep_version) in deps:
-            print("will build report tree  for %s %s", (dep_name, dep_version))
-            build_report_tree((dep_name, dep_version))
+            if tuple([dep_name, dep_version]) in visited:
+                print(f"skipping building report tree for visited dep  {dep_name} {dep_version}")
+                continue
+
+            print(f"building report tree for dep {dep_name} {dep_version}")
+            build_report_tree((dep_name, dep_version), visited)
 
 
 @scanner.task()

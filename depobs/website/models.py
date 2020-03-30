@@ -184,7 +184,7 @@ def get_package_report(package, version = None):
     if None == version:
         #TODO order-by is hard with semver. Think about splitting out versions
         no_version_query = db_session.query(PackageReport).filter(PackageReport.package==package)
-        print("Query is %s" % str(no_version_query))
+        print(f"Query is {no_version_query}")
         for rep in no_version_query:
             return rep
     else:
@@ -200,30 +200,35 @@ def get_most_recently_scored_package_report(package_name: str, package_version: 
         query = query.filter_by(version=package_version)
     if scored_after is not None:
         query = query.filter(PackageReport.scoring_date >= scored_after)
-    print("Query is %s" % str(query))
+    print(f"Query is {query}")
     return query.order_by(PackageReport.scoring_date.desc()).limit(1).one_or_none()
 
 
 def get_ordered_package_deps(name, version):
     def get_package_from_id(db_session, id):
-        print("get_package_id for %i" % (id))
-        pv = db_session.query(PackageVersion).filter(PackageVersion.id == id)
-        return pv[0]
+        package_version = db_session.query(PackageVersion).filter(PackageVersion.id == id).one_or_none()
+        if package_version is None:
+            print(f"no package found for get_package_id {id}")
+        return package_version
 
     def get_package_from_name_and_version(db_session, name, version):
-        pv = db_session.query(PackageVersion).filter(PackageVersion.name == name, PackageVersion.version == version)
-        return pv[0]
+        return db_session.query(PackageVersion).filter_by(name=name, version=version).one_or_none()
     deps = []
     incomplete = False
 
-    subject = db_session.query(PackageVersion).filter(PackageVersion.name == name, PackageVersion.version == version)[0]
-    print("subject  %s %s %i" % (subject.name, subject.version, subject.id))
+    subject = get_package_from_name_and_version(db_session, name, version)
+    if subject is None:
+        print(f"subject dep {name} {version} not found returning empty deps")
+        return []
+    print(f"subject is {subject.name} {subject.version} {subject.id}")
+
     dependency_ids = [link.child_package_id for link in db_session.query(PackageLink).filter(PackageLink.parent_package_id == subject.id)]
-    print(dependency_ids)
-    dependencies = [get_package_from_id(db_session, dependency_id) for dependency_id in dependency_ids]
+    print(f"found dependency ids for {subject.name} {subject.version}: {dependency_ids}")
+    maybe_dependencies = [get_package_from_id(db_session, dependency_id) for dependency_id in dependency_ids]
+    dependencies = [dep for dep in maybe_dependencies if dep is not None]
     reports = []
     for dependency in dependencies:
-        print("dependency  %s %s" % (dependency.name, dependency.version))
+        print(f"dependency {dependency.id} {dependency.name} {dependency.version}")
         report = get_package_report(dependency.name, dependency.version)
         if None == report:
             incomplete = True
@@ -231,10 +236,10 @@ def get_ordered_package_deps(name, version):
         else:
             reports.append(report)
     if incomplete:
-        print("dependencies for %s, %s incomplete, re-adding to the queue" % (name, version))
+        print(f"dependencies for {name}, {version} incomplete, re-adding to the queue")
         deps.append((name, version))
     else:
-        print("dependencies complete for %s %s adding to the graph" % (name, version))
+        print(f"dependencies complete for {name}, {version} adding to the graph")
         pr = PackageReport()
         pr.package = name
         pr.version = version
