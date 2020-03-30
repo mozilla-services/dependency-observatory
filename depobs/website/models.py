@@ -12,7 +12,7 @@ from sqlalchemy.schema import Table
 from sqlalchemy import func, tuple_
 from sqlalchemy.orm import aliased, Load, load_only
 
-from fpr.db.schema import Advisory, NPMRegistryEntry, NPMSIOScore, PackageVersion, PackageLink
+from fpr.db.schema import Advisory, NPMRegistryEntry, NPMSIOScore, PackageGraph, PackageLink, PackageVersion
 from depobs.database.mixins import TaskIDMixin
 
 
@@ -215,6 +215,20 @@ def get_most_recently_inserted_package_from_name_and_version(
     if inserted_after is not None:
         query = query.filter(PackageVersion.inserted_at >= inserted_after)
     return query.order_by(PackageVersion.inserted_at.desc()).limit(1).one_or_none()
+
+
+def get_latest_graph_including_package_as_parent(package: PackageVersion) -> Optional[PackageGraph]:
+    """
+    For a PackageVersion finds the newest package link where the
+    package is a parent and returns newest package graph using that link
+    """
+    link = db_session.query(PackageLink).filter(PackageLink.parent_package_id == package.id).order_by(PackageLink.inserted_at.desc()).limit(1).one_or_none()
+    if link is None:
+        print(f"{package.name} {package.version} has no children")
+        return None
+    graph_query = db_session.query(PackageGraph).filter(PackageGraph.link_ids.contains([link.id])).order_by(PackageGraph.inserted_at.desc()).limit(1)
+    print(f"graph_query is {graph_query}")
+    return graph_query.one_or_none()
 
 
 def get_ordered_package_deps(name, version):
