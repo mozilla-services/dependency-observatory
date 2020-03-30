@@ -213,6 +213,12 @@ def get_ordered_package_deps(name, version):
 
     def get_package_from_name_and_version(db_session, name, version):
         return db_session.query(PackageVersion).filter_by(name=name, version=version).one_or_none()
+
+    def get_child_package_ids_from_parent_package_id(db_session, parent_package_id: int):
+        return [
+            link.child_package_id for link in db_session.query(PackageLink).filter(PackageLink.parent_package_id == subject.id)
+        ]
+
     deps = []
     incomplete = False
 
@@ -222,7 +228,7 @@ def get_ordered_package_deps(name, version):
         return []
     print(f"subject is {subject.name} {subject.version} {subject.id}")
 
-    dependency_ids = [link.child_package_id for link in db_session.query(PackageLink).filter(PackageLink.parent_package_id == subject.id)]
+    dependency_ids = get_child_package_ids_from_parent_package_id(db_session, subject.id)
     print(f"found dependency ids for {subject.name} {subject.version}: {dependency_ids}")
     maybe_dependencies = [get_package_from_id(db_session, dependency_id) for dependency_id in dependency_ids]
     dependencies = [dep for dep in maybe_dependencies if dep is not None]
