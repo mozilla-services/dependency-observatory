@@ -223,12 +223,12 @@ def get_ordered_package_deps(name, version):
     print(f"subject is {subject.name} {subject.version} {subject.id}")
 
     dependency_ids = [link.child_package_id for link in db_session.query(PackageLink).filter(PackageLink.parent_package_id == subject.id)]
-    print(dependency_ids)
+    print(f"found dependency ids for {subject.name} {subject.version}: {dependency_ids}")
     maybe_dependencies = [get_package_from_id(db_session, dependency_id) for dependency_id in dependency_ids]
     dependencies = [dep for dep in maybe_dependencies if dep is not None]
     reports = []
     for dependency in dependencies:
-        print(f"dependency {dependency.name} {dependency.version}")
+        print(f"dependency {dependency.id} {dependency.name} {dependency.version}")
         report = get_package_report(dependency.name, dependency.version)
         if None == report:
             incomplete = True
