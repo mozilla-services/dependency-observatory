@@ -224,9 +224,6 @@ def get_ordered_package_deps(name, version):
             print(f"no package found for get_package_id {id}")
         return package_version
 
-    def get_package_from_name_and_version(db_session, name, version):
-        return db_session.query(PackageVersion).filter_by(name=name, version=version).one_or_none()
-
     def get_child_package_ids_from_parent_package_id(db_session, parent_package_id: int):
         return [
             link.child_package_id for link in db_session.query(PackageLink).filter(PackageLink.parent_package_id == subject.id)
@@ -235,7 +232,7 @@ def get_ordered_package_deps(name, version):
     deps = []
     incomplete = False
 
-    subject = get_package_from_name_and_version(db_session, name, version)
+    subject = get_most_recently_inserted_package_from_name_and_version(name, version)
     if subject is None:
         print(f"subject dep {name} {version} not found returning empty deps")
         return []
