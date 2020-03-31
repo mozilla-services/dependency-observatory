@@ -2,7 +2,7 @@
 
 import os
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, \
      ForeignKey, event, select
@@ -12,7 +12,7 @@ from sqlalchemy.schema import Table
 from sqlalchemy import func, tuple_
 from sqlalchemy.orm import aliased, Load, load_only
 
-from fpr.db.schema import Advisory, NPMRegistryEntry, NPMSIOScore, PackageVersion, PackageLink
+from fpr.db.schema import Advisory, NPMRegistryEntry, NPMSIOScore, PackageGraph, PackageLink, PackageVersion
 from depobs.database.mixins import TaskIDMixin
 
 
@@ -204,27 +204,63 @@ def get_most_recently_scored_package_report(package_name: str, package_version: 
     return query.order_by(PackageReport.scoring_date.desc()).limit(1).one_or_none()
 
 
-def get_ordered_package_deps(name, version):
-    def get_package_from_id(db_session, id):
-        package_version = db_session.query(PackageVersion).filter(PackageVersion.id == id).one_or_none()
-        if package_version is None:
-            print(f"no package found for get_package_id {id}")
-        return package_version
+def get_most_recently_inserted_package_from_name_and_version(
+        package_name: str,
+        package_version: Optional[str]=None,
+        inserted_after: Optional[datetime]=None
+):
+    query = db_session.query(PackageVersion).filter_by(name=package_name)
+    if package_version is not None:
+        query = query.filter_by(version=package_version)
+    if inserted_after is not None:
+        query = query.filter(PackageVersion.inserted_at >= inserted_after)
+    return query.order_by(PackageVersion.inserted_at.desc()).limit(1).one_or_none()
 
-    def get_package_from_name_and_version(db_session, name, version):
-        return db_session.query(PackageVersion).filter_by(name=name, version=version).one_or_none()
+
+def get_latest_graph_including_package_as_parent(package: PackageVersion) -> Optional[PackageGraph]:
+    """
+    For a PackageVersion finds the newest package link where the
+    package is a parent and returns newest package graph using that link
+    """
+    link = db_session.query(PackageLink).filter(PackageLink.parent_package_id == package.id).order_by(PackageLink.inserted_at.desc()).limit(1).one_or_none()
+    if link is None:
+        print(f"{package.name} {package.version} has no children")
+        return None
+    graph_query = db_session.query(PackageGraph).filter(PackageGraph.link_ids.contains([link.id])).order_by(PackageGraph.inserted_at.desc()).limit(1)
+    print(f"graph_query is {graph_query}")
+    return graph_query.one_or_none()
+
+
+def get_graph_links(graph: PackageGraph) -> List[PackageLink]:
+    return db_session.query(PackageLink).filter(PackageLink.id.in_([lid[0] for lid in graph.link_ids])).all()
+
+
+def get_package_from_id(id: int) -> Optional[PackageVersion]:
+    package_version = db_session.query(PackageVersion).filter(PackageVersion.id == id).one_or_none()
+    if package_version is None:
+        print(f"no package found for get_package_id {id}")
+    return package_version
+
+
+def get_child_package_ids_from_parent_package_id(links: List[PackageLink], subject: PackageVersion) -> List[int]:
+    return [
+        link.child_package_id for link in links if link.parent_package_id == subject.id
+    ]
+
+
+def get_ordered_package_deps(links: List[PackageLink], name: str, version: str) -> List[Tuple[str, str]]:
     deps = []
     incomplete = False
 
-    subject = get_package_from_name_and_version(db_session, name, version)
+    subject = get_most_recently_inserted_package_from_name_and_version(name, version)
     if subject is None:
         print(f"subject dep {name} {version} not found returning empty deps")
         return []
     print(f"subject is {subject.name} {subject.version} {subject.id}")
 
-    dependency_ids = [link.child_package_id for link in db_session.query(PackageLink).filter(PackageLink.parent_package_id == subject.id)]
+    dependency_ids = get_child_package_ids_from_parent_package_id(links, subject)
     print(f"found dependency ids for {subject.name} {subject.version}: {dependency_ids}")
-    maybe_dependencies = [get_package_from_id(db_session, dependency_id) for dependency_id in dependency_ids]
+    maybe_dependencies = [get_package_from_id(dependency_id) for dependency_id in dependency_ids]
     dependencies = [dep for dep in maybe_dependencies if dep is not None]
     reports = []
     for dependency in dependencies:
