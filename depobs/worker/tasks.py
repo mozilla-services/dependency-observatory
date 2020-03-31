@@ -258,15 +258,15 @@ def score_package(package_name: str, package_version: str):
         indirectVulnsLow_score,
     ) in stmt:
         dep_rep_count += 1
-        pr.all_deps += 1 + all_deps
+        pr.all_deps += 1 + (all_deps or 0)
         pr.indirectVulnsCritical_score += (
             directVulnsCritical_score + indirectVulnsCritical_score
-        )
-        pr.indirectVulnsHigh_score += directVulnsHigh_score + indirectVulnsHigh_score
+        ) or 0
+        pr.indirectVulnsHigh_score += (directVulnsHigh_score + indirectVulnsHigh_score) or 0
         pr.indirectVulnsMedium_score += (
             directVulnsMedium_score + indirectVulnsMedium_score
-        )
-        pr.indirectVulnsLow_score += directVulnsLow_score + indirectVulnsLow_score
+        ) or 0
+        pr.indirectVulnsLow_score += (directVulnsLow_score + indirectVulnsLow_score) or 0
 
     if dep_rep_count != pr.immediate_deps:
         log.error(
