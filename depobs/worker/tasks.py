@@ -241,6 +241,9 @@ def score_package(package_name: str, package_version: str):
     pr.indirectVulnsMedium_score = 0
     pr.indirectVulnsLow_score = 0
 
+    def none_to_zero(v):
+        return 0 if v is None else v
+
     dep_rep_count = 0
     for (
         package,
@@ -257,16 +260,29 @@ def score_package(package_name: str, package_version: str):
         indirectVulnsMedium_score,
         indirectVulnsLow_score,
     ) in stmt:
+        all_deps, directVulnsCritical_score, indirectVulnsCritical_score, directVulnsHigh_score, indirectVulnsHigh_score, directVulnsMedium_score, indirectVulnsMedium_score, directVulnsLow_score, indirectVulnsLow_score = [
+            none_to_zero(v) for v in [
+                all_deps,
+                directVulnsCritical_score,
+                indirectVulnsCritical_score,
+                directVulnsHigh_score,
+                indirectVulnsHigh_score,
+                directVulnsMedium_score,
+                indirectVulnsMedium_score,
+                directVulnsLow_score,
+                indirectVulnsLow_score,
+            ]
+        ]
         dep_rep_count += 1
-        pr.all_deps += 1 + (all_deps or 0)
+        pr.all_deps += 1 + all_deps
         pr.indirectVulnsCritical_score += (
             directVulnsCritical_score + indirectVulnsCritical_score
-        ) or 0
-        pr.indirectVulnsHigh_score += (directVulnsHigh_score + indirectVulnsHigh_score) or 0
+        )
+        pr.indirectVulnsHigh_score += (directVulnsHigh_score + indirectVulnsHigh_score)
         pr.indirectVulnsMedium_score += (
             directVulnsMedium_score + indirectVulnsMedium_score
-        ) or 0
-        pr.indirectVulnsLow_score += (directVulnsLow_score + indirectVulnsLow_score) or 0
+        )
+        pr.indirectVulnsLow_score += (directVulnsLow_score + indirectVulnsLow_score)
 
     if dep_rep_count != pr.immediate_deps:
         log.error(
