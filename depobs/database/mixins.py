@@ -19,4 +19,6 @@ class TaskIDMixin:
     # https://docs.celeryproject.org/en/stable/userguide/tasks.html#built-in-states
     @property
     def task_status(self) -> str:
+        if self.task_id is None:
+            return None
         return AsyncResult(id=self.task_id).status
