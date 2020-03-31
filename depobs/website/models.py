@@ -232,6 +232,8 @@ def get_latest_graph_including_package_as_parent(package: PackageVersion) -> Opt
 
 
 def get_ordered_package_deps(name, version):
+def get_graph_links(graph: PackageGraph) -> List[PackageLink]:
+    return db_session.query(PackageLink).filter(PackageLink.id.in_([lid[0] for lid in graph.link_ids])).all()
 
 
 def get_package_from_id(id: int) -> Optional[PackageVersion]:
