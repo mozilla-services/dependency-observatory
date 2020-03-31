@@ -233,16 +233,18 @@ def get_latest_graph_including_package_as_parent(package: PackageVersion) -> Opt
 
 def get_ordered_package_deps(name, version):
 
-    def get_child_package_ids_from_parent_package_id(db_session, parent_package_id: int):
-        return [
-            link.child_package_id for link in db_session.query(PackageLink).filter(PackageLink.parent_package_id == subject.id)
-        ]
 
 def get_package_from_id(id: int) -> Optional[PackageVersion]:
     package_version = db_session.query(PackageVersion).filter(PackageVersion.id == id).one_or_none()
     if package_version is None:
         print(f"no package found for get_package_id {id}")
     return package_version
+
+
+def get_child_package_ids_from_parent_package_id(links: List[PackageLink], subject: PackageVersion) -> List[int]:
+    return [
+        link.child_package_id for link in links if link.parent_package_id == subject.id
+    ]
 
 
     deps = []
@@ -254,7 +256,7 @@ def get_package_from_id(id: int) -> Optional[PackageVersion]:
         return []
     print(f"subject is {subject.name} {subject.version} {subject.id}")
 
-    dependency_ids = get_child_package_ids_from_parent_package_id(db_session, subject.id)
+    dependency_ids = get_child_package_ids_from_parent_package_id(links, subject)
     print(f"found dependency ids for {subject.name} {subject.version}: {dependency_ids}")
     maybe_dependencies = [get_package_from_id(dependency_id) for dependency_id in dependency_ids]
     dependencies = [dep for dep in maybe_dependencies if dep is not None]
