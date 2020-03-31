@@ -5,7 +5,7 @@ import os
 import sys
 import re
 import subprocess
-from typing import Callable, Dict, List, Tuple, Union, Optional
+from typing import AbstractSet, Callable, Dict, List, Tuple, Union, Optional
 import logging
 
 from celery import Celery
@@ -32,7 +32,10 @@ from depobs.website.models import (
     get_vulnerability_counts,
     get_direct_dependency_reports,
     store_package_report,
+    get_graph_links,
     get_ordered_package_deps,
+    get_most_recently_inserted_package_from_name_and_version,
+    get_latest_graph_including_package_as_parent,
 )
 
 # import exc_to_str to resolve import cycle for the following fpr.clients
@@ -275,24 +278,41 @@ def score_package(package_name: str, package_version: str):
     store_package_report(pr)
 
 
-@scanner.task()
-def build_report_tree(package_version_tuple: Tuple[str, str], visited=None):
+def score_package_and_children(package_version_tuple: Tuple[str, str], graph_links: List[PackageLink], visited: Optional[AbstractSet] =None) -> None:
     if visited is None:
         visited = set()
-    visited.add(tuple(package_version_tuple))
-
     package_name, package_version = package_version_tuple
-    deps = get_ordered_package_deps(package_name, package_version)
+    visited.add(tuple([package_name, package_version]))
+
+    deps = get_ordered_package_deps(graph_links, package_name, package_version)
     if len(deps) == 0:
         score_package(package_name, package_version)
     else:
         for (dep_name, dep_version) in deps:
             if tuple([dep_name, dep_version]) in visited:
-                print(f"skipping building report tree for visited dep  {dep_name} {dep_version}")
+                print(f"skipping building report tree for visited dep {dep_name} {dep_version}")
                 continue
 
             print(f"building report tree for dep {dep_name} {dep_version}")
-            build_report_tree((dep_name, dep_version), visited)
+            score_package_and_children((dep_name, dep_version), graph_links, visited)
+
+
+@scanner.task()
+def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
+    package_name, package_version = package_version_tuple
+
+    package: Optional[PackageVersion] = get_most_recently_inserted_package_from_name_and_version(package_name, package_version)
+    if package is None:
+        raise Exception(f"PackageVersion not found for {package_name} {package_version}.")
+
+    graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(package)
+    if graph is None:
+        print(f"{package.name} {package.version} has no children scoring directly")
+        score_package(package.name, package.version)
+    else:
+        graph_links = get_graph_links(graph)
+        print(f"{package.name} {package.version} has children scoring from graph {graph.id} with {len(graph_links)} links")
+        score_package_and_children((package.name, package.version), graph_links)
 
 
 @scanner.task()

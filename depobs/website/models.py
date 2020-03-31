@@ -2,7 +2,7 @@
 
 import os
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, \
      ForeignKey, event, select
@@ -231,7 +231,6 @@ def get_latest_graph_including_package_as_parent(package: PackageVersion) -> Opt
     return graph_query.one_or_none()
 
 
-def get_ordered_package_deps(name, version):
 def get_graph_links(graph: PackageGraph) -> List[PackageLink]:
     return db_session.query(PackageLink).filter(PackageLink.id.in_([lid[0] for lid in graph.link_ids])).all()
 
@@ -249,6 +248,7 @@ def get_child_package_ids_from_parent_package_id(links: List[PackageLink], subje
     ]
 
 
+def get_ordered_package_deps(links: List[PackageLink], name: str, version: str) -> List[Tuple[str, str]]:
     deps = []
     incomplete = False
 
