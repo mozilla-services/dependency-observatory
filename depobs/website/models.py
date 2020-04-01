@@ -4,6 +4,9 @@ import os
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
+import networkx as nx
+from networkx.drawing.nx_pydot import to_pydot
+import pydot
 from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, \
      ForeignKey, event, select
 from sqlalchemy.orm import scoped_session, sessionmaker, backref, relation, relationship
@@ -215,6 +218,45 @@ def get_most_recently_inserted_package_from_name_and_version(
     if inserted_after is not None:
         query = query.filter(PackageVersion.inserted_at >= inserted_after)
     return query.order_by(PackageVersion.inserted_at.desc()).limit(1).one_or_none()
+
+
+def get_packages_by_ids(package_ids: List[int]) -> List[PackageVersion]:
+    return db_session.query(PackageVersion).filter(PackageVersion.id.in_(package_ids)).all()
+
+
+def get_graph_by_id(graph_id: int) -> PackageGraph:
+    return db_session.query(PackageGraph).filter_by(id=graph_id).one()
+
+
+def get_labelled_graphviz_graph(graph_id: int) -> str:
+    graph: PackageGraph = get_graph_by_id(graph_id)
+    print(graph.root_package_version_id)
+    if graph.root_package_version_id is not None:
+        root = get_packages_by_ids([graph.root_package_version_id])[0]
+        print(f"root {root.name}@{root.version}")
+    graph_links: List[PackageLink] = get_graph_links(graph)
+    graph_links_by_package_id = [(link.parent_package_id, link.child_package_id) for link in graph_links]
+    graph_nodes: List[PackageVersion] = get_packages_by_ids(set([pid for link in graph_links_by_package_id for pid in link]))
+    g = db_graph_and_links_to_nx_graph(graph, graph_links_by_package_id, graph_nodes)
+    return str(graph_to_dot(g))
+
+
+def db_graph_and_links_to_nx_graph(graph: PackageGraph, links: List[Tuple[int, int]], nodes: List[PackageVersion]) -> nx.DiGraph:
+    # TODO: de-dup with fpr.graph_util.npm_packages_to_networkx_digraph
+    g = nx.DiGraph()
+    for node in nodes:
+        g.add_node(node.id, label=f"{node.name}@{node.version}")
+
+    for link in links:
+        g.add_edge(link[0], link[1])
+    return g
+
+
+def graph_to_dot(g: nx.DiGraph) -> pydot.Graph:
+    # TODO: de-dup with fpr.pipelines.{crate,dep_graph}
+    pdot: pydot.Graph = to_pydot(g)
+    pdot.set("rankdir", "LR")
+    return pdot
 
 
 def get_latest_graph_including_package_as_parent(package: PackageVersion) -> Optional[PackageGraph]:
