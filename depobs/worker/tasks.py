@@ -300,7 +300,7 @@ def score_package_and_children(package_version_tuple: Tuple[str, str], graph_lin
     package_name, package_version = package_version_tuple
 
     deps, reports = get_ordered_package_deps_and_reports(graph_links, package_name, package_version)
-    for reports in reports:
+    for report in reports:
         print(f"scored dep {report.package} {report.version}")
         scored.add(tuple([report.package, report.version]))
 
