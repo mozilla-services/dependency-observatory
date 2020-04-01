@@ -248,14 +248,15 @@ def get_child_package_ids_from_parent_package_id(links: List[PackageLink], subje
     ]
 
 
-def get_ordered_package_deps(links: List[PackageLink], name: str, version: str) -> List[Tuple[str, str]]:
+def get_ordered_package_deps_and_reports(links: List[PackageLink], name: str, version: str) -> Tuple[List[Tuple[str, str]], List[PackageReport]]:
     deps = []
     incomplete = False
 
     subject = get_most_recently_inserted_package_from_name_and_version(name, version)
     if subject is None:
-        print(f"subject dep {name} {version} not found returning empty deps")
-        return []
+        print(f"subject dep {name} {version} not found returning empty deps and reports")
+        return [], []
+
     print(f"subject is {subject.name} {subject.version} {subject.id}")
 
     dependency_ids = get_child_package_ids_from_parent_package_id(links, subject)
@@ -298,7 +299,7 @@ def get_ordered_package_deps(links: List[PackageLink], name: str, version: str) 
             pr.dependencies.append(report)
         db_session.add(pr)
         db_session.commit()
-    return deps
+    return deps, reports
 
 def get_vulnerabilities_report(package: str, version: str) -> Dict:
     vulns = []
