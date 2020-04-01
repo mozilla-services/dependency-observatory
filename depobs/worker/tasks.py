@@ -315,7 +315,7 @@ def score_package_and_children(package_version_tuple: Tuple[str, str], graph_lin
                 continue
 
             print(f"building report tree for dep {dep_name} {dep_version}")
-            return score_package_and_children((dep_name, dep_version), graph_links, visited)
+            return score_package_and_children((dep_name, dep_version), graph_links, scored)
 
 
 @scanner.task()
