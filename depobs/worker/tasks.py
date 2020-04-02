@@ -5,7 +5,7 @@ import os
 import sys
 import re
 import subprocess
-from typing import AbstractSet, Callable, Dict, List, Tuple, Union, Optional
+from typing import AbstractSet, Callable, Dict, Generator, List, Optional, Tuple, Union
 import logging
 
 from celery import Celery
@@ -17,6 +17,8 @@ from celery.exceptions import (
     WorkerTerminate,
 )
 import celery.result
+import networkx as nx
+from networkx.algorithms.dag import is_directed_acyclic_graph
 
 import depobs.worker.celeryconfig as celeryconfig
 
@@ -292,6 +294,36 @@ def score_package(package_name: str, package_version: str):
     pr.scoring_date = datetime.datetime.now()
 
     store_package_report(pr)
+
+
+def outer_in_iter(g: nx.DiGraph) -> Generator[List[int], None, None]:
+    """
+    For a DAG with unique node IDs with type int, iterates from outer
+    / leafmost / least depended upon nodes to inner nodes yielding sets
+    of node IDs.
+
+    Yields each node ID once and visits them such that successive node ID sets
+    only depend on/point to previously visited nodes.
+    """
+    if len(g.edges) == 0 or len(g.nodes) == 0:
+        raise Exception("graph has no edges or nodes")
+    if not is_directed_acyclic_graph(g):
+        raise Exception("graph is not a DAG")
+
+    visited: AbstractSet[int] = set()
+    leaf_nodes = set([node for node in g.nodes() if g.out_degree(node) == 0])
+    yield leaf_nodes
+    visited.update(leaf_nodes)
+
+    while True:
+        points_to_visited = set(src for (src, _) in g.in_edges(visited))
+        only_points_to_visited = set(node for node in points_to_visited if all(dst in visited for (_, dst) in g.out_edges(node)))
+        new_only_points_to_visited = only_points_to_visited - visited
+        if not bool(new_only_points_to_visited): # visited nothing new
+            assert len(visited) == len(g.nodes)
+            break
+        yield new_only_points_to_visited
+        visited.update(only_points_to_visited)
 
 
 def score_package_and_children(package_version_tuple: Tuple[str, str], graph_links: List[PackageLink], scored: Optional[AbstractSet[Tuple[str, str]]]=None) -> AbstractSet[Tuple[str, str]]:
