@@ -21,8 +21,7 @@ from depobs.database.mixins import TaskIDMixin
 
 DATABASE_URI = os.environ.get('DATABASE_URI', 'postgresql+psycopg2://postgres:postgres@localhost/dependency_observatory')
 
-engine = create_engine(DATABASE_URI,
-                       convert_unicode=True)
+engine = create_engine(DATABASE_URI)
 
 db_session = scoped_session(sessionmaker(autocommit=False,
                                          autoflush=False,
