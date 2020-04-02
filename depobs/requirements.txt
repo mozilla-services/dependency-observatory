@@ -4,3 +4,4 @@ celery==4.4.2
 psycopg2==2.8.4
 graphviz==0.13.2
 dependency-observatory-scanner==2020.3.25.a2
+pytest==5.4.1
