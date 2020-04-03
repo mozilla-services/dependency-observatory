@@ -434,6 +434,11 @@ def store_package_report(pr):
     db_session.commit()
 
 
+def store_package_reports(prs: List[PackageReport]) -> None:
+    db_session.add_all(prs)
+    db_session.commit()
+
+
 VIEWS: List[str] = [
     """
 CREATE OR REPLACE VIEW latest_reports AS
