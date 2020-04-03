@@ -250,6 +250,7 @@ def score_package(
                 getattr(report, f"directVulns{severity}_score", 0) +
                 getattr(report, f"indirectVulns{severity}_score", 0)
             )
+        pr.dependencies.append(report)
 
     if dep_rep_count != pr.immediate_deps:
         log.error(
