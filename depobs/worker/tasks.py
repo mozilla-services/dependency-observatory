@@ -199,8 +199,7 @@ def score_package(
     plr.package = package_name
     plr.version = package_version
 
-    stmt = get_npms_io_score(package_name, package_version)
-    pr.npmsio_score = stmt.first()
+    pr.npmsio_score = get_npms_io_score(package_name, package_version).first()
 
     pr.directVulnsCritical_score = 0
     pr.directVulnsHigh_score = 0
@@ -208,8 +207,7 @@ def score_package(
     pr.directVulnsLow_score = 0
 
     # Direct vulnerability counts
-    stmt = get_vulnerability_counts(package_name, package_version)
-    for package, version, severity, count in stmt:
+    for package, version, severity, count in get_vulnerability_counts(package_name, package_version):
         log.info(f"scoring package: {package_name}@{package_version} found vulnerable dep: \t{package}\t{version}\t{severity}\t{count}")
         if severity == "critical":
             pr.directVulnsCritical_score = count
@@ -224,8 +222,7 @@ def score_package(
                 f"unexpected severity {severity} for package {package} / version {version}"
             )
 
-    stmt = get_npm_registry_data(package_name, package_version)
-    for published_at, maintainers, contributors in stmt:
+    for published_at, maintainers, contributors in get_npm_registry_data(package_name, package_version):
         pr.release_date = published_at
         if maintainers is not None:
             pr.authors = len(maintainers)
