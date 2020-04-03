@@ -82,7 +82,7 @@ function gotPackageInfo(pkgInfo) {
 
         let row = table.insertRow(i+1);
         let cell = row.insertCell(0);
-        let linkUrl = 'index.html?manager=npm&package=' + pkg + '&version=' + ver;
+        let linkUrl = '/?manager=npm&package=' + encodeURIComponent(pkg) + '&version=' + encodeURIComponent(ver);
         let a = document.createElement('a');
         let linkText = document.createTextNode(pkg);
         a.appendChild(linkText);
@@ -216,7 +216,7 @@ function gotParentsInfo(parInfo) {
 
         let row = table.insertRow(i);
         let cell = row.insertCell(0);
-        let linkUrl = 'index.html?manager=npm&package=' + pkg + '&version=' + ver;
+        let linkUrl = '/?manager=npm&package=' + encodeURIComponent(pkg) + '&version=' + encodeURIComponent(ver);
         let a = document.createElement('a');
         let linkText = document.createTextNode(pkg);
         a.appendChild(linkText);
