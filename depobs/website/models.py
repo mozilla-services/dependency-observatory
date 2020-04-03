@@ -429,7 +429,7 @@ def insert_package_report_placeholder_or_update_task_id(package_name: str, packa
     return pr
 
 
-def store_package_report(pr):
+def store_package_report(pr) -> None:
     db_session.add(pr)
     db_session.commit()
 
