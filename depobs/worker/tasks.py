@@ -18,7 +18,7 @@ from celery.exceptions import (
 )
 import celery.result
 import networkx as nx
-from networkx.algorithms.dag import is_directed_acyclic_graph
+from networkx.algorithms.dag import descendants, is_directed_acyclic_graph
 
 import depobs.worker.celeryconfig as celeryconfig
 
@@ -188,6 +188,7 @@ def score_package(
     package_name: str,
     package_version: str,
     direct_dep_reports: List[PackageReport],
+    all_deps_count: int=0,
 ) -> PackageReport:
     log.info(f"scoring package: {package_name}@{package_version} with direct deps {list((r.package, r.version) for r in direct_dep_reports)}")
     pr = PackageReport()
@@ -236,9 +237,9 @@ def score_package(
             pr.contributors = 0
 
     pr.immediate_deps = len(direct_dep_reports)
+    pr.all_deps = all_deps_count
 
     # Indirect counts
-    pr.all_deps = 0
     pr.indirectVulnsCritical_score = 0
     pr.indirectVulnsHigh_score = 0
     pr.indirectVulnsMedium_score = 0
@@ -247,7 +248,6 @@ def score_package(
     dep_rep_count = 0
     for report in direct_dep_reports:
         dep_rep_count += 1
-        pr.all_deps += 1 + report.all_deps
         for severity in ('Critical', 'High', 'Medium', 'Low'):
             setattr(pr, f"indirectVulns{severity}_score",
                 getattr(report, f"directVulns{severity}_score", 0) +
@@ -311,7 +311,8 @@ def score_package_and_children(g: nx.DiGraph, package_versions: List[PackageVers
                     package_reports_by_id[direct_dep_package_version_id]
                     for direct_dep_package_version_id in
                     g.successors(package_version_id)
-                ]
+                ],
+                all_deps_count=len(descendants(g, package_version_id)),
             )
 
     return package_reports_by_id.values()
