@@ -5,7 +5,7 @@ import os
 import sys
 import re
 import subprocess
-from typing import AbstractSet, Callable, Dict, List, Tuple, Union, Optional
+from typing import AbstractSet, Callable, Dict, Generator, List, Optional, Tuple, Union
 import logging
 
 from celery import Celery
@@ -17,6 +17,8 @@ from celery.exceptions import (
     WorkerTerminate,
 )
 import celery.result
+import networkx as nx
+from networkx.algorithms.dag import descendants, is_directed_acyclic_graph
 
 import depobs.worker.celeryconfig as celeryconfig
 
@@ -28,14 +30,12 @@ from depobs.website.models import (
     get_NPMRegistryEntry,
     get_maintainers_contributors,
     get_npm_registry_data,
-    get_direct_dependencies,
     get_vulnerability_counts,
-    get_direct_dependency_reports,
     store_package_report,
-    get_graph_links,
-    get_ordered_package_deps_and_reports,
+    store_package_reports,
     get_most_recently_inserted_package_from_name_and_version,
     get_latest_graph_including_package_as_parent,
+    get_networkx_graph_and_nodes,
 )
 
 # import exc_to_str to resolve import cycle for the following fpr.clients
@@ -184,7 +184,13 @@ def scan_npm_package(
 
 
 @scanner.task()
-def score_package(package_name: str, package_version: str):
+def score_package(
+    package_name: str,
+    package_version: str,
+    direct_dep_reports: List[PackageReport],
+    all_deps_count: int=0,
+) -> PackageReport:
+    log.info(f"scoring package: {package_name}@{package_version} with direct deps {list((r.package, r.version) for r in direct_dep_reports)}")
     pr = PackageReport()
     pr.package = package_name
     pr.version = package_version
@@ -193,8 +199,7 @@ def score_package(package_name: str, package_version: str):
     plr.package = package_name
     plr.version = package_version
 
-    stmt = get_npms_io_score(package_name, package_version)
-    pr.npmsio_score = stmt.first()
+    pr.npmsio_score = get_npms_io_score(package_name, package_version).first()
 
     pr.directVulnsCritical_score = 0
     pr.directVulnsHigh_score = 0
@@ -202,10 +207,8 @@ def score_package(package_name: str, package_version: str):
     pr.directVulnsLow_score = 0
 
     # Direct vulnerability counts
-    stmt = get_vulnerability_counts(package_name, package_version)
-    for package, version, severity, count in stmt:
-        # This is not yet tested - need real data
-        print("\t" + package + "\t" + version + "\t" + severity + "\t" + str(count))
+    for package, version, severity, count in get_vulnerability_counts(package_name, package_version):
+        log.info(f"scoring package: {package_name}@{package_version} found vulnerable dep: \t{package}\t{version}\t{severity}\t{count}")
         if severity == "critical":
             pr.directVulnsCritical_score = count
         elif severity == "high":
@@ -219,8 +222,7 @@ def score_package(package_name: str, package_version: str):
                 f"unexpected severity {severity} for package {package} / version {version}"
             )
 
-    stmt = get_npm_registry_data(package_name, package_version)
-    for published_at, maintainers, contributors in stmt:
+    for published_at, maintainers, contributors in get_npm_registry_data(package_name, package_version):
         pr.release_date = published_at
         if maintainers is not None:
             pr.authors = len(maintainers)
@@ -231,58 +233,23 @@ def score_package(package_name: str, package_version: str):
         else:
             pr.contributors = 0
 
-    pr.immediate_deps = get_direct_dependencies(package_name, package_version).count()
+    pr.immediate_deps = len(direct_dep_reports)
+    pr.all_deps = all_deps_count
 
     # Indirect counts
-    pr.all_deps = 0
-    stmt = get_direct_dependency_reports(package_name, package_version)
     pr.indirectVulnsCritical_score = 0
     pr.indirectVulnsHigh_score = 0
     pr.indirectVulnsMedium_score = 0
     pr.indirectVulnsLow_score = 0
 
-    def none_to_zero(v):
-        return 0 if v is None else v
-
     dep_rep_count = 0
-    for (
-        package,
-        version,
-        scoring_date,
-        top_score,
-        all_deps,
-        directVulnsCritical_score,
-        directVulnsHigh_score,
-        directVulnsMedium_score,
-        directVulnsLow_score,
-        indirectVulnsCritical_score,
-        indirectVulnsHigh_score,
-        indirectVulnsMedium_score,
-        indirectVulnsLow_score,
-    ) in stmt:
-        all_deps, directVulnsCritical_score, indirectVulnsCritical_score, directVulnsHigh_score, indirectVulnsHigh_score, directVulnsMedium_score, indirectVulnsMedium_score, directVulnsLow_score, indirectVulnsLow_score = [
-            none_to_zero(v) for v in [
-                all_deps,
-                directVulnsCritical_score,
-                indirectVulnsCritical_score,
-                directVulnsHigh_score,
-                indirectVulnsHigh_score,
-                directVulnsMedium_score,
-                indirectVulnsMedium_score,
-                directVulnsLow_score,
-                indirectVulnsLow_score,
-            ]
-        ]
+    for report in direct_dep_reports:
         dep_rep_count += 1
-        pr.all_deps += 1 + all_deps
-        pr.indirectVulnsCritical_score += (
-            directVulnsCritical_score + indirectVulnsCritical_score
-        )
-        pr.indirectVulnsHigh_score += (directVulnsHigh_score + indirectVulnsHigh_score)
-        pr.indirectVulnsMedium_score += (
-            directVulnsMedium_score + indirectVulnsMedium_score
-        )
-        pr.indirectVulnsLow_score += (directVulnsLow_score + indirectVulnsLow_score)
+        for severity in ('Critical', 'High', 'Medium', 'Low'):
+            setattr(pr, f"indirectVulns{severity}_score",
+                getattr(report, f"directVulns{severity}_score", 0) +
+                getattr(report, f"indirectVulns{severity}_score", 0)
+            )
 
     if dep_rep_count != pr.immediate_deps:
         log.error(
@@ -290,33 +257,62 @@ def score_package(package_name: str, package_version: str):
         )
 
     pr.scoring_date = datetime.datetime.now()
+    return pr
 
-    store_package_report(pr)
+
+def outer_in_iter(g: nx.DiGraph) -> Generator[List[int], None, None]:
+    """
+    For a DAG with unique node IDs with type int, iterates from outer
+    / leafmost / least depended upon nodes to inner nodes yielding sets
+    of node IDs.
+
+    Yields each node ID once and visits them such that successive node ID sets
+    only depend on/point to previously visited nodes.
+    """
+    if len(g.edges) == 0 or len(g.nodes) == 0:
+        raise Exception("graph has no edges or nodes")
+    if not is_directed_acyclic_graph(g):
+        raise Exception("graph is not a DAG")
+
+    visited: AbstractSet[int] = set()
+    leaf_nodes = set([node for node in g.nodes() if g.out_degree(node) == 0])
+    yield leaf_nodes
+    visited.update(leaf_nodes)
+
+    while True:
+        points_to_visited = set(src for (src, _) in g.in_edges(visited))
+        only_points_to_visited = set(node for node in points_to_visited if all(dst in visited for (_, dst) in g.out_edges(node)))
+        new_only_points_to_visited = only_points_to_visited - visited
+        if not bool(new_only_points_to_visited): # visited nothing new
+            assert len(visited) == len(g.nodes)
+            break
+        yield new_only_points_to_visited
+        visited.update(only_points_to_visited)
 
 
-def score_package_and_children(package_version_tuple: Tuple[str, str], graph_links: List[PackageLink], scored: Optional[AbstractSet[Tuple[str, str]]]=None) -> AbstractSet[Tuple[str, str]]:
-    if scored is None:
-        scored = set()
-    package_name, package_version = package_version_tuple
+def score_package_and_children(g: nx.DiGraph, package_versions: List[PackageVersion]):
+    # refs: https://github.com/mozilla-services/dependency-observatory/issues/130#issuecomment-608017713
+    package_versions_by_id: Dict[int, PackageVersion] = {
+        pv.id: pv for pv in package_versions
+    }
+    # fill this up
+    package_reports_by_id: Dict[int, PackageReport] = {}
 
-    deps, reports = get_ordered_package_deps_and_reports(graph_links, package_name, package_version)
-    for report in reports:
-        print(f"scored dep {report.package} {report.version}")
-        scored.add(tuple([report.package, report.version]))
+    for package_version_ids in outer_in_iter(g):
+        for package_version_id in package_version_ids:
+            package = package_versions_by_id[package_version_id]
+            package_reports_by_id[package_version_id] = score_package(
+                package.name,
+                package.version,
+                direct_dep_reports=[
+                    package_reports_by_id[direct_dep_package_version_id]
+                    for direct_dep_package_version_id in
+                    g.successors(package_version_id)
+                ],
+                all_deps_count=len(descendants(g, package_version_id)),
+            )
 
-    if len(deps) == 0:
-        score_package(package_name, package_version)
-        scored.add(package_version_tuple)
-        return scored
-    else:
-        for (dep_name, dep_version) in deps:
-            if tuple([dep_name, dep_version]) in scored:
-                print(f"skipping building report tree for scored dep {dep_name} {dep_version}")
-                continue
-
-            print(f"building report tree for dep {dep_name} {dep_version}")
-            return score_package_and_children((dep_name, dep_version), graph_links, scored)
-
+    return package_reports_by_id.values()
 
 @scanner.task()
 def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
@@ -328,12 +324,12 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
 
     graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(package)
     if graph is None:
-        print(f"{package.name} {package.version} has no children scoring directly")
-        score_package(package.name, package.version)
+        log.info(f"{package.name} {package.version} has no children scoring directly")
+        store_package_report(score_package(package.name, package.version))
     else:
-        graph_links = get_graph_links(graph)
-        print(f"{package.name} {package.version} has children scoring from graph {graph.id} with {len(graph_links)} links")
-        score_package_and_children((package.name, package.version), graph_links)
+        g, nodes = get_networkx_graph_and_nodes(graph)
+        log.info(f"{package.name} {package.version} scoring from graph id={graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes)")
+        store_package_reports(score_package_and_children(g, nodes))
 
 
 @scanner.task()
@@ -359,7 +355,7 @@ async def fetch_and_save_package_data(
 @scanner.task()
 def check_package_name_in_npmsio(package_name: str) -> bool:
     npmsio_score = asyncio.run(fetch_and_save_package_data(fetch_npmsio_scores, _NPMSIO_CLIENT_CONFIG, [package_name]), debug=False)
-    print(f"package: {package_name} on npms.io? {npmsio_score is not None}")
+    log.info(f"package: {package_name} on npms.io? {npmsio_score is not None}")
     return npmsio_score is not None
 
 
@@ -368,10 +364,10 @@ def check_package_in_npm_registry(package_name: str, package_version: Optional[s
     npm_registry_entry = asyncio.run(fetch_and_save_package_data(fetch_npm_registry_metadata, _NPM_CLIENT_CONFIG, [package_name]), debug=False)
 
     package_name_exists = npm_registry_entry is not None
-    print(f"package: {package_name} on npm registry? {package_name_exists}")
+    log.info(f"package: {package_name} on npm registry? {package_name_exists}")
     if package_version is not None:
         package_version_exists = npm_registry_entry.get("versions", {}).get(package_version, False)
-        print(f"package: {package_name}@{package_version!r} on npm registry? {package_version_exists}")
+        log.info(f"package: {package_name}@{package_version!r} on npm registry? {package_version_exists}")
         return package_name_exists and package_version_exists
     return package_name_exists
 
