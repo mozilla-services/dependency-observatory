@@ -207,7 +207,7 @@ def score_package(package_name: str, package_version: str):
     stmt = get_vulnerability_counts(package_name, package_version)
     for package, version, severity, count in stmt:
         # This is not yet tested - need real data
-        print("\t" + package + "\t" + version + "\t" + severity + "\t" + str(count))
+        log.info(f"\t{package}\t{version}\t{severity}\t{count}")
         if severity == "critical":
             pr.directVulnsCritical_score = count
         elif severity == "high":
@@ -360,12 +360,12 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
 
     graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(package)
     if graph is None:
-        print(f"{package.name} {package.version} has no children scoring directly")
         score_package(package.name, package.version)
+        log.info(f"{package.name} {package.version} has no children scoring directly")
     else:
         graph_links = get_graph_links(graph)
-        print(f"{package.name} {package.version} has children scoring from graph {graph.id} with {len(graph_links)} links")
         score_package_and_children((package.name, package.version), graph_links)
+        log.info(f"{package.name} {package.version} scoring from graph id={graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes)")
 
 
 @scanner.task()
@@ -391,7 +391,7 @@ async def fetch_and_save_package_data(
 @scanner.task()
 def check_package_name_in_npmsio(package_name: str) -> bool:
     npmsio_score = asyncio.run(fetch_and_save_package_data(fetch_npmsio_scores, _NPMSIO_CLIENT_CONFIG, [package_name]), debug=False)
-    print(f"package: {package_name} on npms.io? {npmsio_score is not None}")
+    log.info(f"package: {package_name} on npms.io? {npmsio_score is not None}")
     return npmsio_score is not None
 
 
@@ -400,10 +400,10 @@ def check_package_in_npm_registry(package_name: str, package_version: Optional[s
     npm_registry_entry = asyncio.run(fetch_and_save_package_data(fetch_npm_registry_metadata, _NPM_CLIENT_CONFIG, [package_name]), debug=False)
 
     package_name_exists = npm_registry_entry is not None
-    print(f"package: {package_name} on npm registry? {package_name_exists}")
+    log.info(f"package: {package_name} on npm registry? {package_name_exists}")
     if package_version is not None:
         package_version_exists = npm_registry_entry.get("versions", {}).get(package_version, False)
-        print(f"package: {package_name}@{package_version!r} on npm registry? {package_version_exists}")
+        log.info(f"package: {package_name}@{package_version!r} on npm registry? {package_version_exists}")
         return package_name_exists and package_version_exists
     return package_name_exists
 
