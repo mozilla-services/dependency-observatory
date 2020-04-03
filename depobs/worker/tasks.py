@@ -35,6 +35,7 @@ from depobs.website.models import (
     store_package_reports,
     get_most_recently_inserted_package_from_name_and_version,
     get_latest_graph_including_package_as_parent,
+    get_placeholder_entry,
     get_networkx_graph_and_nodes,
 )
 
@@ -258,6 +259,7 @@ def score_package(
         )
 
     pr.scoring_date = datetime.datetime.now()
+    pr.status = "scanned"
     return pr
 
 
@@ -321,6 +323,10 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
 
     package: Optional[PackageVersion] = get_most_recently_inserted_package_from_name_and_version(package_name, package_version)
     if package is None:
+        pr = get_placeholder_entry(package_name, package_version)
+        if pr:
+            pr.status = "error"
+            store_package_report(pr)
         raise Exception(f"PackageVersion not found for {package_name} {package_version}.")
 
     graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(package)

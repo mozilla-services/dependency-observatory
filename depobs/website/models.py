@@ -44,6 +44,7 @@ class PackageReport(TaskIDMixin, Model):
 
     package = Column(String(200))
     version = Column(String(200))
+    status = Column(String(200))
     release_date = Column(DateTime)
     scoring_date = Column(DateTime)
     top_score = Column(Integer)
@@ -78,6 +79,7 @@ class PackageReport(TaskIDMixin, Model):
             task_status=self.task_status,
             package=self.package,
             version=self.version,
+            status=self.status,
             release_date=self.release_date,
             scoring_date=self.scoring_date,
             top_score=self.top_score,
@@ -109,6 +111,7 @@ class PackageLatestReport(View_only):
 
     package = Column(String(200))
     version = Column(String(200))
+    status = Column(String(200))
     release_date = Column(DateTime)
     scoring_date = Column(DateTime)
     top_score = Column(Integer)
@@ -139,6 +142,7 @@ class PackageLatestReport(View_only):
             id=self.id,
             package=self.package,
             version=self.version,
+            status=self.status,
             release_date=self.release_date,
             scoring_date=self.scoring_date,
             top_score=self.top_score,
@@ -163,6 +167,7 @@ class PackageLatestReport(View_only):
             id=self.id,
             package=self.package,
             version=self.version,
+            status=self.status,
             release_date=self.release_date,
             scoring_date=self.scoring_date,
             top_score=self.top_score,
@@ -352,6 +357,7 @@ def insert_package_report_placeholder_or_update_task_id(package_name: str, packa
         pr = PackageReport()
         pr.package = package_name
         pr.version = package_version
+        pr.status = "scanning"
         pr.task_id = task_id
     store_package_report(pr)
     return pr

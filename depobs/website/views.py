@@ -58,6 +58,8 @@ def handle_package_report_not_found(e):
     # Is there a placeholder entry?
     package_report = models.get_placeholder_entry(package_name, package_version)
     if package_report:
+        if package_report.status == "error":
+            return package_report.report_json, 500
         return package_report.report_json, 202
     
     if not tasks.check_npm_package_exists(package_name, package_version):
