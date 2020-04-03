@@ -207,6 +207,15 @@ def get_most_recently_scored_package_report(package_name: str, package_version: 
     return query.order_by(PackageReport.scoring_date.desc()).limit(1).one_or_none()
 
 
+def get_placeholder_entry(package_name: str, package_version: str) -> Optional[PackageReport]:
+    "Get the placeholder entry, if it exists"
+    query = db_session.query(PackageReport).filter_by(package=package_name)
+    query = query.filter_by(version=package_version)
+    query = query.filter(PackageReport.scoring_date == None)
+    print(f"Query is {query}")
+    return query.one_or_none()
+
+
 def get_most_recently_inserted_package_from_name_and_version(
         package_name: str,
         package_version: Optional[str]=None,
