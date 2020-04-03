@@ -236,17 +236,20 @@ def get_graph_by_id(graph_id: int) -> PackageGraph:
     return db_session.query(PackageGraph).filter_by(id=graph_id).one()
 
 
+def get_networkx_graph_and_nodes(graph: PackageGraph) -> Tuple[nx.DiGraph, List[PackageVersion]]:
+    graph_links: List[PackageLink] = get_graph_links(graph)
+    graph_links_by_package_id = [(link.parent_package_id, link.child_package_id) for link in graph_links]
+    graph_nodes: List[PackageVersion] = get_packages_by_ids(set([pid for link in graph_links_by_package_id for pid in link]))
+    return db_graph_and_links_to_nx_graph(graph, graph_links_by_package_id, graph_nodes), graph_nodes
+
+
 def get_labelled_graphviz_graph(graph_id: int) -> str:
     graph: PackageGraph = get_graph_by_id(graph_id)
     print(graph.root_package_version_id)
     if graph.root_package_version_id is not None:
         root = get_packages_by_ids([graph.root_package_version_id])[0]
         print(f"root {root.name}@{root.version}")
-    graph_links: List[PackageLink] = get_graph_links(graph)
-    graph_links_by_package_id = [(link.parent_package_id, link.child_package_id) for link in graph_links]
-    graph_nodes: List[PackageVersion] = get_packages_by_ids(set([pid for link in graph_links_by_package_id for pid in link]))
-    g = db_graph_and_links_to_nx_graph(graph, graph_links_by_package_id, graph_nodes)
-    return str(graph_to_dot(g))
+    return str(graph_to_dot(get_networkx_graph_and_nodes(graph)[0]))
 
 
 def db_graph_and_links_to_nx_graph(graph: PackageGraph, links: List[Tuple[int, int]], nodes: List[PackageVersion]) -> nx.DiGraph:
