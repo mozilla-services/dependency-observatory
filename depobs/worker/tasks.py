@@ -30,14 +30,12 @@ from depobs.website.models import (
     get_NPMRegistryEntry,
     get_maintainers_contributors,
     get_npm_registry_data,
-    get_direct_dependencies,
     get_vulnerability_counts,
-    get_direct_dependency_reports,
     store_package_report,
-    get_graph_links,
-    get_ordered_package_deps_and_reports,
+    store_package_reports,
     get_most_recently_inserted_package_from_name_and_version,
     get_latest_graph_including_package_as_parent,
+    get_networkx_graph_and_nodes,
 )
 
 # import exc_to_str to resolve import cycle for the following fpr.clients
@@ -186,7 +184,12 @@ def scan_npm_package(
 
 
 @scanner.task()
-def score_package(package_name: str, package_version: str):
+def score_package(
+    package_name: str,
+    package_version: str,
+    direct_dep_reports: List[PackageReport],
+) -> PackageReport:
+    log.info(f"scoring package: {package_name}@{package_version} with direct deps {list((r.package, r.version) for r in direct_dep_reports)}")
     pr = PackageReport()
     pr.package = package_name
     pr.version = package_version
@@ -233,58 +236,24 @@ def score_package(package_name: str, package_version: str):
         else:
             pr.contributors = 0
 
-    pr.immediate_deps = get_direct_dependencies(package_name, package_version).count()
+    pr.immediate_deps = len(direct_dep_reports)
 
     # Indirect counts
     pr.all_deps = 0
-    stmt = get_direct_dependency_reports(package_name, package_version)
     pr.indirectVulnsCritical_score = 0
     pr.indirectVulnsHigh_score = 0
     pr.indirectVulnsMedium_score = 0
     pr.indirectVulnsLow_score = 0
 
-    def none_to_zero(v):
-        return 0 if v is None else v
-
     dep_rep_count = 0
-    for (
-        package,
-        version,
-        scoring_date,
-        top_score,
-        all_deps,
-        directVulnsCritical_score,
-        directVulnsHigh_score,
-        directVulnsMedium_score,
-        directVulnsLow_score,
-        indirectVulnsCritical_score,
-        indirectVulnsHigh_score,
-        indirectVulnsMedium_score,
-        indirectVulnsLow_score,
-    ) in stmt:
-        all_deps, directVulnsCritical_score, indirectVulnsCritical_score, directVulnsHigh_score, indirectVulnsHigh_score, directVulnsMedium_score, indirectVulnsMedium_score, directVulnsLow_score, indirectVulnsLow_score = [
-            none_to_zero(v) for v in [
-                all_deps,
-                directVulnsCritical_score,
-                indirectVulnsCritical_score,
-                directVulnsHigh_score,
-                indirectVulnsHigh_score,
-                directVulnsMedium_score,
-                indirectVulnsMedium_score,
-                directVulnsLow_score,
-                indirectVulnsLow_score,
-            ]
-        ]
+    for report in direct_dep_reports:
         dep_rep_count += 1
-        pr.all_deps += 1 + all_deps
-        pr.indirectVulnsCritical_score += (
-            directVulnsCritical_score + indirectVulnsCritical_score
-        )
-        pr.indirectVulnsHigh_score += (directVulnsHigh_score + indirectVulnsHigh_score)
-        pr.indirectVulnsMedium_score += (
-            directVulnsMedium_score + indirectVulnsMedium_score
-        )
-        pr.indirectVulnsLow_score += (directVulnsLow_score + indirectVulnsLow_score)
+        pr.all_deps += 1 + report.all_deps
+        for severity in ('Critical', 'High', 'Medium', 'Low'):
+            setattr(pr, f"indirectVulns{severity}_score",
+                getattr(report, f"directVulns{severity}_score", 0) +
+                getattr(report, f"indirectVulns{severity}_score", 0)
+            )
 
     if dep_rep_count != pr.immediate_deps:
         log.error(
@@ -292,8 +261,7 @@ def score_package(package_name: str, package_version: str):
         )
 
     pr.scoring_date = datetime.datetime.now()
-
-    store_package_report(pr)
+    return pr
 
 
 def outer_in_iter(g: nx.DiGraph) -> Generator[List[int], None, None]:
@@ -326,29 +294,28 @@ def outer_in_iter(g: nx.DiGraph) -> Generator[List[int], None, None]:
         visited.update(only_points_to_visited)
 
 
-def score_package_and_children(package_version_tuple: Tuple[str, str], graph_links: List[PackageLink], scored: Optional[AbstractSet[Tuple[str, str]]]=None) -> AbstractSet[Tuple[str, str]]:
-    if scored is None:
-        scored = set()
-    package_name, package_version = package_version_tuple
+def score_package_and_children(g: nx.DiGraph, package_versions: List[PackageVersion]):
+    # refs: https://github.com/mozilla-services/dependency-observatory/issues/130#issuecomment-608017713
+    package_versions_by_id: Dict[int, PackageVersion] = {
+        pv.id: pv for pv in package_versions
+    }
+    # fill this up
+    package_reports_by_id: Dict[int, PackageReport] = {}
 
-    deps, reports = get_ordered_package_deps_and_reports(graph_links, package_name, package_version)
-    for report in reports:
-        print(f"scored dep {report.package} {report.version}")
-        scored.add(tuple([report.package, report.version]))
+    for package_version_ids in outer_in_iter(g):
+        for package_version_id in package_version_ids:
+            package = package_versions_by_id[package_version_id]
+            package_reports_by_id[package_version_id] = score_package(
+                package.name,
+                package.version,
+                direct_dep_reports=[
+                    package_reports_by_id[direct_dep_package_version_id]
+                    for direct_dep_package_version_id in
+                    g.successors(package_version_id)
+                ]
+            )
 
-    if len(deps) == 0:
-        score_package(package_name, package_version)
-        scored.add(package_version_tuple)
-        return scored
-    else:
-        for (dep_name, dep_version) in deps:
-            if tuple([dep_name, dep_version]) in scored:
-                print(f"skipping building report tree for scored dep {dep_name} {dep_version}")
-                continue
-
-            print(f"building report tree for dep {dep_name} {dep_version}")
-            return score_package_and_children((dep_name, dep_version), graph_links, scored)
-
+    return package_reports_by_id.values()
 
 @scanner.task()
 def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
@@ -360,12 +327,12 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
 
     graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(package)
     if graph is None:
-        score_package(package.name, package.version)
         log.info(f"{package.name} {package.version} has no children scoring directly")
+        store_package_report(score_package(package.name, package.version))
     else:
-        graph_links = get_graph_links(graph)
-        score_package_and_children((package.name, package.version), graph_links)
+        g, nodes = get_networkx_graph_and_nodes(graph)
         log.info(f"{package.name} {package.version} scoring from graph id={graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes)")
+        store_package_reports(score_package_and_children(g, nodes))
 
 
 @scanner.task()
