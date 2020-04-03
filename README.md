@@ -162,3 +162,24 @@ docker run -d -u 0 --rm -v /var/run/docker.sock:/var/run/docker.sock --net=host 
 ```
 
 Note that you'll probably want to derive from the image to properly deamonize the worker and web server.
+
+### Scanning, Report Building, and Scoring Process
+
+#### score computation
+
+Scores are very much a work in progress. They attempt to capture:
+
+1. how much code and how many people it trusts (# unique of dependencies, # unique of maintainers)
+1. library's security track record
+1. code quality and activity from npms.io score
+
+It does not try to estimate the vulnerability reporting rate.
+
+The current scoring proposal is described in: https://docs.google.com/document/d/10kmyjHkuy3GSQc7ZEfqbbTBS_w-p6l42DV5z3fC9twc/edit#
+
+#### scoring and report building process
+
+Described in:
+
+* https://docs.google.com/document/d/1JhgeL11ro2_5Cmkgti-bN_juGVbVufQ50OOo3SOtcpE/edit
+* https://github.com/mozilla-services/dependency-observatory/issues/130#issuecomment-608017713
