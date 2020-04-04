@@ -209,12 +209,13 @@ def score_package(
 
     # Direct vulnerability counts
     for package, version, severity, count in get_vulnerability_counts(package_name, package_version):
+        severity = severity.lower()
         log.info(f"scoring package: {package_name}@{package_version} found vulnerable dep: \t{package}\t{version}\t{severity}\t{count}")
         if severity == "critical":
             pr.directVulnsCritical_score = count
         elif severity == "high":
             pr.directVulnsHigh_score = count
-        elif severity == "medium":
+        elif severity in ("medium", "moderate"):
             pr.directVulnsMedium_score = count
         elif severity == "low":
             pr.directVulnsLow_score = count

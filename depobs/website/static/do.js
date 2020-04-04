@@ -1,6 +1,14 @@
 const PACKAGE_PREFIX = '/package';
 const PARENTS_PREFIX = '/parents';
 
+function getLinkURL(name, version) {
+    return '/manager=npm&package=' + encodeURIComponent(name) + '&version=' + encodeURIComponent(version);
+}
+
+function getPrefixedURL(prefix, name, version) {
+    return prefix + '?package_name=' + encodeURIComponent(name) + '&package_version=' + encodeURIComponent(version);
+}
+
 window.onload = function() {
     let urlParams = new URLSearchParams(window.location.search);
     let pkg = urlParams.get('package');
@@ -15,7 +23,7 @@ window.onload = function() {
 }
 
 function getPackageInfo(pkg, ver) {
-    fetch(PACKAGE_PREFIX + '?' + 'package_name=' + encodeURIComponent(pkg) + '&package_version=' + encodeURIComponent(ver))
+    fetch(getPrefixedURL(PACKAGE_PREFIX, pkg, ver))
         .then((response) => {
             if (response.status == 200) {
                 response.json().then(function(pkgInfo) {
@@ -82,7 +90,7 @@ function gotPackageInfo(pkgInfo) {
 
         let row = table.insertRow(i+1);
         let cell = row.insertCell(0);
-        let linkUrl = 'index.html?manager=npm&package=' + pkg + '&version=' + ver;
+        let linkUrl = getLinkURL(pkg, ver);
         let a = document.createElement('a');
         let linkText = document.createTextNode(pkg);
         a.appendChild(linkText);
@@ -186,7 +194,7 @@ function toggleParents() {
         let urlParams = new URLSearchParams(window.location.search);
         let pkg = urlParams.get('package');
         let ver = urlParams.get('version');
-	    fetch(PARENTS_PREFIX + '?' + 'package_name=' + encodeURIComponent(pkg) + '&package_version=' + encodeURIComponent(ver))
+	fetch(getPrefixedURL(PARENTS_PREFIX, pkg, ver))
 	        .then((response) => {
 	            if (response.status == 200) {
 	                console.log(response);
@@ -216,7 +224,7 @@ function gotParentsInfo(parInfo) {
 
         let row = table.insertRow(i);
         let cell = row.insertCell(0);
-        let linkUrl = 'index.html?manager=npm&package=' + pkg + '&version=' + ver;
+        let linkUrl = getLinkURL(pkg, ver);
         let a = document.createElement('a');
         let linkText = document.createTextNode(pkg);
         a.appendChild(linkText);
