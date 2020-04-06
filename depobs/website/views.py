@@ -38,7 +38,7 @@ class PackageReportNotFound(NotFound):
 
 
 def get_most_recently_scored_package_report_or_raise(package_name: str, package_version: str, scored_after: datetime) -> models.PackageReport:
-    "Returns a PackageReport or "
+    "Returns a PackageReport or raises a PackageReportNotFound exception"
     package_report = models.get_most_recently_scored_package_report(package_name, package_version, scored_after)
     if package_report is None:
         raise PackageReportNotFound(package_name=package_name, package_version=package_version, scored_after=scored_after)
