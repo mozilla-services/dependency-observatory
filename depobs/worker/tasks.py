@@ -333,7 +333,7 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
     graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(package)
     if graph is None:
         log.info(f"{package.name} {package.version} has no children scoring directly")
-        store_package_report(score_package(package.name, package.version))
+        store_package_report(score_package(package.name, package.version, []))
     else:
         g, nodes = get_networkx_graph_and_nodes(graph)
         log.info(f"{package.name} {package.version} scoring from graph id={graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes)")
