@@ -38,7 +38,7 @@ class PackageReportNotFound(NotFound):
 
 
 def get_most_recently_scored_package_report_or_raise(package_name: str, package_version: str, scored_after: datetime) -> models.PackageReport:
-    "Returns a PackageReport or "
+    "Returns a PackageReport or raises a PackageReportNotFound exception"
     package_report = models.get_most_recently_scored_package_report(package_name, package_version, scored_after)
     if package_report is None:
         raise PackageReportNotFound(package_name=package_name, package_version=package_version, scored_after=scored_after)
@@ -54,14 +54,14 @@ def handle_bad_request(e):
 @app.errorhandler(PackageReportNotFound)
 def handle_package_report_not_found(e):
     package_name, package_version = e.package_name, e.package_version
-    
+
     # Is there a placeholder entry?
     package_report = models.get_placeholder_entry(package_name, package_version)
     if package_report:
         if package_report.status == "error":
             return package_report.report_json, 500
         return package_report.report_json, 202
-    
+
     if not tasks.check_npm_package_exists(package_name, package_version):
         return dict(description=f"{e.description} Unable to find package on npm registry and npms.io."), 404
 
