@@ -48,7 +48,10 @@ function gotPackageInfo(pkgInfo) {
     document.getElementById('scan-results').className = "";
     let fail = 0;
     let warn = 0;
-    setElement(pkgInfo, 'package');
+
+    let pkgLink = 'https://www.npmjs.com/package/' + pkgInfo['package'] +'/v/' + pkgInfo['version'];
+
+    setElementLink(pkgInfo, 'package', pkgLink);
     setElement(pkgInfo, 'version');
     setElement(pkgInfo, 'npmsio_score');
     setElement(pkgInfo, 'authors');
@@ -254,6 +257,21 @@ function setElement(json, elem) {
     const val = json[elem];
     if (el) {
         el.innerText = val;
+    } else {
+        console.log('No element for id: ' + elem);
+    }
+    return val;
+}
+
+function setElementLink(json, elem, link) {
+    const el = document.getElementById(elem);
+    const val = json[elem];
+    if (el) {
+        let a = document.createElement('a');
+        let linkText = document.createTextNode(val);
+        a.appendChild(linkText);
+        a.href = link;
+        el.appendChild(a);
     } else {
         console.log('No element for id: ' + elem);
     }
