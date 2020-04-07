@@ -189,56 +189,63 @@ function get_grade(score) {
 }
 
 function toggleParents() {
+    // Hide 'show parents' link
+    document.getElementById('parents').className = "d-none";
     let table = document.getElementById("parenttable");
     if (table.rows.length === 0) {
         let urlParams = new URLSearchParams(window.location.search);
         let pkg = urlParams.get('package');
         let ver = urlParams.get('version');
-	fetch(getPrefixedURL(PARENTS_PREFIX, pkg, ver))
-	        .then((response) => {
-	            if (response.status == 200) {
-	                console.log(response);
+        fetch(getPrefixedURL(PARENTS_PREFIX, pkg, ver))
+            .then((response) => {
+                if (response.status == 200) {
+                    console.log(response);
                     response.json().then(function(parInfo) {
-    	                gotParentsInfo(parInfo);
+                        gotParentsInfo(parInfo);
                     });
-	            } else {
-	                console.log(response);
-	            }
-	         })
-	        .then((data) => {
-	            console.log(data);
-	         });
+                } else {
+                    console.log(response);
+                }
+             })
+            .then((data) => {
+                console.log(data);
+             });
     } else {
         while(table.hasChildNodes()) {
            table.removeChild(table.firstChild);
         }
     }
+    return false;
 }
 
 function gotParentsInfo(parInfo) {
     let table = document.getElementById("parenttable");
     let parentsJson = parInfo['parents'];
-    for(let i = 0; i < parentsJson.length; i++) {
-        let pkg = parentsJson[i]['package'];
-        let ver = parentsJson[i]['version'];
-
-        let row = table.insertRow(i);
-        let cell = row.insertCell(0);
-        let linkUrl = getLinkURL(pkg, ver);
-        let a = document.createElement('a');
-        let linkText = document.createTextNode(pkg);
-        a.appendChild(linkText);
-        a.title = "See package / version details";
-        a.href = linkUrl;
-        cell.appendChild(a);
-
-        cell = row.insertCell(1);
-        a = document.createElement('a');
-        linkText = document.createTextNode(ver);
-        a.appendChild(linkText);
-        a.title = "See package / version details";
-        a.href = linkUrl;
-        cell.appendChild(a);
+    if (parentsJson.length == 0) {
+        document.getElementById('no-parents').className = "";
+    } else {
+        for(let i = 0; i < parentsJson.length; i++) {
+            let pkg = parentsJson[i]['package'];
+            let ver = parentsJson[i]['version'];
+    
+            let row = table.insertRow(i);
+            let cell = row.insertCell(0);
+            let linkUrl = getLinkURL(pkg, ver);
+            let a = document.createElement('a');
+            let linkText = document.createTextNode(pkg);
+            a.appendChild(linkText);
+            a.title = "See package / version details";
+            a.href = linkUrl;
+            cell.appendChild(a);
+    
+            cell = row.insertCell(1);
+            a = document.createElement('a');
+            linkText = document.createTextNode(ver);
+            a.appendChild(linkText);
+            a.title = "See package / version details";
+            a.href = linkUrl;
+            cell.appendChild(a);
+        }
     }
 }
 
