@@ -53,7 +53,10 @@ function gotPackageInfo(pkgInfo) {
 
     setElementLink(pkgInfo, 'package', pkgLink);
     setElement(pkgInfo, 'version');
-    setElement(pkgInfo, 'npmsio_score');
+    let npmsio_score = pkgInfo['npmsio_score'];
+    if (npmsio_score) {
+        setElementValue(pkgInfo, 'npmsio_score', npmsio_score.toFixed(2));
+    }
     setElement(pkgInfo, 'authors');
     setElement(pkgInfo, 'contributors');
     setElement(pkgInfo, 'immediate_deps');
@@ -255,6 +258,16 @@ function gotParentsInfo(parInfo) {
 function setElement(json, elem) {
     const el = document.getElementById(elem);
     const val = json[elem];
+    if (el) {
+        el.innerText = val;
+    } else {
+        console.log('No element for id: ' + elem);
+    }
+    return val;
+}
+
+function setElementValue(json, elem, val) {
+    const el = document.getElementById(elem);
     if (el) {
         el.innerText = val;
     } else {
