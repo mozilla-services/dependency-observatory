@@ -2,7 +2,7 @@ const PACKAGE_PREFIX = '/package';
 const PARENTS_PREFIX = '/parents';
 
 function getLinkURL(name, version) {
-    return '/manager=npm&package=' + encodeURIComponent(name) + '&version=' + encodeURIComponent(version);
+    return '/?manager=npm&package=' + encodeURIComponent(name) + '&version=' + encodeURIComponent(version);
 }
 
 function getPrefixedURL(prefix, name, version) {
