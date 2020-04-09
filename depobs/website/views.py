@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, Optional
 
-from flask import abort, Response, request, send_from_directory
+from flask import abort, Blueprint, Response, request, send_from_directory
 import graphviz
 from werkzeug.exceptions import BadRequest, NotFound
 
@@ -13,6 +13,8 @@ import depobs.worker.tasks as tasks
 STANDARD_HEADERS = {
     'Access-Control-Allow-Origin' : '*'
 }
+
+views_blueprint = api = Blueprint("views_blueprint", __name__)
 
 
 class PackageReportNotFound(NotFound):
@@ -44,12 +46,12 @@ def get_most_recently_scored_package_report_or_raise(package_name: str, package_
     return package_report
 
 
-@app.errorhandler(BadRequest)
+@api.errorhandler(BadRequest)
 def handle_bad_request(e):
     return dict(description=e.description), 400
 
 
-@app.errorhandler(PackageReportNotFound)
+@api.errorhandler(PackageReportNotFound)
 def handle_package_report_not_found(e):
     package_name, package_version = e.package_name, e.package_version
 
@@ -75,7 +77,7 @@ def handle_package_report_not_found(e):
     return package_report.report_json, 202
 
 
-@app.route('/package', methods=["GET"])
+@api.route('/package', methods=["GET"])
 def show_package_by_name_and_version_if_available() -> Dict:
     scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
@@ -85,7 +87,7 @@ def show_package_by_name_and_version_if_available() -> Dict:
     return package_report.json_with_dependencies()
 
 
-@app.route('/parents', methods=["GET"])
+@api.route('/parents', methods=["GET"])
 def get_parents_by_name_and_version() -> Dict:
     scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
@@ -95,13 +97,13 @@ def get_parents_by_name_and_version() -> Dict:
     return package_report.json_with_parents()
 
 
-@app.route('/vulnerabilities', methods=["GET"])
+@api.route('/vulnerabilities', methods=["GET"])
 def get_vulnerabilities_by_name_and_version() -> Dict:
     package_name, package_version, _ = validate_npm_package_version_query_params()
     return models.get_vulnerabilities_report(package_name, package_version)
 
 
-@app.route('/graphs/<int:graph_id>', methods=["GET"])
+@api.route('/graphs/<int:graph_id>', methods=["GET"])
 def get_graph(graph_id):
     """
     Returns an svg rendered graphviz dot graph of the given scan
@@ -114,24 +116,24 @@ def get_graph(graph_id):
     return graphviz.Source(dot_graph).pipe(format='svg').decode('utf-8')
 
 
-@app.after_request
+@api.after_request
 def add_standard_headers_to_static_routes(response):
     response.headers.update(STANDARD_HEADERS)
     return response
 
 
-@app.route('/__lbheartbeat__')
+@api.route('/__lbheartbeat__')
 def lbheartbeat():
     return Response("badum badum", mimetype="text/plain")
 
-@app.route('/__heartbeat__')
+@api.route('/__heartbeat__')
 def heartbeat():
     return Response("badum badum", mimetype="text/plain")
 
-@app.route('/__version__')
+@api.route('/__version__')
 def version():
     return send_from_directory('/app', 'version.json')
 
-@app.route('/')
+@api.route('/')
 def index_page():
     return send_from_directory('static/', 'index.html')
