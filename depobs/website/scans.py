@@ -8,7 +8,7 @@ from werkzeug.exceptions import BadRequest
 
 import depobs.worker.tasks as tasks
 
-tasks_api = api = Blueprint("tasks_api", __name__)
+scans_blueprint = api = Blueprint("scans_blueprint", __name__)
 
 
 @api.errorhandler(BadRequest)
