@@ -15,6 +15,8 @@ ch.setFormatter(formatter)
 
 
 def main():
+    app = Flask(__name__)  # depobs.website
+
     if os.environ.get('INIT_DB', False) == '1':
         log.info("Initializing DO DB")
         models.init_db()
