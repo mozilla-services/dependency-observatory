@@ -6,15 +6,13 @@ import graphviz
 from werkzeug.exceptions import BadRequest, NotFound
 
 from depobs.website import models, app
-from depobs.website.scans import tasks_api, validate_npm_package_version_query_params, validate_scored_after_ts_query_param
+from depobs.website.scans import validate_npm_package_version_query_params, validate_scored_after_ts_query_param
 import depobs.worker.tasks as tasks
 
 
 STANDARD_HEADERS = {
     'Access-Control-Allow-Origin' : '*'
 }
-
-app.register_blueprint(tasks_api)
 
 
 class PackageReportNotFound(NotFound):
