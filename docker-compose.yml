@@ -25,6 +25,8 @@ services:
       - INIT_DB=1
       - FLASK_APP=/app/depobs/website/do.py
       - FLASK_ENV=development
+      - HOST=0.0.0.0
+      - PORT=8000
     depends_on:
       - db
     links:
