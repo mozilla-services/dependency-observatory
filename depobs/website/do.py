@@ -14,7 +14,7 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 ch.setFormatter(formatter)
 
 
-def main():
+def create_app():
     app = Flask(__name__)  # depobs.website
 
     if os.environ.get('INIT_DB', False) == '1':
@@ -24,10 +24,17 @@ def main():
     host = os.environ.get('HOST','0.0.0.0')
     port = int(os.environ.get('PORT','8000'))
 
+    app.config.update(
+        SERVER_NAME=f"{host}:{port}",
+    )
+
     app.register_blueprint(scans_blueprint)
     app.register_blueprint(views_blueprint)
+    return app
 
-    app.run(host=host, port=port)
+
+def main():
+    create_app().run()
 
 
 if __name__ == '__main__':
