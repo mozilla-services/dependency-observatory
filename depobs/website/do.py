@@ -3,9 +3,6 @@ import logging
 
 from flask import Flask
 
-import depobs.website.models as models
-from depobs.website.scans import scans_blueprint
-from depobs.website.views import views_blueprint
 
 log = logging.getLogger("do")
 ch = logging.StreamHandler()
@@ -15,7 +12,13 @@ ch.setFormatter(formatter)
 
 
 def create_app():
-    app = Flask(__name__)  # depobs.website
+    # reimport to pick up changes for testing and autoreload
+    import depobs.website.models as models
+    from depobs.website.scans import scans_blueprint
+    from depobs.website.views import views_blueprint
+
+    # create and configure the app
+    app = Flask(__name__)  # do
 
     if os.environ.get('INIT_DB', False) == '1':
         log.info("Initializing DO DB")
