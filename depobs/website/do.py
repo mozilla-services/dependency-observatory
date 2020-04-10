@@ -28,13 +28,22 @@ def create_app(test_config=None):
     dockerflow = Dockerflow(app)
     dockerflow.init_app(app)
 
+    app.config.update(
+        SQLALCHEMY_DATABASE_URI=os.environ.get("SQLALCHEMY_DATABASE_URI", None),
+        SQLALCHEMY_TRACK_MODIFICATIONS=bool(
+            os.environ.get("SQLALCHEMY_TRACK_MODIFICATIONS", False)
+        ),
+    )
+
     if test_config:
         # load the test config if passed in
         app.config.from_mapping(test_config)
 
+    # setup up request-scoped DB connections
+    log.info(f"Initializing DO DB: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    models.db.init_app(app)
     if os.environ.get("INIT_DB", False) == "1":
-        log.info("Initializing DO DB")
-        models.init_db()
+        models.create_tables_and_views(app)
 
     app.register_blueprint(scans_blueprint)
     app.register_blueprint(views_blueprint)
