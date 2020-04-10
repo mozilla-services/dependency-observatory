@@ -32,12 +32,12 @@ from fpr.db.schema import (
 from depobs.database.mixins import TaskIDMixin
 
 
-DATABASE_URI = os.environ.get(
-    "DATABASE_URI",
+SQLALCHEMY_DATABASE_URI = os.environ.get(
+    "SQLALCHEMY_DATABASE_URI",
     "postgresql+psycopg2://postgres:postgres@localhost/dependency_observatory",
 )
 
-engine = create_engine(DATABASE_URI)
+engine = create_engine(SQLALCHEMY_DATABASE_URI)
 
 db_session = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)

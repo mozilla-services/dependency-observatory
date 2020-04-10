@@ -119,7 +119,7 @@ def scan_npm_package(package_name: str, package_version: Optional[str] = None) -
         "run",
         "--rm",
         "-e",
-        f"DB_URL={os.environ['DATABASE_URI']}",
+        f"DB_URL={os.environ['SQLALCHEMY_DATABASE_URI']}",
         "-v",
         "/var/run/docker.sock:/var/run/docker.sock",
         "mozilla/dependencyscan:latest",
