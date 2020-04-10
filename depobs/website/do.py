@@ -11,7 +11,7 @@ formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(messag
 ch.setFormatter(formatter)
 
 
-def create_app():
+def create_app(test_config=None):
     # reimport to pick up changes for testing and autoreload
     import depobs.website.models as models
     from depobs.website.scans import scans_blueprint
@@ -30,6 +30,10 @@ def create_app():
     app.config.update(
         SERVER_NAME=f"{host}:{port}",
     )
+
+    if test_config:
+        # load the test config if passed in
+        app.config.from_mapping(test_config)
 
     app.register_blueprint(scans_blueprint)
     app.register_blueprint(views_blueprint)
