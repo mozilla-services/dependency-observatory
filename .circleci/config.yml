@@ -76,6 +76,7 @@ workflows:
   version: 2
   check-readme-local-dev:
     jobs:
+
       - build-images:
           filters:
             tags:
@@ -90,7 +91,7 @@ workflows:
 
       - deploy:
           requires:
-            - test
+            - check-format
             - build-images
           filters:
             tags:
