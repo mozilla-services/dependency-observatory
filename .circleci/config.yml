@@ -5,19 +5,7 @@
 # DOCKER_PASS
 #
 version: 2.1
-jobs:
-  test:
-    docker:
-      - image: circleci/python:buster
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: run black formatter
-          command: |
-            pip install --user black
-            black --py36 --check .
-            
+jobs:        
   build-images:
     docker:
       - image: circleci/python:buster
@@ -44,6 +32,19 @@ jobs:
           key: v1-{{ .Branch }}-{{ epoch }}
           paths:
             - /tmp/docker.tgz
+
+  test:
+    docker:
+      - image: circleci/python:buster
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          key: v1-{{.Branch}}
+      - run:
+          name: run black formatter in api container
+          command: |
+            docker run mozilla/dependency-observatory black --py38 --check /app/
 
   deploy:
     docker:
