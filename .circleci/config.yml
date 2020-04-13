@@ -15,9 +15,9 @@ jobs:
       - run:
           name: run black formatter
           command: |
-            pip install --user black
-            black --py36 --check .
-            
+            pip install --user black==19.10b0
+            black -t py38 --check .
+
   build-images:
     docker:
       - image: circleci/python:buster
