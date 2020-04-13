@@ -33,7 +33,7 @@ jobs:
           paths:
             - /tmp/docker.tgz
 
-  test:
+  tests:
     docker:
       - image: circleci/python:buster
     steps:
@@ -82,7 +82,7 @@ workflows:
             tags:
               only: /.*/
 
-      - test:
+      - tests:
           requires:
             - build-images
           filters:
@@ -91,7 +91,7 @@ workflows:
 
       - deploy:
           requires:
-            - check-format
+            - tests
             - build-images
           filters:
             tags:
