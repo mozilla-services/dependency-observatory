@@ -44,7 +44,7 @@ jobs:
       - run:
           name: run black formatter in api container
           command: |
-            docker run mozilla/dependency-observatory black --py38 --check /app/
+            docker run mozilla/dependency-observatory black --check /app/ --diff
 
   deploy:
     docker:
@@ -76,12 +76,14 @@ workflows:
   version: 2
   check-readme-local-dev:
     jobs:
-      - test:
-        filters:
-          tags:
-            only: /.*/
-
       - build-images:
+          filters:
+            tags:
+              only: /.*/
+
+      - test:
+          requires:
+            - build-images
           filters:
             tags:
               only: /.*/
