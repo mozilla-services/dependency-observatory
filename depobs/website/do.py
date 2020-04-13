@@ -20,16 +20,14 @@ def create_app(test_config=None):
     # create and configure the app
     app = Flask(__name__)  # do
 
-    if os.environ.get('INIT_DB', False) == '1':
+    if os.environ.get("INIT_DB", False) == "1":
         log.info("Initializing DO DB")
         models.init_db()
 
-    host = os.environ.get('HOST','0.0.0.0')
-    port = int(os.environ.get('PORT','8000'))
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", "8000"))
 
-    app.config.update(
-        SERVER_NAME=f"{host}:{port}",
-    )
+    app.config.update(SERVER_NAME=f"{host}:{port}",)
 
     if test_config:
         # load the test config if passed in
@@ -44,5 +42,5 @@ def main():
     create_app().run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

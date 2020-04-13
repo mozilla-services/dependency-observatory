@@ -6,13 +6,14 @@ import graphviz
 from werkzeug.exceptions import BadRequest, NotFound
 
 from depobs.website import models
-from depobs.website.scans import validate_npm_package_version_query_params, validate_scored_after_ts_query_param
+from depobs.website.scans import (
+    validate_npm_package_version_query_params,
+    validate_scored_after_ts_query_param,
+)
 import depobs.worker.tasks as tasks
 
 
-STANDARD_HEADERS = {
-    'Access-Control-Allow-Origin' : '*'
-}
+STANDARD_HEADERS = {"Access-Control-Allow-Origin": "*"}
 
 views_blueprint = api = Blueprint("views_blueprint", __name__)
 
@@ -22,7 +23,12 @@ class PackageReportNotFound(NotFound):
     package_version: Optional[str] = None
     scored_after: Optional[datetime] = None
 
-    def __init__(self, package_name: str, package_version: Optional[str] = None, scored_after: Optional[datetime] = None):
+    def __init__(
+        self,
+        package_name: str,
+        package_version: Optional[str] = None,
+        scored_after: Optional[datetime] = None,
+    ):
         self.package_name = package_name
         self.package_version = package_version
         self.scored_after = scored_after
@@ -37,11 +43,19 @@ class PackageReportNotFound(NotFound):
         return msg + " not found."
 
 
-def get_most_recently_scored_package_report_or_raise(package_name: str, package_version: str, scored_after: datetime) -> models.PackageReport:
+def get_most_recently_scored_package_report_or_raise(
+    package_name: str, package_version: str, scored_after: datetime
+) -> models.PackageReport:
     "Returns a PackageReport or raises a PackageReportNotFound exception"
-    package_report = models.get_most_recently_scored_package_report(package_name, package_version, scored_after)
+    package_report = models.get_most_recently_scored_package_report(
+        package_name, package_version, scored_after
+    )
     if package_report is None:
-        raise PackageReportNotFound(package_name=package_name, package_version=package_version, scored_after=scored_after)
+        raise PackageReportNotFound(
+            package_name=package_name,
+            package_version=package_version,
+            scored_after=scored_after,
+        )
 
     return package_report
 
@@ -63,7 +77,12 @@ def handle_package_report_not_found(e):
         return package_report.report_json, 202
 
     if not tasks.check_npm_package_exists(package_name, package_version):
-        return dict(description=f"{e.description} Unable to find package on npm registry and npms.io."), 404
+        return (
+            dict(
+                description=f"{e.description} Unable to find package on npm registry and npms.io."
+            ),
+            404,
+        )
 
     # start a task to scan the package
     result: celery.result.AsyncResult = tasks.scan_npm_package_then_build_report_tree.delay(
@@ -77,33 +96,37 @@ def handle_package_report_not_found(e):
     return package_report.report_json, 202
 
 
-@api.route('/package', methods=["GET"])
+@api.route("/package", methods=["GET"])
 def show_package_by_name_and_version_if_available() -> Dict:
     scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
     # TODO: fetch all package versions
 
-    package_report = get_most_recently_scored_package_report_or_raise(package_name, package_version, scored_after)
+    package_report = get_most_recently_scored_package_report_or_raise(
+        package_name, package_version, scored_after
+    )
     return package_report.json_with_dependencies()
 
 
-@api.route('/parents', methods=["GET"])
+@api.route("/parents", methods=["GET"])
 def get_parents_by_name_and_version() -> Dict:
     scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
     # TODO: fetch all package versions
 
-    package_report = get_most_recently_scored_package_report_or_raise(package_name, package_version, scored_after)
+    package_report = get_most_recently_scored_package_report_or_raise(
+        package_name, package_version, scored_after
+    )
     return package_report.json_with_parents()
 
 
-@api.route('/vulnerabilities', methods=["GET"])
+@api.route("/vulnerabilities", methods=["GET"])
 def get_vulnerabilities_by_name_and_version() -> Dict:
     package_name, package_version, _ = validate_npm_package_version_query_params()
     return models.get_vulnerabilities_report(package_name, package_version)
 
 
-@api.route('/graphs/<int:graph_id>', methods=["GET"])
+@api.route("/graphs/<int:graph_id>", methods=["GET"])
 def get_graph(graph_id):
     """
     Returns an svg rendered graphviz dot graph of the given scan
@@ -113,7 +136,7 @@ def get_graph(graph_id):
     # TODO: check Accept header for a graphviz dot or image mimetype
     dot_graph: str = models.get_labelled_graphviz_graph(graph_id)
     print(dot_graph)  # TODO: debug log
-    return graphviz.Source(dot_graph).pipe(format='svg').decode('utf-8')
+    return graphviz.Source(dot_graph).pipe(format="svg").decode("utf-8")
 
 
 @api.after_request
@@ -122,18 +145,21 @@ def add_standard_headers_to_static_routes(response):
     return response
 
 
-@api.route('/__lbheartbeat__')
+@api.route("/__lbheartbeat__")
 def lbheartbeat():
     return Response("badum badum", mimetype="text/plain")
 
-@api.route('/__heartbeat__')
+
+@api.route("/__heartbeat__")
 def heartbeat():
     return Response("badum badum", mimetype="text/plain")
 
-@api.route('/__version__')
-def version():
-    return send_from_directory('/app', 'version.json')
 
-@api.route('/')
+@api.route("/__version__")
+def version():
+    return send_from_directory("/app", "version.json")
+
+
+@api.route("/")
 def index_page():
-    return send_from_directory('static/', 'index.html')
+    return send_from_directory("static/", "index.html")

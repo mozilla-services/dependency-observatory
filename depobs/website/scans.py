@@ -22,7 +22,11 @@ def validate_scored_after_ts_query_param() -> datetime:
         raise BadRequest(description="only one scored_after_ts param supported")
     param_value = param_values[0] if len(param_values) else None
     # utcfromtimestamp might raise https://docs.python.org/3/library/exceptions.html#OverflowError
-    return datetime.utcfromtimestamp(param_value) if param_value else (datetime.now() - timedelta(days=90))
+    return (
+        datetime.utcfromtimestamp(param_value)
+        if param_value
+        else (datetime.now() - timedelta(days=90))
+    )
 
 
 def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
@@ -37,7 +41,11 @@ def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
         raise BadRequest(description="only one package manager supported")
 
     package_name = package_names[0]
-    package_version = package_versions[0] if (len(package_versions) and package_versions[0] != "") else None
+    package_version = (
+        package_versions[0]
+        if (len(package_versions) and package_versions[0] != "")
+        else None
+    )
     package_manager = package_managers[0] if len(package_managers) else "npm"
 
     package_name_validation_error = tasks.get_npm_package_name_validation_error(

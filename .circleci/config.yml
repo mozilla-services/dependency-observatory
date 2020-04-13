@@ -6,6 +6,18 @@
 #
 version: 2.1
 jobs:
+  test:
+    docker:
+      - image: circleci/python:buster
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: run black formatter
+          command: |
+            pip install --user black
+            black --py36 --check .
+            
   build-images:
     docker:
       - image: circleci/python:buster
@@ -63,6 +75,11 @@ workflows:
   version: 2
   check-readme-local-dev:
     jobs:
+      - test:
+        filters:
+          tags:
+            only: /.*/
+
       - build-images:
           filters:
             tags:
@@ -70,6 +87,7 @@ workflows:
 
       - deploy:
           requires:
+            - test
             - build-images
           filters:
             tags:

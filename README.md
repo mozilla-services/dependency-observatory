@@ -1,5 +1,6 @@
-Dependency Observatory
+# Dependency Observatory
 
+[![CircleCI](https://circleci.com/gh/mozilla-services/dependency-observatory.svg?style=svg)](https://circleci.com/gh/mozilla-services/dependency-observatory)
 
 ### Running
 
