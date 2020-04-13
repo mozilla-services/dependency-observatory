@@ -17,16 +17,14 @@ ch.setFormatter(formatter)
 def create_app():
     app = Flask(__name__)  # depobs.website
 
-    if os.environ.get('INIT_DB', False) == '1':
+    if os.environ.get("INIT_DB", False) == "1":
         log.info("Initializing DO DB")
         models.init_db()
 
-    host = os.environ.get('HOST','0.0.0.0')
-    port = int(os.environ.get('PORT','8000'))
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", "8000"))
 
-    app.config.update(
-        SERVER_NAME=f"{host}:{port}",
-    )
+    app.config.update(SERVER_NAME=f"{host}:{port}",)
 
     app.register_blueprint(scans_blueprint)
     app.register_blueprint(views_blueprint)
@@ -37,5 +35,5 @@ def main():
     create_app().run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

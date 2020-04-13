@@ -148,9 +148,7 @@ def add(x, y):
 
 
 @scanner.task()
-def scan_npm_package(
-    package_name: str, package_version: Optional[str] = None
-) -> None:
+def scan_npm_package(package_name: str, package_version: Optional[str] = None) -> None:
     package_name_validation_error = get_npm_package_name_validation_error(package_name)
     if package_name_validation_error is not None:
         raise package_name_validation_error
@@ -189,9 +187,11 @@ def score_package(
     package_name: str,
     package_version: str,
     direct_dep_reports: List[PackageReport],
-    all_deps_count: int=0,
+    all_deps_count: int = 0,
 ) -> PackageReport:
-    log.info(f"scoring package: {package_name}@{package_version} with direct deps {list((r.package, r.version) for r in direct_dep_reports)}")
+    log.info(
+        f"scoring package: {package_name}@{package_version} with direct deps {list((r.package, r.version) for r in direct_dep_reports)}"
+    )
     pr = PackageReport()
     pr.package = package_name
     pr.version = package_version
@@ -208,9 +208,13 @@ def score_package(
     pr.directVulnsLow_score = 0
 
     # Direct vulnerability counts
-    for package, version, severity, count in get_vulnerability_counts(package_name, package_version):
+    for package, version, severity, count in get_vulnerability_counts(
+        package_name, package_version
+    ):
         severity = severity.lower()
-        log.info(f"scoring package: {package_name}@{package_version} found vulnerable dep: \t{package}\t{version}\t{severity}\t{count}")
+        log.info(
+            f"scoring package: {package_name}@{package_version} found vulnerable dep: \t{package}\t{version}\t{severity}\t{count}"
+        )
         if severity == "critical":
             pr.directVulnsCritical_score = count
         elif severity == "high":
@@ -224,7 +228,9 @@ def score_package(
                 f"unexpected severity {severity} for package {package} / version {version}"
             )
 
-    for published_at, maintainers, contributors in get_npm_registry_data(package_name, package_version):
+    for published_at, maintainers, contributors in get_npm_registry_data(
+        package_name, package_version
+    ):
         pr.release_date = published_at
         if maintainers is not None:
             pr.authors = len(maintainers)
@@ -247,10 +253,12 @@ def score_package(
     dep_rep_count = 0
     for report in direct_dep_reports:
         dep_rep_count += 1
-        for severity in ('Critical', 'High', 'Medium', 'Low'):
-            setattr(pr, f"indirectVulns{severity}_score",
-                getattr(report, f"directVulns{severity}_score", 0) +
-                getattr(report, f"indirectVulns{severity}_score", 0)
+        for severity in ("Critical", "High", "Medium", "Low"):
+            setattr(
+                pr,
+                f"indirectVulns{severity}_score",
+                getattr(report, f"directVulns{severity}_score", 0)
+                + getattr(report, f"indirectVulns{severity}_score", 0),
             )
         pr.dependencies.append(report)
 
@@ -285,9 +293,13 @@ def outer_in_iter(g: nx.DiGraph) -> Generator[List[int], None, None]:
 
     while True:
         points_to_visited = set(src for (src, _) in g.in_edges(visited))
-        only_points_to_visited = set(node for node in points_to_visited if all(dst in visited for (_, dst) in g.out_edges(node)))
+        only_points_to_visited = set(
+            node
+            for node in points_to_visited
+            if all(dst in visited for (_, dst) in g.out_edges(node))
+        )
         new_only_points_to_visited = only_points_to_visited - visited
-        if not bool(new_only_points_to_visited): # visited nothing new
+        if not bool(new_only_points_to_visited):  # visited nothing new
             assert len(visited) == len(g.nodes)
             break
         yield new_only_points_to_visited
@@ -310,33 +322,45 @@ def score_package_and_children(g: nx.DiGraph, package_versions: List[PackageVers
                 package.version,
                 direct_dep_reports=[
                     package_reports_by_id[direct_dep_package_version_id]
-                    for direct_dep_package_version_id in
-                    g.successors(package_version_id)
+                    for direct_dep_package_version_id in g.successors(
+                        package_version_id
+                    )
                 ],
                 all_deps_count=len(descendants(g, package_version_id)),
             )
 
     return package_reports_by_id.values()
 
+
 @scanner.task()
 def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
     package_name, package_version = package_version_tuple
 
-    package: Optional[PackageVersion] = get_most_recently_inserted_package_from_name_and_version(package_name, package_version)
+    package: Optional[
+        PackageVersion
+    ] = get_most_recently_inserted_package_from_name_and_version(
+        package_name, package_version
+    )
     if package is None:
         pr = get_placeholder_entry(package_name, package_version)
         if pr:
             pr.status = "error"
             store_package_report(pr)
-        raise Exception(f"PackageVersion not found for {package_name} {package_version}.")
+        raise Exception(
+            f"PackageVersion not found for {package_name} {package_version}."
+        )
 
-    graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(package)
+    graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(
+        package
+    )
     if graph is None:
         log.info(f"{package.name} {package.version} has no children scoring directly")
         store_package_report(score_package(package.name, package.version, []))
     else:
         g, nodes = get_networkx_graph_and_nodes(graph)
-        log.info(f"{package.name} {package.version} scoring from graph id={graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes)")
+        log.info(
+            f"{package.name} {package.version} scoring from graph id={graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes)"
+        )
         store_package_reports(score_package_and_children(g, nodes))
 
 
@@ -344,13 +368,15 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
 def scan_npm_package_then_build_report_tree(
     package_name: str, package_version: Optional[str] = None
 ) -> celery.result.AsyncResult:
-    return scan_npm_package.apply_async(args=(package_name, package_version), link=build_report_tree.signature())
+    return scan_npm_package.apply_async(
+        args=(package_name, package_version), link=build_report_tree.signature()
+    )
 
 
 async def fetch_and_save_package_data(
     fetcher: Callable[[argparse.Namespace, List[str], int], Dict],
     args: argparse.Namespace,
-    package_names: List[str]
+    package_names: List[str],
 ) -> Dict:
     async for package_result in fetcher(args, package_names, len(package_names)):
         if isinstance(package_result, Exception):
@@ -362,29 +388,49 @@ async def fetch_and_save_package_data(
 
 @scanner.task()
 def check_package_name_in_npmsio(package_name: str) -> bool:
-    npmsio_score = asyncio.run(fetch_and_save_package_data(fetch_npmsio_scores, _NPMSIO_CLIENT_CONFIG, [package_name]), debug=False)
+    npmsio_score = asyncio.run(
+        fetch_and_save_package_data(
+            fetch_npmsio_scores, _NPMSIO_CLIENT_CONFIG, [package_name]
+        ),
+        debug=False,
+    )
     log.info(f"package: {package_name} on npms.io? {npmsio_score is not None}")
     return npmsio_score is not None
 
 
 @scanner.task()
-def check_package_in_npm_registry(package_name: str, package_version: Optional[str] = None) -> Dict:
-    npm_registry_entry = asyncio.run(fetch_and_save_package_data(fetch_npm_registry_metadata, _NPM_CLIENT_CONFIG, [package_name]), debug=False)
+def check_package_in_npm_registry(
+    package_name: str, package_version: Optional[str] = None
+) -> Dict:
+    npm_registry_entry = asyncio.run(
+        fetch_and_save_package_data(
+            fetch_npm_registry_metadata, _NPM_CLIENT_CONFIG, [package_name]
+        ),
+        debug=False,
+    )
 
     package_name_exists = npm_registry_entry is not None
     log.info(f"package: {package_name} on npm registry? {package_name_exists}")
     if package_version is not None:
-        package_version_exists = npm_registry_entry.get("versions", {}).get(package_version, False)
-        log.info(f"package: {package_name}@{package_version!r} on npm registry? {package_version_exists}")
+        package_version_exists = npm_registry_entry.get("versions", {}).get(
+            package_version, False
+        )
+        log.info(
+            f"package: {package_name}@{package_version!r} on npm registry? {package_version_exists}"
+        )
         return package_name_exists and package_version_exists
     return package_name_exists
 
 
 @scanner.task()
-def check_npm_package_exists(package_name: str, package_version: Optional[str] = None) -> bool:
+def check_npm_package_exists(
+    package_name: str, package_version: Optional[str] = None
+) -> bool:
     """
     Check that an npm package name has a score on npms.io and is published on
     the npm registry if a version is provided check that it's in the npm registry
     """
     # check npms.io first because it's usually faster (smaller response sizes)
-    return check_package_name_in_npmsio(package_name) and check_package_in_npm_registry(package_name, package_version)
+    return check_package_name_in_npmsio(package_name) and check_package_in_npm_registry(
+        package_name, package_version
+    )
