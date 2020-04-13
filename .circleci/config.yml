@@ -6,7 +6,7 @@
 #
 version: 2.1
 jobs:
-  test:
+  check-format:
     docker:
       - image: circleci/python:buster
     steps:
@@ -15,9 +15,9 @@ jobs:
       - run:
           name: run black formatter
           command: |
-            pip install --user black
-            black --py36 --check .
-            
+            pip install --user black==19.10b0
+            black -t py38 --check .
+
   build-images:
     docker:
       - image: circleci/python:buster
@@ -75,7 +75,7 @@ workflows:
   version: 2
   check-readme-local-dev:
     jobs:
-      - test:
+      - check-format:
         filters:
           tags:
             only: /.*/
@@ -87,7 +87,7 @@ workflows:
 
       - deploy:
           requires:
-            - test
+            - check-format
             - build-images
           filters:
             tags:
