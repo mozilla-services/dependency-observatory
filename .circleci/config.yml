@@ -16,8 +16,8 @@ jobs:
           name: check code is formatted with black and output diff
           command: |
             pip install --user $(grep black depobs/requirements.txt)
-            black -t py38 --diff .
-            black -t py38 --check .
+            black --config pyproject.toml --diff .
+            black --config pyproject.toml --check .
 
   build-images:
     docker:
