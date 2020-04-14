@@ -21,6 +21,9 @@ jobs:
   unit-test:
     docker:
       - image: circleci/python:buster
+    environment:
+      CELERY_BROKER_URL: sqla+postgresql://postgres:postgres@db/dependency_observatory
+      CELERY_RESULT_BACKEND: db+postgresql://postgres:postgres@db/dependency_observatory
     steps:
       - checkout
       - run:
