@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# requires a running api container
 CI=${CI:-""}
 
 if [[ "$CI" = "" ]]; then
+    # requires a running api container
     docker-compose exec api coverage run -m pytest "$@"
     docker-compose exec api coverage report
     docker-compose exec api coverage html
