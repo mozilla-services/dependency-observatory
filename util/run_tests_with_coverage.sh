@@ -14,5 +14,5 @@ else
     coverage run -m pytest
     coverage report
     coverage html
-    cp /tmp/htmlcov/ .
+    mv /tmp/htmlcov/ .
 fi
