@@ -101,6 +101,13 @@ NB: scan fixture loading runs with `docker-compose up`, but run `docker-compose 
 
 ### Local Development
 
+Run:
+
+```console
+./util/write_version_json.sh > depobs/version.json
+docker-compose up --build -d
+```
+
 #### API
 
 Flask is configured with `FLASK_ENV=development`, which will reload on
