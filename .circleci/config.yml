@@ -16,6 +16,7 @@ jobs:
           name: run black formatter
           command: |
             pip install --user black==19.10b0
+            black -t py38 --diff .
             black -t py38 --check .
 
   build-images:
