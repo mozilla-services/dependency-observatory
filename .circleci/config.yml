@@ -26,7 +26,7 @@ jobs:
       - run:
           name: run unit tests with coverage (no DB)
           command: |
-            pip install --user "$(grep pytest depobs/requirements.txt)" "$(grep coverage depobs/requirements.txt)"
+            pip install --user -r depobs/requirements.txt
             CI=1 ./util/run_tests_with_coverage.sh
       - store_artifacts:
           path: htmlcov
