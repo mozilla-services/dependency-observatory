@@ -24,11 +24,6 @@ def create_app(test_config=None):
         log.info("Initializing DO DB")
         models.init_db()
 
-    host = os.environ.get("HOST", "0.0.0.0")
-    port = int(os.environ.get("PORT", "8000"))
-
-    app.config.update(SERVER_NAME=f"{host}:{port}",)
-
     if test_config:
         # load the test config if passed in
         app.config.from_mapping(test_config)
@@ -39,7 +34,10 @@ def create_app(test_config=None):
 
 
 def main():
-    create_app().run()
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", "8000"))
+
+    create_app().run(host=host, port=port)
 
 
 if __name__ == "__main__":
