@@ -10,6 +10,7 @@ if [[ "$CI" = "" ]]; then
     docker cp dependency-observatory-api:/tmp/htmlcov/ $(pwd)/htmlcov/
     python -m webbrowser -t htmlcov/index.html
 else
+    set -v
     coverage run -m pytest
     coverage report
     coverage html
