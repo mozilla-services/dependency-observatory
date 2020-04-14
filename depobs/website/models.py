@@ -15,14 +15,11 @@ from sqlalchemy import (
     String,
     DateTime,
     ForeignKey,
-    event,
-    select,
 )
-from sqlalchemy.orm import scoped_session, sessionmaker, backref, relation, relationship
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import scoped_session, sessionmaker, backref, relationship
 from sqlalchemy.schema import Table
 from sqlalchemy import func, tuple_
-from sqlalchemy.orm import aliased, Load, load_only
 
 from fpr.db.schema import (
     Advisory,
