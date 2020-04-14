@@ -47,8 +47,6 @@ db_session = scoped_session(
 )
 
 Model = declarative_base()
-View_only = declarative_base()
-# Model.query = db_session.query_property()
 
 dependency = Table(
     "package_dependencies",
@@ -139,7 +137,7 @@ class PackageReport(TaskIDMixin, Model):
         }
 
 
-class PackageLatestReport(View_only):
+class PackageLatestReport(Model):
     __tablename__ = "latest_reports"
 
     id = Column("id", Integer, primary_key=True)
@@ -490,8 +488,8 @@ def store_package_reports(prs: List[PackageReport]) -> None:
     db_session.commit()
 
 
-VIEWS: List[str] = [
-    """
+VIEWS: Dict[str, str] = {
+    "latest_reports": """
 CREATE OR REPLACE VIEW latest_reports AS
 SELECT * From (
 SELECT r.*, row_number() OVER (PARTITION BY package, version ORDER BY scoring_date desc) AS rn
@@ -499,16 +497,28 @@ SELECT r.*, row_number() OVER (PARTITION BY package, version ORDER BY scoring_da
      ) r2
 WHERE r2.rn = 1
     """
-]
+}
 
 
 def create_views(engine):
     connection = engine.connect()
-    for view_command in VIEWS:
+    print(f"creating views if they don't exist: {VIEWS.keys()}")
+    for view_command in VIEWS.values():
         _ = connection.execute(view_command)
     connection.close()
 
 
 def init_db():
-    Model.metadata.create_all(bind=engine)
+    non_view_table_names = [
+        table_name
+        for table_name in Model.metadata.tables
+        if table_name not in VIEWS.keys()
+    ]
+    print(f"creating tables if they don't exist: {non_view_table_names}")
+    Model.metadata.create_all(
+        bind=engine,
+        tables=[
+            Model.metadata.tables[table_name] for table_name in non_view_table_names
+        ],
+    )
     create_views(engine)
