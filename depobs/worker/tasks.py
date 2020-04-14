@@ -9,6 +9,7 @@ from typing import AbstractSet, Callable, Dict, Generator, List, Optional, Tuple
 import logging
 
 from celery import Celery
+from celery.utils.log import get_task_logger
 from celery.exceptions import (
     SoftTimeLimitExceeded,
     TimeLimitExceeded,
@@ -54,7 +55,7 @@ from fpr.db.schema import (
     NPMRegistryEntry,
 )
 
-log = logging.getLogger("depobs.worker")
+log = get_task_logger(__name__)
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
