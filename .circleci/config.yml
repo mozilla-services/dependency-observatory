@@ -18,6 +18,19 @@ jobs:
             black --config pyproject.toml --diff .
             black --config pyproject.toml --check .
 
+  unit-test:
+    docker:
+      - image: circleci/python:buster
+    steps:
+      - checkout
+      - run:
+          name: run unit tests with coverage (no DB)
+          command: |
+            pip install --user "$(grep pytest depobs/requirements.txt)" "$(grep coverage depobs/requirements.txt)"
+            CI=1 ./util/run_tests_with_coverage.sh
+      - store_artifacts:
+          path: htmlcov
+
   build-images:
     docker:
       - image: circleci/python:buster
@@ -80,6 +93,11 @@ workflows:
           tags:
             only: /.*/
 
+      - unit-test:
+        filters:
+          tags:
+            only: /.*/
+
       - build-images:
           filters:
             tags:
@@ -88,6 +106,7 @@ workflows:
       - deploy:
           requires:
             - check-format
+            - unit-test
             - build-images
           filters:
             tags:
