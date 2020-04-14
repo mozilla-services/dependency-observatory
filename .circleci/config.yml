@@ -13,9 +13,9 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-          name: run black formatter
+          name: check code is formatted with black and output diff
           command: |
-            pip install --user black==19.10b0
+            pip install --user $(grep black depobs/requirements.txt)
             black -t py38 --diff .
             black -t py38 --check .
 
