@@ -11,13 +11,28 @@ jobs:
       - image: circleci/python:buster
     steps:
       - checkout
-      - setup_remote_docker
       - run:
-          name: run black formatter
+          name: check code is formatted with black and output diff
           command: |
-            pip install --user black==19.10b0
-            black -t py38 --diff .
-            black -t py38 --check .
+            pip install --user "$(grep black depobs/requirements.txt)"
+            black --config pyproject.toml --diff .
+            black --config pyproject.toml --check .
+
+  unit-test:
+    docker:
+      - image: circleci/python:buster
+    environment:
+      CELERY_BROKER_URL: sqla+postgresql://postgres:postgres@db/dependency_observatory
+      CELERY_RESULT_BACKEND: db+postgresql://postgres:postgres@db/dependency_observatory
+    steps:
+      - checkout
+      - run:
+          name: run unit tests with coverage (no DB)
+          command: |
+            pip install --user -r depobs/requirements.txt
+            CI=1 ./util/run_tests_with_coverage.sh
+      - store_artifacts:
+          path: htmlcov
 
   build-images:
     docker:
@@ -81,6 +96,11 @@ workflows:
           tags:
             only: /.*/
 
+      - unit-test:
+        filters:
+          tags:
+            only: /.*/
+
       - build-images:
           filters:
             tags:
@@ -89,6 +109,7 @@ workflows:
       - deploy:
           requires:
             - check-format
+            - unit-test
             - build-images
           filters:
             tags:
