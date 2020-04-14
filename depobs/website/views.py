@@ -144,22 +144,6 @@ def add_standard_headers_to_static_routes(response):
     response.headers.update(STANDARD_HEADERS)
     return response
 
-
-@api.route("/__lbheartbeat__")
-def lbheartbeat():
-    return Response("badum badum", mimetype="text/plain")
-
-
-@api.route("/__heartbeat__")
-def heartbeat():
-    return Response("badum badum", mimetype="text/plain")
-
-
-@api.route("/__version__")
-def version():
-    return send_from_directory("/app", "version.json")
-
-
 @api.route("/")
 def index_page():
     return send_from_directory("static/", "index.html")

@@ -2,12 +2,14 @@ import os
 import logging
 
 from flask import Flask
+from dockerflow.flask import Dockerflow
+from dockerflow.logging import JsonLogFormatter
 
-
-log = logging.getLogger("do")
+logger  = logging.getLogger(__name__)
+summary_logger = logging.getLogger("request.summary")
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+formatter = JsonLogFormatter(logger_name=__name__)
 ch.setFormatter(formatter)
 
 
@@ -19,9 +21,11 @@ def create_app(test_config=None):
 
     # create and configure the app
     app = Flask(__name__)  # do
+    dockerflow = Dockerflow(app)
+    dockerflow.init_app(app)
 
     if os.environ.get("INIT_DB", False) == "1":
-        log.info("Initializing DO DB")
+        logger.info("Initializing DO DB")
         models.init_db()
 
     host = os.environ.get("HOST", "0.0.0.0")
