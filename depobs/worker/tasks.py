@@ -89,7 +89,7 @@ app = Celery(
     broker=os.environ["CELERY_BROKER_URL"],
     result_backend=os.environ["CELERY_RESULT_BACKEND"],
 )
-scanner.config_from_object(celeryconfig)
+app.config_from_object(celeryconfig)
 
 # The name must be less than or equal to 214 characters. This includes the scope for scoped packages.
 # The name can’t start with a dot or an underscore.
