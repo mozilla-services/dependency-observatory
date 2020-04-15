@@ -18,7 +18,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker, backref, relationship
-from sqlalchemy.schema import Table
 from sqlalchemy import func, tuple_
 
 from fpr.db.schema import (
@@ -46,12 +45,12 @@ db_session = scoped_session(
 
 Model = declarative_base()
 
-dependency = Table(
-    "package_dependencies",
-    Model.metadata,
-    Column("depends_on_id", Integer, ForeignKey("reports.id"), primary_key=True),
-    Column("used_by_id", Integer, ForeignKey("reports.id"), primary_key=True),
-)
+
+class Dependency(Model):
+    __tablename__ = "package_dependencies"
+
+    depends_on_id = Column(Integer, ForeignKey("reports.id"), primary_key=True)
+    used_by_id = Column(Integer, ForeignKey("reports.id"), primary_key=True)
 
 
 class PackageReport(TaskIDMixin, Model):
@@ -82,9 +81,9 @@ class PackageReport(TaskIDMixin, Model):
     # this relationship is used for persistence
     dependencies = relationship(
         "PackageReport",
-        secondary=dependency,
-        primaryjoin=id == dependency.c.depends_on_id,
-        secondaryjoin=id == dependency.c.used_by_id,
+        secondary=Dependency.__table__,
+        primaryjoin=id == Dependency.__table__.c.depends_on_id,
+        secondaryjoin=id == Dependency.__table__.c.used_by_id,
         backref="parents",
     )
 
@@ -163,9 +162,9 @@ class PackageLatestReport(Model):
     # this relationship is used for persistence
     dependencies = relationship(
         "PackageLatestReport",
-        secondary=dependency,
-        primaryjoin=id == dependency.c.depends_on_id,
-        secondaryjoin=id == dependency.c.used_by_id,
+        secondary=Dependency.__table__,
+        primaryjoin=id == Dependency.__table__.c.depends_on_id,
+        secondaryjoin=id == Dependency.__table__.c.used_by_id,
         backref="parents",
     )
 
