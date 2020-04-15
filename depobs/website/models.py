@@ -23,6 +23,7 @@ from sqlalchemy import func, tuple_
 
 from fpr.db.schema import (
     Advisory,
+    Base as scanner_schema_declarative_base,
     NPMRegistryEntry,
     NPMSIOScore,
     PackageGraph,
@@ -499,13 +500,16 @@ WHERE r2.rn = 1
 
 def create_views(engine):
     connection = engine.connect()
-    print(f"creating views if they don't exist: {VIEWS.keys()}")
+    print(f"creating views if they don't exist: {list(VIEWS.keys())}")
     for view_command in VIEWS.values():
         _ = connection.execute(view_command)
     connection.close()
 
 
 def init_db():
+    scanner_tables = scanner_schema_declarative_base.metadata.tables
+    print(f"creating scanner tables if they don't exist: {list(scanner_tables.keys())}")
+    scanner_schema_declarative_base.metadata.create_all(bind=engine)
     non_view_table_names = [
         table_name
         for table_name in Model.metadata.tables
