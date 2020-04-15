@@ -1,5 +1,6 @@
-LOG_LEVEL = config("LOG_LEVEL", default="INFO").upper()
-LOG_FORMAT = config("LOG_FORMAT", default="json")
+import sys
+
+
 LOGGING = {
     "version": 1,
     "formatters": {
@@ -11,9 +12,9 @@ LOGGING = {
     },
     "handlers": {
         "console": {
-            "level": LOG_LEVEL,
+            "level": "DEBUG",
             "class": "logging.StreamHandler",
-            "formatter": LOG_FORMAT,
+            "formatter": "json",
             "stream": sys.stdout,
         }
     },

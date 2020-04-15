@@ -12,7 +12,6 @@ from depobs.website.scans import (
 )
 import depobs.worker.tasks as tasks
 
-
 STANDARD_HEADERS = {"Access-Control-Allow-Origin": "*"}
 
 views_blueprint = api = Blueprint("views_blueprint", __name__)
@@ -143,6 +142,7 @@ def get_graph(graph_id):
 def add_standard_headers_to_static_routes(response):
     response.headers.update(STANDARD_HEADERS)
     return response
+
 
 @api.route("/")
 def index_page():
