@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 import re
 from typing import Tuple
 
-from celery import Celery
 from flask import Blueprint, jsonify, make_response, request
 from werkzeug.exceptions import BadRequest
 
