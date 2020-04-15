@@ -35,6 +35,12 @@ jobs:
           command: |
             pip install --user -r depobs/requirements.txt
             CI=1 ./util/run_tests_with_coverage.sh
+      - run:
+          name: generate coverage reports
+          command: |
+            coverage report
+            coverage html
+            mv /tmp/htmlcov/ .
       - store_artifacts:
           path: htmlcov
 
