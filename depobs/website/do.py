@@ -10,7 +10,7 @@ from dockerflow.logging import JsonLogFormatter
 from config import LOGGING
 
 logging.config.dictConfig(LOGGING)
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 # silence flask request logging
 flasklog = logging.getLogger("werkzeug")
@@ -27,7 +27,7 @@ def create_app(test_config=None):
     app = Flask(__name__)  # do
     dockerflow = Dockerflow(app)
     dockerflow.init_app(app)
-        
+
     if test_config:
         # load the test config if passed in
         app.config.from_mapping(test_config)
