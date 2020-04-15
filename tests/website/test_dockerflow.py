@@ -13,8 +13,4 @@ def test_heartbeat(client):
 
 def test_version_json(client):
     response = client.get("/__version__")
-
-    with open("/app/version.json", "rb") as fin:
-        expected_data = fin.read()
-
-    assert expected_data == response.data
+    assert response.status == "200 OK"
