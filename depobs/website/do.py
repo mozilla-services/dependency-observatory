@@ -7,7 +7,7 @@ from dockerflow.flask import Dockerflow
 from dockerflow.logging import JsonLogFormatter
 
 # enable mozlog request logging
-from config import LOGGING
+from depobs.website.config import LOGGING
 
 logging.config.dictConfig(LOGGING)
 log = logging.getLogger(__name__)
