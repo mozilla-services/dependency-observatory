@@ -9,6 +9,7 @@ from typing import AbstractSet, Callable, Dict, Generator, List, Optional, Tuple
 import logging
 
 from celery import Celery
+from celery.utils.log import get_task_logger
 from celery.exceptions import (
     SoftTimeLimitExceeded,
     TimeLimitExceeded,
@@ -54,7 +55,7 @@ from fpr.db.schema import (
     NPMRegistryEntry,
 )
 
-log = logging.getLogger("depobs.worker")
+log = get_task_logger(__name__)
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -83,7 +84,7 @@ _NPMSIO_CLIENT_CONFIG = argparse.Namespace(
 )
 
 # Create the scanner task queue
-scanner = Celery(
+app = Celery(
     "tasks",
     broker=os.environ["CELERY_BROKER_URL"],
     result_backend=os.environ["CELERY_RESULT_BACKEND"],
@@ -142,12 +143,12 @@ def get_npm_package_version_validation_error(package_name: str) -> Optional[Exce
     return None
 
 
-@scanner.task()
+@app.task()
 def add(x, y):
     return x + y
 
 
-@scanner.task()
+@app.task()
 def scan_npm_package(package_name: str, package_version: Optional[str] = None) -> None:
     package_name_validation_error = get_npm_package_name_validation_error(package_name)
     if package_name_validation_error is not None:
@@ -182,7 +183,7 @@ def scan_npm_package(package_name: str, package_version: Optional[str] = None) -
     return (package_name, package_version)
 
 
-@scanner.task()
+@app.task()
 def score_package(
     package_name: str,
     package_version: str,
@@ -332,7 +333,7 @@ def score_package_and_children(g: nx.DiGraph, package_versions: List[PackageVers
     return package_reports_by_id.values()
 
 
-@scanner.task()
+@app.task()
 def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
     package_name, package_version = package_version_tuple
 
@@ -364,7 +365,7 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
         store_package_reports(score_package_and_children(g, nodes))
 
 
-@scanner.task()
+@app.task()
 def scan_npm_package_then_build_report_tree(
     package_name: str, package_version: Optional[str] = None
 ) -> celery.result.AsyncResult:
@@ -386,7 +387,7 @@ async def fetch_and_save_package_data(
         return package_result
 
 
-@scanner.task()
+@app.task()
 def check_package_name_in_npmsio(package_name: str) -> bool:
     npmsio_score = asyncio.run(
         fetch_and_save_package_data(
@@ -398,7 +399,7 @@ def check_package_name_in_npmsio(package_name: str) -> bool:
     return npmsio_score is not None
 
 
-@scanner.task()
+@app.task()
 def check_package_in_npm_registry(
     package_name: str, package_version: Optional[str] = None
 ) -> Dict:
@@ -422,7 +423,7 @@ def check_package_in_npm_registry(
     return package_name_exists
 
 
-@scanner.task()
+@app.task()
 def check_npm_package_exists(
     package_name: str, package_version: Optional[str] = None
 ) -> bool:

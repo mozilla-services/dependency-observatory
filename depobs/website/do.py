@@ -27,19 +27,14 @@ def create_app(test_config=None):
     app = Flask(__name__)  # do
     dockerflow = Dockerflow(app)
     dockerflow.init_app(app)
-
-    if os.environ.get("INIT_DB", False) == "1":
-        logger.info("Initializing DO DB")
-        models.init_db()
-
-    host = os.environ.get("HOST", "0.0.0.0")
-    port = int(os.environ.get("PORT", "8000"))
-
-    app.config.update(SERVER_NAME=f"{host}:{port}",)
-
+        
     if test_config:
         # load the test config if passed in
         app.config.from_mapping(test_config)
+
+    if os.environ.get("INIT_DB", False) == "1":
+        log.info("Initializing DO DB")
+        models.init_db()
 
     app.register_blueprint(scans_blueprint)
     app.register_blueprint(views_blueprint)
@@ -48,7 +43,10 @@ def create_app(test_config=None):
 
 
 def main():
-    create_app().run()
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", "8000"))
+
+    create_app().run(host=host, port=port)
 
 
 if __name__ == "__main__":
