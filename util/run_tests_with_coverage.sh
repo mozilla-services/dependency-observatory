@@ -12,7 +12,4 @@ if [[ "$CI" = "" ]]; then
 else
     set -v
     coverage run -m pytest
-    coverage report
-    coverage html
-    mv /tmp/htmlcov/ .
 fi
