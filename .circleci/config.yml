@@ -27,6 +27,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: write a version.json in depobs/
+          command: |
+            CI=1 ./util/write_version_json.sh > depobs/version.json
+      - run:
           name: run unit tests with coverage (no DB)
           command: |
             pip install --user -r depobs/requirements.txt
