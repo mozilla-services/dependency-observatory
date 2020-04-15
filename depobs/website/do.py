@@ -1,14 +1,20 @@
 import os
 import logging
+import logging.config
 
 from flask import Flask
+from dockerflow.flask import Dockerflow
+from dockerflow.logging import JsonLogFormatter
 
+# enable mozlog request logging
+from config import LOGGING
 
-log = logging.getLogger("do")
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-ch.setFormatter(formatter)
+logging.config.dictConfig(LOGGING)
+logger = logging.getLogger(__name__)
+
+# silence flask request logging
+flasklog = logging.getLogger("werkzeug")
+flasklog.setLevel(logging.ERROR)
 
 
 def create_app(test_config=None):
@@ -19,7 +25,9 @@ def create_app(test_config=None):
 
     # create and configure the app
     app = Flask(__name__)  # do
-
+    dockerflow = Dockerflow(app)
+    dockerflow.init_app(app)
+        
     if test_config:
         # load the test config if passed in
         app.config.from_mapping(test_config)
@@ -30,6 +38,7 @@ def create_app(test_config=None):
 
     app.register_blueprint(scans_blueprint)
     app.register_blueprint(views_blueprint)
+
     return app
 
 
