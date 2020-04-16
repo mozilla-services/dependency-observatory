@@ -26,8 +26,6 @@ def create_app(test_config=None):
 
     # create and configure the app
     app = Flask(__name__)  # do
-    dockerflow = Dockerflow(app)
-    dockerflow.init_app(app)
     app.config.from_object('depobs.website.config')
 
     if test_config:
@@ -40,6 +38,8 @@ def create_app(test_config=None):
     if app.config["INIT_DB"]:
         models.create_tables_and_views(app)
 
+    dockerflow = Dockerflow(app)
+    dockerflow.init_app(app)
     app.register_blueprint(scans_blueprint)
     app.register_blueprint(views_blueprint)
 
