@@ -28,6 +28,7 @@ def create_app(test_config=None):
     app = Flask(__name__)  # do
     dockerflow = Dockerflow(app)
     dockerflow.init_app(app)
+    app.config.from_object('depobs.website.config')
 
     app.config.update(
         SQLALCHEMY_DATABASE_URI=os.environ.get("SQLALCHEMY_DATABASE_URI", None),
@@ -54,16 +55,28 @@ def create_app(test_config=None):
     return app
 
 
-def create_celery_app(flask_app=None):
-    import depobs.worker.celeryconfig as celeryconfig
+def create_celery_app(flask_app=None, test_config=None, tasks=None):
+    """Returns a celery app that gives tasks access to a Flask
+    application's context (e.g. the db variable).
 
-    flask_app = flask_app if flask_app else create_app()
+    Uses the Flask app's config (e.g. when started in the web container)
+    or creates a default Flask app (e.g. when started in the worker
+    container).
+
+    To avoid import cycles web views should use the
+    depobs.website.get_celery_tasks to kick off celery tasks.
+    """
+    flask_app = flask_app if flask_app else create_app(dict(INIT_DB=False))
+    if tasks is None:
+        tasks = []
+
     celery_app = Celery(
         flask_app.import_name,
         broker=flask_app.config["CELERY_BROKER_URL"],
         result_backend=flask_app.config["CELERY_RESULT_BACKEND"],
     )
-    celery_app.config_from_object(celeryconfig)
+    celery_app.config_from_object(flask_app.config)
+    celery_app.config_from_object(test_config)
 
     TaskBase = celery_app.Task
 
@@ -75,6 +88,9 @@ def create_celery_app(flask_app=None):
                 return TaskBase.__call__(self, *args, **kwargs)
 
     celery_app.Task = ContextTask
+    log.info(f"registering tasks: {tasks}")
+    for task in tasks:
+        celery_app.task(task)
     return celery_app
 
 
