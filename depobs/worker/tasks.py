@@ -3,7 +3,6 @@ import asyncio
 import datetime
 import os
 import sys
-import subprocess
 from typing import AbstractSet, Callable, Dict, Generator, List, Optional, Tuple, Union
 import logging
 
@@ -93,25 +92,7 @@ def scan_npm_package(package_name: str, package_version: Optional[str] = None) -
         if package_version_validation_error is not None:
             raise package_version_validation_error
 
-    # mozilla/dependencyscan:latest must already be built/pulled/otherwise
-    # present on the worker node
-    command = [
-        "docker",
-        "run",
-        "--rm",
-        "-e",
-        f"DB_URL={os.environ['SQLALCHEMY_DATABASE_URI']}",
-        "-v",
-        "/var/run/docker.sock:/var/run/docker.sock",
-        "mozilla/dependencyscan:latest",
-        "analyze_package.sh",
-        package_name,
-    ]
-    if package_version:
-        command.append(package_version)
 
-    log.info(f"running {command} for package_name {package_name}@{package_version}")
-    subprocess.run(command, encoding="utf-8", capture_output=True).check_returncode()
     return (package_name, package_version)
 
 
