@@ -38,7 +38,10 @@ from depobs.scanner.db.schema import (
 )
 from depobs.scanner.models.pipeline import Pipeline
 from depobs.scanner.models.pipeline import add_infile_and_outfile, add_db_arg
-from depobs.scanner.pipelines.postprocess import parse_stdout_as_json, parse_stdout_as_jsonlines
+from depobs.scanner.pipelines.postprocess import (
+    parse_stdout_as_json,
+    parse_stdout_as_jsonlines,
+)
 from depobs.scanner.rx_util import on_next_save_to_jsonl
 from depobs.scanner.serialize_util import (
     iter_jsonlines,

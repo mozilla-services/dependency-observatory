@@ -19,7 +19,12 @@ from typing import (
 )
 
 from depobs.scanner.rx_util import on_next_save_to_jsonl
-from depobs.scanner.serialize_util import get_in, extract_fields, iter_jsonlines, REPO_FIELDS
+from depobs.scanner.serialize_util import (
+    get_in,
+    extract_fields,
+    iter_jsonlines,
+    REPO_FIELDS,
+)
 import depobs.scanner.docker.containers as containers
 from depobs.scanner.models.pipeline import Pipeline
 from depobs.scanner.models.org_repo import OrgRepo
@@ -32,7 +37,10 @@ from depobs.scanner.graph_util import (
     has_changes,
     get_new_removed_and_new_total,
 )
-from depobs.scanner.models.pipeline import add_infile_and_outfile, add_graphviz_graph_args
+from depobs.scanner.models.pipeline import (
+    add_infile_and_outfile,
+    add_graphviz_graph_args,
+)
 from depobs.scanner.pipelines.util import exc_to_str
 
 log = logging.getLogger("depobs.scanner.pipelines.rust_changelog")

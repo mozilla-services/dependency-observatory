@@ -27,7 +27,12 @@ from typing import (
 import typing
 
 from depobs.scanner.rx_util import on_next_save_to_jsonl
-from depobs.scanner.serialize_util import get_in, extract_fields, iter_jsonlines, REPO_FIELDS
+from depobs.scanner.serialize_util import (
+    get_in,
+    extract_fields,
+    iter_jsonlines,
+    REPO_FIELDS,
+)
 import depobs.scanner.docker.containers as containers
 import depobs.scanner.docker.volumes as volumes
 from depobs.scanner.models.pipeline import Pipeline
@@ -47,7 +52,11 @@ from depobs.scanner.models.language import (
     package_manager_names,
     package_managers,
 )
-from depobs.scanner.models.pipeline import add_infile_and_outfile, add_docker_args, add_volume_args
+from depobs.scanner.models.pipeline import (
+    add_infile_and_outfile,
+    add_docker_args,
+    add_volume_args,
+)
 from depobs.scanner.pipelines.util import exc_to_str
 
 log = logging.getLogger("depobs.scanner.pipelines.run_repo_tasks")

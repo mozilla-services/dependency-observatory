@@ -8,7 +8,11 @@ from depobs.scanner.rx_util import on_next_save_to_jsonl
 from depobs.scanner.clients.cratesio import fetch_cratesio_metadata
 from depobs.scanner.clients.npmsio import fetch_npmsio_scores
 from depobs.scanner.clients.npm_registry import fetch_npm_registry_metadata
-from depobs.scanner.models.pipeline import Pipeline, add_infile_and_outfile, add_aiohttp_args
+from depobs.scanner.models.pipeline import (
+    Pipeline,
+    add_infile_and_outfile,
+    add_aiohttp_args,
+)
 from depobs.scanner.models.package_meta_result import Result
 from depobs.scanner.pipelines.util import exc_to_str
 from depobs.scanner.serialize_util import iter_jsonlines

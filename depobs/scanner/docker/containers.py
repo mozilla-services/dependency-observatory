@@ -204,7 +204,9 @@ async def run(
         volume_configs: List[
             depobs.scanner.docker.volumes.DockerVolumeConfig
         ] = volumes if volumes is not None else []
-        async with depobs.scanner.docker.volumes.ensure_many(log, client, volume_configs):
+        async with depobs.scanner.docker.volumes.ensure_many(
+            log, client, volume_configs
+        ):
             config: Dict[str, Any] = dict(
                 Cmd=cmd,
                 Image=repository_tag,

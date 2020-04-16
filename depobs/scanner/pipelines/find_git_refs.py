@@ -15,7 +15,11 @@ from depobs.scanner.models.pipeline import Pipeline
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
 from depobs.scanner.models.language import DockerImage, docker_images
-from depobs.scanner.models.pipeline import add_infile_and_outfile, add_docker_args, add_volume_args
+from depobs.scanner.models.pipeline import (
+    add_infile_and_outfile,
+    add_docker_args,
+    add_volume_args,
+)
 from depobs.scanner.pipelines.util import exc_to_str
 
 log = logging.getLogger("depobs.scanner.pipelines.find_git_refs")
