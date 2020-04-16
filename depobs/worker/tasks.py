@@ -43,14 +43,9 @@ from depobs.scanner.pipelines.util import exc_to_str as _
 from depobs.scanner.clients.npmsio import fetch_npmsio_scores
 from depobs.scanner.clients.npm_registry import fetch_npm_registry_metadata
 
-    Base,
-    Advisory,
 from depobs.scanner.db.schema import (
     PackageVersion,
-    PackageLink,
     PackageGraph,
-    NPMSIOScore,
-    NPMRegistryEntry,
 )
 
 log = get_task_logger(__name__)
