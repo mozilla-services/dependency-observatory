@@ -13,7 +13,9 @@ import networkx as nx
 from networkx.algorithms.dag import descendants, is_directed_acyclic_graph
 
 from depobs.website.do import create_celery_app
+import depobs.website.models as models
 from depobs.website.models import (
+    NPMRegistryEntry,
     PackageReport,
     PackageLatestReport,
     get_package_report,
@@ -35,7 +37,6 @@ import depobs.worker.validators as validators
 from depobs.scanner.pipelines.util import exc_to_str as _
 from depobs.scanner.clients.npmsio import fetch_npmsio_scores
 from depobs.scanner.clients.npm_registry import fetch_npm_registry_metadata
-
 from depobs.scanner.db.schema import (
     PackageVersion,
     PackageGraph,
@@ -325,6 +326,9 @@ def check_package_name_in_npmsio(package_name: str) -> bool:
         debug=False,
     )
     log.info(f"package: {package_name} on npms.io? {npmsio_score is not None}")
+    log.info(f"saving npms.io score for {package_name}")
+    # inserts a unique entry for new analyzed_at fields
+    models.insert_npmsio_score(npmsio_score)
     return npmsio_score is not None
 
 
@@ -340,6 +344,11 @@ def check_package_in_npm_registry(
     )
 
     package_name_exists = npm_registry_entry is not None
+    if package_name_exists:
+        # inserts new entries for new versions (but doesn't update old ones)
+        log.info(f"saving npm registry entry for {package_name}")
+        models.insert_npm_registry_entry(npm_registry_entry)
+
     log.info(f"package: {package_name} on npm registry? {package_name_exists}")
     if package_version is not None:
         package_version_exists = npm_registry_entry.get("versions", {}).get(
