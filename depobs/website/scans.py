@@ -1,5 +1,4 @@
 from datetime import datetime, timedelta
-import re
 from typing import Tuple
 
 from flask import Blueprint, jsonify, make_response, request
