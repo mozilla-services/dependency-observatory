@@ -4,8 +4,6 @@
 
 ### Running
 
-1. run `docker pull mozilla/dependencyscan:latest` to fetch the latest scanner image
-
 1. run `docker-compose up --build -d` to build and start DB, API, and scan runner worker
 
 1. check for loaded scan fixture data:
@@ -153,7 +151,6 @@ worker: Warm shutdown (MainProcess)
 1. fetch the relevant images e.g.
 
 ```console
-docker pull mozilla/dependencyscan:latest
 docker pull mozilla/dependency-observatory:latest
 ```
 
