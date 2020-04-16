@@ -84,7 +84,6 @@ _NPMSIO_CLIENT_CONFIG = argparse.Namespace(
 app = create_celery_app()
 
 
-
 def add(x, y):
     return x + y
 
