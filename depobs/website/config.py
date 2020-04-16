@@ -22,6 +22,7 @@ LOGGING = {
     "loggers": {
         "do": {"handlers": ["console"], "level": "DEBUG"},
         "request.summary": {"handlers": ["console"], "level": "INFO"},
+        "depobs.website.models": {"handlers": ["console"], "level": "INFO"},
     },
 }
 
