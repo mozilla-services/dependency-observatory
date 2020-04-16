@@ -1,11 +1,10 @@
 from datetime import datetime, timedelta
-import re
 from typing import Tuple
 
 from flask import Blueprint, jsonify, make_response, request
 from werkzeug.exceptions import BadRequest
 
-import depobs.worker.tasks as tasks
+from depobs.website.celery_tasks import get_celery_tasks
 import depobs.worker.validators as validators
 
 scans_blueprint = api = Blueprint("scans_blueprint", __name__)
@@ -70,7 +69,7 @@ def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
 @api.route("/scan", methods=["POST"])
 def scan():
     package_name, package_version, _ = validate_npm_package_version_query_params()
-    result: celery.result.AsyncResult = tasks.scan_npm_package.delay(
+    result: celery.result.AsyncResult = get_celery_tasks().scan_npm_package.delay(
         package_name, package_version
     )
     return dict(task_id=result.id)
@@ -79,7 +78,7 @@ def scan():
 @api.route("/build_report_tree", methods=["POST"])
 def build_report_tree():
     package_name, package_version, _ = validate_npm_package_version_query_params()
-    result: celery.result.AsyncResult = tasks.build_report_tree.delay(
+    result: celery.result.AsyncResult = get_celery_tasks().build_report_tree.delay(
         (package_name, package_version)
     )
     return dict(task_id=result.id)
@@ -88,7 +87,7 @@ def build_report_tree():
 @api.route("/scan_then_build_report_tree", methods=["POST"])
 def scan_npm_package_then_build_report_tree():
     package_name, package_version, _ = validate_npm_package_version_query_params()
-    result: celery.result.AsyncResult = tasks.scan_npm_package_then_build_report_tree.delay(
+    result: celery.result.AsyncResult = get_celery_tasks().scan_npm_package_then_build_report_tree.delay(
         package_name, package_version
     )
     return dict(task_id=result.id)
@@ -97,7 +96,7 @@ def scan_npm_package_then_build_report_tree():
 @api.route("/score", methods=["POST"])
 def score():
     package_name, package_version, _ = validate_npm_package_version_query_params()
-    result: celery.result.AsyncResult = tasks.score_package.delay(
+    result: celery.result.AsyncResult = get_celery_tasks().score_package.delay(
         package_name, package_version
     )
     return dict(task_id=result.id)

@@ -4,11 +4,11 @@ import os
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple
 
+from flask_sqlalchemy import SQLAlchemy
 import networkx as nx
 from networkx.drawing.nx_pydot import to_pydot
 import pydot
 from sqlalchemy import (
-    create_engine,
     Column,
     Integer,
     Float,
@@ -16,9 +16,9 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import scoped_session, sessionmaker, backref, relationship
-from sqlalchemy import func, tuple_
+from sqlalchemy.orm import backref, relationship
+from sqlalchemy.schema import Table
+from sqlalchemy import func
 
 from fpr.db.schema import (
     Advisory,
@@ -31,29 +31,17 @@ from fpr.db.schema import (
 )
 from depobs.database.mixins import TaskIDMixin
 
-
-DATABASE_URI = os.environ.get(
-    "DATABASE_URI",
-    "postgresql+psycopg2://postgres:postgres@localhost/dependency_observatory",
-)
-
-engine = create_engine(DATABASE_URI)
-
-db_session = scoped_session(
-    sessionmaker(autocommit=False, autoflush=False, bind=engine)
-)
-
-Model = declarative_base()
+db = SQLAlchemy()
 
 
-class Dependency(Model):
+class Dependency(db.Model):
     __tablename__ = "package_dependencies"
 
     depends_on_id = Column(Integer, ForeignKey("reports.id"), primary_key=True)
     used_by_id = Column(Integer, ForeignKey("reports.id"), primary_key=True)
 
 
-class PackageReport(TaskIDMixin, Model):
+class PackageReport(TaskIDMixin, db.Model):
     __tablename__ = "reports"
 
     id = Column("id", Integer, primary_key=True)
@@ -134,7 +122,7 @@ class PackageReport(TaskIDMixin, Model):
         }
 
 
-class PackageLatestReport(Model):
+class PackageLatestReport(db.Model):
     __tablename__ = "latest_reports"
 
     id = Column("id", Integer, primary_key=True)
@@ -228,14 +216,14 @@ class PackageLatestReport(Model):
 def get_package_report(package, version=None):
     if None == version:
         # TODO order-by is hard with semver. Think about splitting out versions
-        no_version_query = db_session.query(PackageReport).filter(
+        no_version_query = db.session.query(PackageReport).filter(
             PackageReport.package == package
         )
         print(f"Query is {no_version_query}")
         for rep in no_version_query:
             return rep
     else:
-        for rep in db_session.query(PackageReport).filter(
+        for rep in db.session.query(PackageReport).filter(
             PackageReport.package == package, PackageReport.version == version
         ):
             return rep
@@ -248,7 +236,7 @@ def get_most_recently_scored_package_report(
     scored_after: Optional[datetime] = None,
 ) -> Optional[PackageReport]:
     "Get the most recently scored PackageReport with package_name, optional package_version, and optionally scored_after the scored_after datetime or None"
-    query = db_session.query(PackageReport).filter_by(package=package_name)
+    query = db.session.query(PackageReport).filter_by(package=package_name)
     if package_version is not None:
         query = query.filter_by(version=package_version)
     if scored_after is not None:
@@ -261,7 +249,7 @@ def get_placeholder_entry(
     package_name: str, package_version: str
 ) -> Optional[PackageReport]:
     "Get the placeholder entry, if it exists"
-    query = db_session.query(PackageReport).filter_by(package=package_name)
+    query = db.session.query(PackageReport).filter_by(package=package_name)
     query = query.filter_by(version=package_version)
     query = query.filter(PackageReport.scoring_date == None)
     print(f"Query is {query}")
@@ -273,7 +261,7 @@ def get_most_recently_inserted_package_from_name_and_version(
     package_version: Optional[str] = None,
     inserted_after: Optional[datetime] = None,
 ):
-    query = db_session.query(PackageVersion).filter_by(name=package_name)
+    query = db.session.query(PackageVersion).filter_by(name=package_name)
     if package_version is not None:
         query = query.filter_by(version=package_version)
     if inserted_after is not None:
@@ -283,14 +271,14 @@ def get_most_recently_inserted_package_from_name_and_version(
 
 def get_packages_by_ids(package_ids: List[int]) -> List[PackageVersion]:
     return (
-        db_session.query(PackageVersion)
+        db.session.query(PackageVersion)
         .filter(PackageVersion.id.in_(package_ids))
         .all()
     )
 
 
 def get_graph_by_id(graph_id: int) -> PackageGraph:
-    return db_session.query(PackageGraph).filter_by(id=graph_id).one()
+    return db.session.query(PackageGraph).filter_by(id=graph_id).one()
 
 
 def get_networkx_graph_and_nodes(
@@ -346,7 +334,7 @@ def get_latest_graph_including_package_as_parent(
     package is a parent and returns newest package graph using that link
     """
     link = (
-        db_session.query(PackageLink)
+        db.session.query(PackageLink)
         .filter(PackageLink.parent_package_id == package.id)
         .order_by(PackageLink.inserted_at.desc())
         .limit(1)
@@ -356,7 +344,7 @@ def get_latest_graph_including_package_as_parent(
         print(f"{package.name} {package.version} has no children")
         return None
     graph_query = (
-        db_session.query(PackageGraph)
+        db.session.query(PackageGraph)
         .filter(PackageGraph.link_ids.contains([link.id]))
         .order_by(PackageGraph.inserted_at.desc())
         .limit(1)
@@ -367,7 +355,7 @@ def get_latest_graph_including_package_as_parent(
 
 def get_graph_links(graph: PackageGraph) -> List[PackageLink]:
     return (
-        db_session.query(PackageLink)
+        db.session.query(PackageLink)
         .filter(PackageLink.id.in_([lid[0] for lid in graph.link_ids]))
         .all()
     )
@@ -375,7 +363,7 @@ def get_graph_links(graph: PackageGraph) -> List[PackageLink]:
 
 def get_package_from_id(id: int) -> Optional[PackageVersion]:
     package_version = (
-        db_session.query(PackageVersion).filter(PackageVersion.id == id).one_or_none()
+        db.session.query(PackageVersion).filter(PackageVersion.id == id).one_or_none()
     )
     if package_version is None:
         print(f"no package found for get_package_id {id}")
@@ -400,25 +388,25 @@ def get_vulnerabilities_report(package: str, version: str) -> Dict:
 
 
 def get_npms_io_score(package: str, version: str):
-    return db_session.query(NPMSIOScore.score).filter_by(
+    return db.session.query(NPMSIOScore.score).filter_by(
         package_name=package, package_version=version
     )
 
 
 def get_NPMRegistryEntry(package: str, version: str):
-    return db_session.query(NPMRegistryEntry).filter_by(
+    return db.session.query(NPMRegistryEntry).filter_by(
         package_name=package, package_version=version
     )
 
 
 def get_maintainers_contributors(package: str, version: str):
-    return db_session.query(
+    return db.session.query(
         NPMRegistryEntry.maintainers, NPMRegistryEntry.contributors
     ).filter_by(package_name=package, package_version=version)
 
 
 def get_npm_registry_data(package: str, version: str):
-    return db_session.query(
+    return db.session.query(
         NPMRegistryEntry.published_at,
         NPMRegistryEntry.maintainers,
         NPMRegistryEntry.contributors,
@@ -427,7 +415,7 @@ def get_npm_registry_data(package: str, version: str):
 
 def get_vulnerability_counts(package: str, version: str):
     return (
-        db_session.query(
+        db.session.query(
             Advisory.package_name,
             PackageVersion.version,
             Advisory.severity,
@@ -442,7 +430,7 @@ def get_vulnerability_counts(package: str, version: str):
 
 def get_vulnerabilities(package: str, version: str):
     return (
-        db_session.query(
+        db.session.query(
             Advisory.package_name,
             PackageVersion.version,
             Advisory.severity,
@@ -476,13 +464,13 @@ def insert_package_report_placeholder_or_update_task_id(
 
 
 def store_package_report(pr) -> None:
-    db_session.add(pr)
-    db_session.commit()
+    db.session.add(pr)
+    db.session.commit()
 
 
 def store_package_reports(prs: List[PackageReport]) -> None:
-    db_session.add_all(prs)
-    db_session.commit()
+    db.session.add_all(prs)
+    db.session.commit()
 
 
 VIEWS: Dict[str, str] = {
@@ -505,20 +493,24 @@ def create_views(engine):
     connection.close()
 
 
-def init_db():
-    scanner_tables = scanner_schema_declarative_base.metadata.tables
-    print(f"creating scanner tables if they don't exist: {list(scanner_tables.keys())}")
-    scanner_schema_declarative_base.metadata.create_all(bind=engine)
-    non_view_table_names = [
-        table_name
-        for table_name in Model.metadata.tables
-        if table_name not in VIEWS.keys()
-    ]
-    print(f"creating tables if they don't exist: {non_view_table_names}")
-    Model.metadata.create_all(
-        bind=engine,
-        tables=[
-            Model.metadata.tables[table_name] for table_name in non_view_table_names
-        ],
-    )
-    create_views(engine)
+def create_tables_and_views(app):
+    with app.app_context():
+        scanner_tables = scanner_schema_declarative_base.metadata.tables
+        print(
+            f"creating scanner tables if they don't exist: {list(scanner_tables.keys())}"
+        )
+        scanner_schema_declarative_base.metadata.create_all(bind=db.engine,)
+        non_view_table_names = [
+            table_name
+            for table_name in db.Model.metadata.tables
+            if table_name not in VIEWS.keys()
+        ]
+        print(f"creating tables if they don't exist: {non_view_table_names}")
+        db.Model.metadata.create_all(
+            bind=db.engine,
+            tables=[
+                db.Model.metadata.tables[table_name]
+                for table_name in non_view_table_names
+            ],
+        )
+        create_views(db.engine)

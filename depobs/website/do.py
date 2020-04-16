@@ -2,6 +2,7 @@ import os
 import logging
 import logging.config
 
+import celery
 from flask import Flask
 from dockerflow.flask import Dockerflow
 from dockerflow.logging import JsonLogFormatter
@@ -25,21 +26,59 @@ def create_app(test_config=None):
 
     # create and configure the app
     app = Flask(__name__)  # do
-    dockerflow = Dockerflow(app)
-    dockerflow.init_app(app)
+    app.config.from_object("depobs.website.config")
 
     if test_config:
         # load the test config if passed in
         app.config.from_mapping(test_config)
 
-    if os.environ.get("INIT_DB", False) == "1":
-        log.info("Initializing DO DB")
-        models.init_db()
+    # setup up request-scoped DB connections
+    log.info(f"Initializing DO DB: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    models.db.init_app(app)
+    if app.config["INIT_DB"]:
+        models.create_tables_and_views(app)
 
+    dockerflow = Dockerflow(app)
+    dockerflow.init_app(app)
     app.register_blueprint(scans_blueprint)
     app.register_blueprint(views_blueprint)
 
     return app
+
+
+def create_celery_app(flask_app=None, test_config=None, tasks=None):
+    """Returns a celery app that gives tasks access to a Flask
+    application's context (e.g. the db variable).
+
+    Uses the Flask app's config (e.g. when started in the web container)
+    or creates a default Flask app (e.g. when started in the worker
+    container).
+
+    To avoid import cycles web views should use the
+    depobs.website.get_celery_tasks to kick off celery tasks.
+    """
+    flask_app = flask_app if flask_app else create_app(dict(INIT_DB=False))
+    if tasks is None:
+        tasks = []
+
+    celery_app = celery.Celery(
+        flask_app.import_name,
+        broker=flask_app.config["CELERY_BROKER_URL"],
+        result_backend=flask_app.config["CELERY_RESULT_BACKEND"],
+    )
+    celery_app.conf.update(flask_app.config)
+    celery_app.config_from_object(test_config)
+
+    class ContextTask(celery.Task):
+        def __call__(self, *args, **kwargs):
+            with flask_app.app_context():
+                return self.run(*args, **kwargs)
+
+    celery_app.Task = ContextTask
+    log.info(f"registering additional tasks: {tasks}")
+    for task in tasks:
+        celery_app.task(task)
+    return celery_app
 
 
 def main():

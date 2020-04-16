@@ -10,7 +10,7 @@ from depobs.website.scans import (
     validate_npm_package_version_query_params,
     validate_scored_after_ts_query_param,
 )
-import depobs.worker.tasks as tasks
+from depobs.website.celery_tasks import get_celery_tasks
 
 STANDARD_HEADERS = {"Access-Control-Allow-Origin": "*"}
 
@@ -75,7 +75,7 @@ def handle_package_report_not_found(e):
             return package_report.report_json, 500
         return package_report.report_json, 202
 
-    if not tasks.check_npm_package_exists(package_name, package_version):
+    if not get_celery_tasks().check_npm_package_exists(package_name, package_version):
         return (
             dict(
                 description=f"{e.description} Unable to find package on npm registry and npms.io."
@@ -84,7 +84,7 @@ def handle_package_report_not_found(e):
         )
 
     # start a task to scan the package
-    result: celery.result.AsyncResult = tasks.scan_npm_package_then_build_report_tree.delay(
+    result: celery.result.AsyncResult = get_celery_tasks().scan_npm_package_then_build_report_tree.delay(
         package_name, package_version
     )
 

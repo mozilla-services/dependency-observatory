@@ -7,7 +7,6 @@ import subprocess
 from typing import AbstractSet, Callable, Dict, Generator, List, Optional, Tuple, Union
 import logging
 
-from celery import Celery
 from celery.utils.log import get_task_logger
 from celery.exceptions import (
     SoftTimeLimitExceeded,
@@ -20,8 +19,7 @@ import celery.result
 import networkx as nx
 from networkx.algorithms.dag import descendants, is_directed_acyclic_graph
 
-import depobs.worker.celeryconfig as celeryconfig
-
+from depobs.website.do import create_celery_app
 from depobs.website.models import (
     PackageReport,
     PackageLatestReport,
@@ -83,13 +81,7 @@ _NPMSIO_CLIENT_CONFIG = argparse.Namespace(
     dry_run=False,
 )
 
-# Create the scanner task queue
-app = Celery(
-    "tasks",
-    broker=os.environ["CELERY_BROKER_URL"],
-    result_backend=os.environ["CELERY_RESULT_BACKEND"],
-)
-app.config_from_object(celeryconfig)
+app = create_celery_app()
 
 
 @app.task()
@@ -119,7 +111,7 @@ def scan_npm_package(package_name: str, package_version: Optional[str] = None) -
         "run",
         "--rm",
         "-e",
-        f"DB_URL={os.environ['DATABASE_URI']}",
+        f"DB_URL={os.environ['SQLALCHEMY_DATABASE_URI']}",
         "-v",
         "/var/run/docker.sock:/var/run/docker.sock",
         "mozilla/dependencyscan:latest",
@@ -386,3 +378,16 @@ def check_npm_package_exists(
     return check_package_name_in_npmsio(package_name) and check_package_in_npm_registry(
         package_name, package_version
     )
+
+
+# list tasks for the web server to register against its flask app
+tasks = [
+    add,
+    build_report_tree,
+    check_npm_package_exists,
+    check_package_in_npm_registry,
+    check_package_name_in_npmsio,
+    scan_npm_package,
+    scan_npm_package_then_build_report_tree,
+    score_package,
+]
