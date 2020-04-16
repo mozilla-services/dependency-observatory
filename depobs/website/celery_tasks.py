@@ -5,20 +5,20 @@ from flask import current_app
 from depobs.website.do import create_celery_app
 
 
-def get_celery_tasks(filter_prefix: str="depobs.worker.tasks."):
+def get_celery_tasks(filter_prefix: str = "depobs.worker.tasks."):
     """Returns the celery app configured and bound to the Flask app.
 
     Web views should use it in a flask application context to kick off
     celery tasks without creating import cycles.
     """
-    if not hasattr(current_app, 'tasks'):
+    if not hasattr(current_app, "tasks"):
         import depobs.worker.tasks
 
         celery_app = create_celery_app(current_app, tasks=depobs.worker.tasks.tasks)
         request_tasks = {
-                task_name.replace(filter_prefix, ""): task
-                for task_name, task in celery_app.tasks.items()
-                if task_name.startswith(filter_prefix)
+            task_name.replace(filter_prefix, ""): task
+            for task_name, task in celery_app.tasks.items()
+            if task_name.startswith(filter_prefix)
         }
         # convert request_tasks dict to namedtuple so it behaves like the
         # module

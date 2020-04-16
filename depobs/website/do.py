@@ -26,7 +26,7 @@ def create_app(test_config=None):
 
     # create and configure the app
     app = Flask(__name__)  # do
-    app.config.from_object('depobs.website.config')
+    app.config.from_object("depobs.website.config")
 
     if test_config:
         # load the test config if passed in
