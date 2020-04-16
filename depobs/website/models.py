@@ -20,7 +20,7 @@ from sqlalchemy.orm import backref, relationship
 from sqlalchemy.schema import Table
 from sqlalchemy import func
 
-from fpr.db.schema import (
+from depobs.scanner.db.schema import (
     Advisory,
     Base as scanner_schema_declarative_base,
     NPMRegistryEntry,
@@ -309,7 +309,7 @@ def get_labelled_graphviz_graph(graph_id: int) -> str:
 def db_graph_and_links_to_nx_graph(
     graph: PackageGraph, links: List[Tuple[int, int]], nodes: List[PackageVersion]
 ) -> nx.DiGraph:
-    # TODO: de-dup with fpr.graph_util.npm_packages_to_networkx_digraph
+    # TODO: de-dup with depobs.scanner.graph_util.npm_packages_to_networkx_digraph
     g = nx.DiGraph()
     for node in nodes:
         g.add_node(node.id, label=f"{node.name}@{node.version}")
@@ -320,7 +320,7 @@ def db_graph_and_links_to_nx_graph(
 
 
 def graph_to_dot(g: nx.DiGraph) -> pydot.Graph:
-    # TODO: de-dup with fpr.pipelines.{crate,dep_graph}
+    # TODO: de-dup with depobs.scanner.pipelines.{crate,dep_graph}
     pdot: pydot.Graph = to_pydot(g)
     pdot.set("rankdir", "LR")
     return pdot

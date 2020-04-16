@@ -38,14 +38,14 @@ from depobs.website.models import (
 )
 import depobs.worker.validators as validators
 
-# import exc_to_str to resolve import cycle for the following fpr.clients
-from fpr.pipelines.util import exc_to_str as _
-from fpr.clients.npmsio import fetch_npmsio_scores
-from fpr.clients.npm_registry import fetch_npm_registry_metadata
+# import exc_to_str to resolve import cycle for the following depobs.scanner.clients
+from depobs.scanner.pipelines.util import exc_to_str as _
+from depobs.scanner.clients.npmsio import fetch_npmsio_scores
+from depobs.scanner.clients.npm_registry import fetch_npm_registry_metadata
 
-from fpr.db.schema import (
     Base,
     Advisory,
+from depobs.scanner.db.schema import (
     PackageVersion,
     PackageLink,
     PackageGraph,
@@ -65,7 +65,7 @@ NPM_PAT = os.environ.get("NPM_PAT", None)
 
 # celery will try to import these if they're public vars (no _ prefix)
 _NPM_CLIENT_CONFIG = argparse.Namespace(
-    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+fpr@mozilla.com)",
+    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
     total_timeout=30,
     max_connections=1,
     max_retries=1,
@@ -74,7 +74,7 @@ _NPM_CLIENT_CONFIG = argparse.Namespace(
     npm_auth_token=NPM_PAT,
 )
 _NPMSIO_CLIENT_CONFIG = argparse.Namespace(
-    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+fpr@mozilla.com)",
+    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
     total_timeout=10,
     max_connections=1,
     package_batch_size=1,
