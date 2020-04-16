@@ -84,10 +84,12 @@ _NPMSIO_CLIENT_CONFIG = argparse.Namespace(
 app = create_celery_app()
 
 
+@app.task()
 def add(x, y):
     return x + y
 
 
+@app.task()
 def scan_npm_package(package_name: str, package_version: Optional[str] = None) -> None:
     package_name_validation_error = validators.get_npm_package_name_validation_error(
         package_name
@@ -124,6 +126,7 @@ def scan_npm_package(package_name: str, package_version: Optional[str] = None) -
     return (package_name, package_version)
 
 
+@app.task()
 def score_package(
     package_name: str,
     package_version: str,
@@ -273,6 +276,7 @@ def score_package_and_children(g: nx.DiGraph, package_versions: List[PackageVers
     return package_reports_by_id.values()
 
 
+@app.task()
 def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
     package_name, package_version = package_version_tuple
 
@@ -304,6 +308,7 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
         store_package_reports(score_package_and_children(g, nodes))
 
 
+@app.task()
 def scan_npm_package_then_build_report_tree(
     package_name: str, package_version: Optional[str] = None
 ) -> celery.result.AsyncResult:
@@ -325,6 +330,7 @@ async def fetch_and_save_package_data(
         return package_result
 
 
+@app.task()
 def check_package_name_in_npmsio(package_name: str) -> bool:
     npmsio_score = asyncio.run(
         fetch_and_save_package_data(
@@ -336,6 +342,7 @@ def check_package_name_in_npmsio(package_name: str) -> bool:
     return npmsio_score is not None
 
 
+@app.task()
 def check_package_in_npm_registry(
     package_name: str, package_version: Optional[str] = None
 ) -> Dict:
@@ -359,6 +366,7 @@ def check_package_in_npm_registry(
     return package_name_exists
 
 
+@app.task()
 def check_npm_package_exists(
     package_name: str, package_version: Optional[str] = None
 ) -> bool:
@@ -372,8 +380,7 @@ def check_npm_package_exists(
     )
 
 
-# functions to registry with our celery app for the web api or other tasks to
-# call as subtasks
+# list tasks for the web server to register against its flask app
 tasks = [
     add,
     build_report_tree,
@@ -384,4 +391,3 @@ tasks = [
     scan_npm_package_then_build_report_tree,
     score_package,
 ]
-app = create_celery_app(tasks=tasks)

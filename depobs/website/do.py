@@ -2,7 +2,7 @@ import os
 import logging
 import logging.config
 
-from celery import Celery
+import celery
 from flask import Flask
 from dockerflow.flask import Dockerflow
 from dockerflow.logging import JsonLogFormatter
@@ -61,21 +61,21 @@ def create_celery_app(flask_app=None, test_config=None, tasks=None):
     if tasks is None:
         tasks = []
 
-    celery_app = Celery(
+    celery_app = celery.Celery(
         flask_app.import_name,
         broker=flask_app.config["CELERY_BROKER_URL"],
         result_backend=flask_app.config["CELERY_RESULT_BACKEND"],
     )
     celery_app.conf.update(flask_app.config)
-    celery_app.conf_from_object(test_config)
+    celery_app.config_from_object(test_config)
 
-    class ContextTask(celery_app.Task):
+    class ContextTask(celery.Task):
         def __call__(self, *args, **kwargs):
             with flask_app.app_context():
                 return self.run(*args, **kwargs)
 
     celery_app.Task = ContextTask
-    log.info(f"registering tasks: {tasks}")
+    log.info(f"registering additional tasks: {tasks}")
     for task in tasks:
         celery_app.task(task)
     return celery_app
