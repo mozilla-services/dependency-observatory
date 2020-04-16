@@ -26,8 +26,8 @@ import sqlalchemy
 from sqlalchemy import tuple_
 from sqlalchemy.orm import Load, load_only
 
-from fpr.db.connect import create_engine, create_session
-from fpr.db.schema import (
+from depobs.scanner.db.connect import create_engine, create_session
+from depobs.scanner.db.schema import (
     Base,
     Advisory,
     PackageVersion,
@@ -36,11 +36,11 @@ from fpr.db.schema import (
     NPMSIOScore,
     NPMRegistryEntry,
 )
-from fpr.models.pipeline import Pipeline
-from fpr.models.pipeline import add_infile_and_outfile, add_db_arg
-from fpr.pipelines.postprocess import parse_stdout_as_json, parse_stdout_as_jsonlines
-from fpr.rx_util import on_next_save_to_jsonl
-from fpr.serialize_util import (
+from depobs.scanner.models.pipeline import Pipeline
+from depobs.scanner.models.pipeline import add_infile_and_outfile, add_db_arg
+from depobs.scanner.pipelines.postprocess import parse_stdout_as_json, parse_stdout_as_jsonlines
+from depobs.scanner.rx_util import on_next_save_to_jsonl
+from depobs.scanner.serialize_util import (
     iter_jsonlines,
     extract_fields,
     extract_nested_fields,
@@ -50,7 +50,7 @@ from sqlalchemy.dialects.postgresql import array
 
 NAME = "save_to_db"
 
-log = logging.getLogger(f"fpr.pipelines.{NAME}")
+log = logging.getLogger(f"depobs.scanner.pipelines.{NAME}")
 
 
 __doc__ = """Saves JSON lines to a postgres DB"""

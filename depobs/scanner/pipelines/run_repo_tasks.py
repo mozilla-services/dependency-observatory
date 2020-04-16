@@ -26,15 +26,15 @@ from typing import (
 )
 import typing
 
-from fpr.rx_util import on_next_save_to_jsonl
-from fpr.serialize_util import get_in, extract_fields, iter_jsonlines, REPO_FIELDS
-import fpr.docker.containers as containers
-import fpr.docker.volumes as volumes
-from fpr.models.pipeline import Pipeline
-from fpr.models.org_repo import OrgRepo
-from fpr.models.git_ref import GitRef
-from fpr.docker.images import build_images
-from fpr.models.language import (
+from depobs.scanner.rx_util import on_next_save_to_jsonl
+from depobs.scanner.serialize_util import get_in, extract_fields, iter_jsonlines, REPO_FIELDS
+import depobs.scanner.docker.containers as containers
+import depobs.scanner.docker.volumes as volumes
+from depobs.scanner.models.pipeline import Pipeline
+from depobs.scanner.models.org_repo import OrgRepo
+from depobs.scanner.models.git_ref import GitRef
+from depobs.scanner.docker.images import build_images
+from depobs.scanner.models.language import (
     ContainerTask,
     DependencyFile,
     DockerImage,
@@ -47,10 +47,10 @@ from fpr.models.language import (
     package_manager_names,
     package_managers,
 )
-from fpr.models.pipeline import add_infile_and_outfile, add_docker_args, add_volume_args
-from fpr.pipelines.util import exc_to_str
+from depobs.scanner.models.pipeline import add_infile_and_outfile, add_docker_args, add_volume_args
+from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("fpr.pipelines.run_repo_tasks")
+log = logging.getLogger("depobs.scanner.pipelines.run_repo_tasks")
 
 __doc__ = """Runs tasks on a checked out git ref with dep. files"""
 

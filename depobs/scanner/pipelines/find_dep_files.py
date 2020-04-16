@@ -7,24 +7,24 @@ import pathlib
 from random import randrange
 from typing import Any, AsyncGenerator, Dict, Generator, Iterable, Tuple, Union
 
-from fpr.rx_util import on_next_save_to_jsonl
-from fpr.serialize_util import get_in, extract_fields, iter_jsonlines
-import fpr.docker.containers as containers
-from fpr.docker.images import build_images
-import fpr.docker.volumes as volumes
-from fpr.models.pipeline import Pipeline
-from fpr.models.org_repo import OrgRepo
-from fpr.models.git_ref import GitRef
-from fpr.models.pipeline import add_infile_and_outfile, add_docker_args, add_volume_args
-from fpr.models.language import (
+from depobs.scanner.rx_util import on_next_save_to_jsonl
+from depobs.scanner.serialize_util import get_in, extract_fields, iter_jsonlines
+import depobs.scanner.docker.containers as containers
+from depobs.scanner.docker.images import build_images
+import depobs.scanner.docker.volumes as volumes
+from depobs.scanner.models.pipeline import Pipeline
+from depobs.scanner.models.org_repo import OrgRepo
+from depobs.scanner.models.git_ref import GitRef
+from depobs.scanner.models.pipeline import add_infile_and_outfile, add_docker_args, add_volume_args
+from depobs.scanner.models.language import (
     dependency_file_patterns,
     DependencyFile,
     DockerImage,
     docker_images,
 )
-from fpr.pipelines.util import exc_to_str
+from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("fpr.pipelines.find_dep_files")
+log = logging.getLogger("depobs.scanner.pipelines.find_dep_files")
 
 __doc__ = """
 Given a repo_url, clones the repo, lists git refs for each tag

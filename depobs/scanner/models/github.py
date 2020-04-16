@@ -20,7 +20,7 @@ from uuid import uuid4, UUID
 
 import quiz
 
-from fpr.quiz_util import (
+from depobs.scanner.quiz_util import (
     get_kwargs_in,
     SelectionPath,
     SelectionUpdate,
@@ -28,7 +28,7 @@ from fpr.quiz_util import (
     SelectionKwargsValue,
     multi_upsert_kwargs,
 )
-from fpr.serialize_util import (
+from depobs.scanner.serialize_util import (
     get_in as get_in_dict,
     extract_fields,
     JSONPath,

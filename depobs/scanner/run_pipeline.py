@@ -12,9 +12,9 @@ import os
 import sys
 import json
 
-from fpr.pipelines import pipelines
-from fpr.pipelines.util import exc_to_str
-from fpr.rx_util import save_to_tmpfile
+from depobs.scanner.pipelines import pipelines
+from depobs.scanner.pipelines.util import exc_to_str
+from depobs.scanner.rx_util import save_to_tmpfile
 
 log = logging.getLogger("fpr")
 log.setLevel(logging.DEBUG)

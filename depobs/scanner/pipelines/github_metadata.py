@@ -24,12 +24,12 @@ import aiohttp
 import snug
 import quiz
 
-from fpr.rx_util import on_next_save_to_jsonl
-from fpr.serialize_util import iter_jsonlines
-from fpr.quiz_util import raw_result_to_dict
-from fpr.models.pipeline import Pipeline
-from fpr.models.org_repo import OrgRepo
-from fpr.models.github import (
+from depobs.scanner.rx_util import on_next_save_to_jsonl
+from depobs.scanner.serialize_util import iter_jsonlines
+from depobs.scanner.quiz_util import raw_result_to_dict
+from depobs.scanner.models.pipeline import Pipeline
+from depobs.scanner.models.org_repo import OrgRepo
+from depobs.scanner.models.github import (
     ResourceKind,
     Request,
     Response,
@@ -37,11 +37,11 @@ from fpr.models.github import (
     get_next_requests,
     MISSING,
 )
-from fpr.models.rust import cargo_metadata_to_rust_crates
-from fpr.models.pipeline import add_infile_and_outfile, add_aiohttp_args
-from fpr.pipelines.util import exc_to_str
+from depobs.scanner.models.rust import cargo_metadata_to_rust_crates
+from depobs.scanner.models.pipeline import add_infile_and_outfile, add_aiohttp_args
+from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("fpr.pipelines.github_metadata")
+log = logging.getLogger("depobs.scanner.pipelines.github_metadata")
 
 __doc__ = """Given an input file with repo urls metadata output fetches
 dependency and vulnerability metadata from GitHub and an optional GitHub PAT

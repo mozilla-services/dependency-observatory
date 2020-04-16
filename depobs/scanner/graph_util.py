@@ -4,12 +4,12 @@ from typing import AbstractSet, Any, Dict, Iterable, List, Tuple, TypeVar, Set, 
 
 import networkx as nx
 
-from fpr.models.nodejs import NPMPackage
-from fpr.models.rust import RustCrate, RustPackageID, RustPackage
+from depobs.scanner.models.nodejs import NPMPackage
+from depobs.scanner.models.rust import RustCrate, RustPackageID, RustPackage
 
 T = TypeVar("T")
 
-log = logging.getLogger("fpr.models.graph_util")
+log = logging.getLogger("depobs.scanner.models.graph_util")
 
 
 NODE_ID_FORMATS = {

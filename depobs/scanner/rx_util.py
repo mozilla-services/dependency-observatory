@@ -7,7 +7,7 @@ import tempfile
 from typing import Dict, IO, Tuple, Any
 
 
-log = logging.getLogger("fpr.rx_util")
+log = logging.getLogger("depobs.scanner.rx_util")
 
 
 async def sleep_by_index(sleep_per_index: float, item: Tuple[int, Any]):

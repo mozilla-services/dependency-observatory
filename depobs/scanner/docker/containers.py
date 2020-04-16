@@ -24,13 +24,13 @@ from typing import (
 )
 import aiodocker
 
-from fpr.docker.client import aiodocker_client
-import fpr.docker.log_reader as docker_log_reader
-import fpr.docker.volumes
-from fpr.models.git_ref import GitRef, GitRefKind
-from fpr.pipelines.util import exc_to_str
+from depobs.scanner.docker.client import aiodocker_client
+import depobs.scanner.docker.log_reader as docker_log_reader
+import depobs.scanner.docker.volumes
+from depobs.scanner.models.git_ref import GitRef, GitRefKind
+from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("fpr.containers")
+log = logging.getLogger("depobs.scanner.containers")
 
 
 # https://docs.docker.com/engine/api/v1.37/#operation/ExecInspect
@@ -198,13 +198,13 @@ async def run(
     cmd: str = None,
     entrypoint: Optional[str] = None,
     working_dir: Optional[str] = None,
-    volumes: Optional[List[fpr.docker.volumes.DockerVolumeConfig]] = None,
+    volumes: Optional[List[depobs.scanner.docker.volumes.DockerVolumeConfig]] = None,
 ) -> AsyncGenerator[aiodocker.docker.DockerContainer, None]:
     async with aiodocker_client() as client:
         volume_configs: List[
-            fpr.docker.volumes.DockerVolumeConfig
+            depobs.scanner.docker.volumes.DockerVolumeConfig
         ] = volumes if volumes is not None else []
-        async with fpr.docker.volumes.ensure_many(log, client, volume_configs):
+        async with depobs.scanner.docker.volumes.ensure_many(log, client, volume_configs):
             config: Dict[str, Any] = dict(
                 Cmd=cmd,
                 Image=repository_tag,

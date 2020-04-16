@@ -19,7 +19,7 @@ from typing import (
 
 T = TypeVar("T")
 
-log = logging.getLogger("fpr.docker_log_reader")
+log = logging.getLogger("depobs.scanner.docker_log_reader")
 log.setLevel(logging.WARN)
 
 

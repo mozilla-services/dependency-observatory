@@ -3,11 +3,11 @@ import asyncio
 import logging
 from typing import Iterable
 
-import fpr.docker.containers as containers
-from fpr.models.docker_image import DockerImage
-from fpr.pipelines.util import exc_to_str
+import depobs.scanner.docker.containers as containers
+from depobs.scanner.models.docker_image import DockerImage
+from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("fpr.docker.images")
+log = logging.getLogger("depobs.scanner.docker.images")
 
 
 async def build_images(

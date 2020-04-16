@@ -25,32 +25,32 @@ from typing import (
 )
 import typing
 
-from fpr.rx_util import on_next_save_to_jsonl
-from fpr.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
-from fpr.serialize_util import (
+from depobs.scanner.rx_util import on_next_save_to_jsonl
+from depobs.scanner.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
+from depobs.scanner.serialize_util import (
     get_in,
     extract_fields,
     extract_nested_fields,
     iter_jsonlines,
     REPO_FIELDS,
 )
-from fpr.models.pipeline import Pipeline
-from fpr.models.org_repo import OrgRepo
-from fpr.models.git_ref import GitRef
-from fpr.models.language import (
+from depobs.scanner.models.pipeline import Pipeline
+from depobs.scanner.models.org_repo import OrgRepo
+from depobs.scanner.models.git_ref import GitRef
+from depobs.scanner.models.language import (
     DependencyFile,
     languages,
     ContainerTask,
     package_managers,
 )
-from fpr.models.pipeline import add_infile_and_outfile
-from fpr.models.nodejs import NPMPackage, flatten_deps
-from fpr.pipelines.util import exc_to_str
+from depobs.scanner.models.pipeline import add_infile_and_outfile
+from depobs.scanner.models.nodejs import NPMPackage, flatten_deps
+from depobs.scanner.pipelines.util import exc_to_str
 
 
 NAME = "postprocess"
 
-log = logging.getLogger(f"fpr.pipelines.{NAME}")
+log = logging.getLogger(f"depobs.scanner.pipelines.{NAME}")
 
 
 __doc__ = """Post processes tasks for various outputs e.g. flattening deps,

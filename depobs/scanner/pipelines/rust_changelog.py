@@ -18,24 +18,24 @@ from typing import (
     AsyncGenerator,
 )
 
-from fpr.rx_util import on_next_save_to_jsonl
-from fpr.serialize_util import get_in, extract_fields, iter_jsonlines, REPO_FIELDS
-import fpr.docker.containers as containers
-from fpr.models.pipeline import Pipeline
-from fpr.models.org_repo import OrgRepo
-from fpr.models.git_ref import GitRef
-from fpr.models.rust import cargo_metadata_to_rust_crate_and_packages
-from fpr.graph_util import (
+from depobs.scanner.rx_util import on_next_save_to_jsonl
+from depobs.scanner.serialize_util import get_in, extract_fields, iter_jsonlines, REPO_FIELDS
+import depobs.scanner.docker.containers as containers
+from depobs.scanner.models.pipeline import Pipeline
+from depobs.scanner.models.org_repo import OrgRepo
+from depobs.scanner.models.git_ref import GitRef
+from depobs.scanner.models.rust import cargo_metadata_to_rust_crate_and_packages
+from depobs.scanner.graph_util import (
     rust_crates_and_packages_to_networkx_digraph,
     get_authors,
     get_repos,
     has_changes,
     get_new_removed_and_new_total,
 )
-from fpr.models.pipeline import add_infile_and_outfile, add_graphviz_graph_args
-from fpr.pipelines.util import exc_to_str
+from depobs.scanner.models.pipeline import add_infile_and_outfile, add_graphviz_graph_args
+from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("fpr.pipelines.rust_changelog")
+log = logging.getLogger("depobs.scanner.pipelines.rust_changelog")
 
 __doc__ = """
 Given ordered cargo metadata output for git refs from the same repo:

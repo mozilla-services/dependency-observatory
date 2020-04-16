@@ -12,21 +12,21 @@ from networkx.drawing.nx_pydot import to_pydot
 from networkx.utils import make_str
 import pydot
 
-from fpr.rx_util import on_next_save_to_jsonl
-from fpr.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
-from fpr.models.pipeline import Pipeline
-from fpr.models.nodejs import NPMPackage
-from fpr.models.pipeline import (
+from depobs.scanner.rx_util import on_next_save_to_jsonl
+from depobs.scanner.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
+from depobs.scanner.models.pipeline import Pipeline
+from depobs.scanner.models.nodejs import NPMPackage
+from depobs.scanner.models.pipeline import (
     add_infile_and_outfile,
     add_graphviz_graph_args,
     NODE_ID_FORMATS,
     NODE_LABEL_FORMATS,
     GROUP_ATTRS,
 )
-from fpr.serialize_util import extract_fields, get_in, iter_jsonlines
-from fpr.pipelines.util import exc_to_str
+from depobs.scanner.serialize_util import extract_fields, get_in, iter_jsonlines
+from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("fpr.pipelines.dep_graph")
+log = logging.getLogger("depobs.scanner.pipelines.dep_graph")
 
 __doc__ = """Parses the output of the cargo metadata pipeline and writes a .dot
 file of the dependencies to outfile"""

@@ -4,7 +4,7 @@ import functools
 import pathlib
 from typing import AbstractSet, Any, Callable, Dict, List
 
-from fpr.models.docker_image import DockerImage, DockerImageName
+from depobs.scanner.models.docker_image import DockerImage, DockerImageName
 
 
 @enum.unique

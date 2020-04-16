@@ -5,7 +5,7 @@ from typing import AsyncContextManager, AsyncGenerator, Dict, List, Optional, Un
 
 import aiodocker
 
-from fpr.docker.client import aiodocker_client
+from depobs.scanner.docker.client import aiodocker_client
 
 # https://docs.docker.com/engine/api/v1.32/#operation/VolumeList
 DockerVolumeResponseJSON = Dict[str, Union[str, Dict[str, str]]]

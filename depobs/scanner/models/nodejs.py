@@ -5,9 +5,9 @@ from dataclasses import asdict, dataclass, field
 import enum
 from typing import Dict, Tuple, Sequence, List, Optional, Generator, Union
 
-from fpr.serialize_util import extract_fields, get_in, JSONPath, JSONPathElement
+from depobs.scanner.serialize_util import extract_fields, get_in, JSONPath, JSONPathElement
 
-log = logging.getLogger("fpr.models.nodejs")
+log = logging.getLogger("depobs.scanner.models.nodejs")
 
 NPMPackageID = str
 

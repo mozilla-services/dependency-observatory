@@ -6,10 +6,10 @@ import math
 from typing import Any, AsyncGenerator, Dict, Iterable, Optional
 import logging
 
-from fpr.pipelines.util import exc_to_str
-from fpr.serialize_util import grouper
+from depobs.scanner.pipelines.util import exc_to_str
+from depobs.scanner.serialize_util import grouper
 
-log = logging.getLogger(f"fpr.clients.npm_registry")
+log = logging.getLogger(f"depobs.scanner.clients.npm_registry")
 log.setLevel(logging.DEBUG)
 
 
