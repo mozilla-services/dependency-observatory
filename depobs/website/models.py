@@ -2,7 +2,7 @@
 
 import os
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from flask_sqlalchemy import SQLAlchemy
 import networkx as nx
@@ -28,6 +28,10 @@ from depobs.scanner.db.schema import (
     PackageGraph,
     PackageLink,
     PackageVersion,
+)
+from depobs.scanner.pipelines.save_to_db import (
+    insert_npmsio_data,
+    insert_npm_registry_data,
 )
 from depobs.database.mixins import TaskIDMixin
 
@@ -471,6 +475,14 @@ def store_package_report(pr) -> None:
 def store_package_reports(prs: List[PackageReport]) -> None:
     db.session.add_all(prs)
     db.session.commit()
+
+
+def insert_npmsio_score(npmsio_score: Dict[str, Any]) -> None:
+    return insert_npmsio_data(db.session, [npmsio_score])
+
+
+def insert_npm_registry_entry(npm_registry_entry: Dict[str, Any]) -> None:
+    return insert_npm_registry_data(db.session, [npm_registry_entry])
 
 
 VIEWS: Dict[str, str] = {
