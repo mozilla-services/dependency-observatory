@@ -37,6 +37,7 @@ def create_app(test_config=None):
         ),
         CELERY_BROKER_URL=os.environ.get("CELERY_BROKER_URL", None),
         CELERY_RESULT_BACKEND=os.environ.get("CELERY_RESULT_BACKEND", None),
+        INIT_DB=bool(os.environ.get("INIT_DB", False) == "1"),
     )
 
     if test_config:
@@ -46,7 +47,7 @@ def create_app(test_config=None):
     # setup up request-scoped DB connections
     log.info(f"Initializing DO DB: {app.config['SQLALCHEMY_DATABASE_URI']}")
     models.db.init_app(app)
-    if os.environ.get("INIT_DB", False) == "1":
+    if app.config["INIT_DB"]:
         models.create_tables_and_views(app)
 
     app.register_blueprint(scans_blueprint)
