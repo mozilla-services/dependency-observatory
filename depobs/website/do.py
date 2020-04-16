@@ -66,17 +66,13 @@ def create_celery_app(flask_app=None, test_config=None, tasks=None):
         broker=flask_app.config["CELERY_BROKER_URL"],
         result_backend=flask_app.config["CELERY_RESULT_BACKEND"],
     )
-    celery_app.config_from_object(flask_app.config)
-    celery_app.config_from_object(test_config)
+    celery_app.conf.update(flask_app.config)
+    celery_app.conf_from_object(test_config)
 
-    TaskBase = celery_app.Task
-
-    class ContextTask(TaskBase):
-        abstract = True
-
+    class ContextTask(celery_app.Task):
         def __call__(self, *args, **kwargs):
             with flask_app.app_context():
-                return TaskBase.__call__(self, *args, **kwargs)
+                return self.run(*args, **kwargs)
 
     celery_app.Task = ContextTask
     log.info(f"registering tasks: {tasks}")
