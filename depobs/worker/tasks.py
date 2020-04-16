@@ -8,13 +8,6 @@ from typing import AbstractSet, Callable, Dict, Generator, List, Optional, Tuple
 import logging
 
 from celery.utils.log import get_task_logger
-from celery.exceptions import (
-    SoftTimeLimitExceeded,
-    TimeLimitExceeded,
-    WorkerLostError,
-    WorkerShutdown,
-    WorkerTerminate,
-)
 import celery.result
 import networkx as nx
 from networkx.algorithms.dag import descendants, is_directed_acyclic_graph
