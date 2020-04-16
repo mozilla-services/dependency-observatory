@@ -1,2 +1,8 @@
 worker/fixtures/
 **/__pycache__/
+*.log
+*.jsonl
+*.json
+venv/
+data/
+*.sql
