@@ -6,6 +6,7 @@ from flask import Blueprint, jsonify, make_response, request
 from werkzeug.exceptions import BadRequest
 
 import depobs.worker.tasks as tasks
+import depobs.worker.validators as validators
 
 scans_blueprint = api = Blueprint("scans_blueprint", __name__)
 
@@ -47,14 +48,14 @@ def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
     )
     package_manager = package_managers[0] if len(package_managers) else "npm"
 
-    package_name_validation_error = tasks.get_npm_package_name_validation_error(
+    package_name_validation_error = validators.get_npm_package_name_validation_error(
         package_name
     )
     if package_name_validation_error is not None:
         raise BadRequest(description=str(package_name_validation_error))
 
     if package_version:
-        package_version_validation_error = tasks.get_npm_package_version_validation_error(
+        package_version_validation_error = validators.get_npm_package_version_validation_error(
             package_version
         )
         if package_version_validation_error is not None:
