@@ -30,16 +30,6 @@ def create_app(test_config=None):
     dockerflow.init_app(app)
     app.config.from_object('depobs.website.config')
 
-    app.config.update(
-        SQLALCHEMY_DATABASE_URI=os.environ.get("SQLALCHEMY_DATABASE_URI", None),
-        SQLALCHEMY_TRACK_MODIFICATIONS=bool(
-            os.environ.get("SQLALCHEMY_TRACK_MODIFICATIONS", False)
-        ),
-        CELERY_BROKER_URL=os.environ.get("CELERY_BROKER_URL", None),
-        CELERY_RESULT_BACKEND=os.environ.get("CELERY_RESULT_BACKEND", None),
-        INIT_DB=bool(os.environ.get("INIT_DB", False) == "1"),
-    )
-
     if test_config:
         # load the test config if passed in
         app.config.from_mapping(test_config)

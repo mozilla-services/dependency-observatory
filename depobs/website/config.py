@@ -1,3 +1,4 @@
+import os
 import sys
 
 
@@ -24,6 +25,18 @@ LOGGING = {
     },
 }
 
+# Flask-SQLAlchemy config
+SQLALCHEMY_DATABASE_URI = os.environ.get("SQLALCHEMY_DATABASE_URI", None)
+SQLALCHEMY_TRACK_MODIFICATIONS = bool(
+    os.environ.get("SQLALCHEMY_TRACK_MODIFICATIONS", False)
+)
+
+# try to create tables and views for depobs
+INIT_DB = bool(os.environ.get("INIT_DB", False) == "1")
+
+# Celery config
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", None)
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", None)
 
 # Set the Celery task queue
 CELERY_ACCEPT_CONTENT = ["json"]
