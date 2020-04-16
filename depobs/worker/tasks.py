@@ -305,7 +305,7 @@ def scan_npm_package_then_build_report_tree(
     )
 
 
-async def fetch_and_save_package_data(
+async def fetch_package_data(
     fetcher: Callable[[argparse.Namespace, List[str], int], Dict],
     args: argparse.Namespace,
     package_names: List[str],
@@ -313,7 +313,7 @@ async def fetch_and_save_package_data(
     async for package_result in fetcher(args, package_names, len(package_names)):
         if isinstance(package_result, Exception):
             raise package_result
-        # TODO: save to db
+
         # TODO: return multiple results
         return package_result
 
@@ -321,9 +321,7 @@ async def fetch_and_save_package_data(
 @app.task()
 def check_package_name_in_npmsio(package_name: str) -> bool:
     npmsio_score = asyncio.run(
-        fetch_and_save_package_data(
-            fetch_npmsio_scores, _NPMSIO_CLIENT_CONFIG, [package_name]
-        ),
+        fetch_package_data(fetch_npmsio_scores, _NPMSIO_CLIENT_CONFIG, [package_name]),
         debug=False,
     )
     log.info(f"package: {package_name} on npms.io? {npmsio_score is not None}")
@@ -335,7 +333,7 @@ def check_package_in_npm_registry(
     package_name: str, package_version: Optional[str] = None
 ) -> Dict:
     npm_registry_entry = asyncio.run(
-        fetch_and_save_package_data(
+        fetch_package_data(
             fetch_npm_registry_metadata, _NPM_CLIENT_CONFIG, [package_name]
         ),
         debug=False,
