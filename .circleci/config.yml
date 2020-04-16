@@ -22,6 +22,8 @@ jobs:
     docker:
       - image: circleci/python:buster
     environment:
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://postgres:postgres@db/dependency_observatory
+      INIT_DB: 0
       CELERY_BROKER_URL: sqla+postgresql://postgres:postgres@db/dependency_observatory
       CELERY_RESULT_BACKEND: db+postgresql://postgres:postgres@db/dependency_observatory
     steps:
