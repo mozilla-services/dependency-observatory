@@ -284,7 +284,7 @@ def temp_dockerfile_tgz(fileobject: BinaryIO) -> Generator[IO, None, None]:
 async def build(dockerfile: bytes, tag: str, pull: bool = False) -> str:
     # NB: can shell out to docker build if this doesn't work
     async with aiodocker_client() as client:
-        log.debug(f"building image {tag} with dockerfile:\n{dockerfile}")
+        log.debug(f"building image {tag} with dockerfile:\n{dockerfile!r}")
         with temp_dockerfile_tgz(BytesIO(dockerfile)) as tar_obj:
             async for build_log_line in client.images.build(
                 fileobj=tar_obj,
