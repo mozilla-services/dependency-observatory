@@ -4,23 +4,18 @@ import logging
 import pathlib
 from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Tuple, Union
 
-from depobs.scanner.rx_util import on_next_save_to_jsonl
 from depobs.scanner.clients.cratesio import fetch_cratesio_metadata
 from depobs.scanner.clients.npmsio import fetch_npmsio_scores
 from depobs.scanner.clients.npm_registry import fetch_npm_registry_metadata
 from depobs.scanner.models.pipeline import (
-    Pipeline,
     add_infile_and_outfile,
     add_aiohttp_args,
 )
 from depobs.scanner.models.package_meta_result import Result
 from depobs.scanner.pipelines.util import exc_to_str
-from depobs.scanner.serialize_util import iter_jsonlines
 
 
-NAME = "fetch_package_data"
-
-log = logging.getLogger(f"depobs.scanner.pipelines.{NAME}")
+log = logging.getLogger(f"depobs.scanner.pipelines.fetch_package_data")
 
 __doc__ = """Fetches additional data about a dependency."""
 
@@ -115,15 +110,3 @@ IN_FIELDS: Dict[str, Union[type, str, Dict[str, str]]] = {
     "name": str,  # the package name
     "version": Optional[str],
 }
-OUT_FIELDS: Dict[str, Any] = dict()
-
-
-pipeline = Pipeline(
-    name=NAME,
-    desc=__doc__,
-    fields=set(OUT_FIELDS.keys()),
-    argparser=parse_args,
-    reader=iter_jsonlines,
-    runner=run_pipeline,
-    writer=on_next_save_to_jsonl,
-)

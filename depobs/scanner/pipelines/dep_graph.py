@@ -12,9 +12,7 @@ from networkx.drawing.nx_pydot import to_pydot
 from networkx.utils import make_str
 import pydot
 
-from depobs.scanner.rx_util import on_next_save_to_jsonl
 from depobs.scanner.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
-from depobs.scanner.models.pipeline import Pipeline
 from depobs.scanner.models.nodejs import NPMPackage
 from depobs.scanner.models.pipeline import (
     add_infile_and_outfile,
@@ -23,7 +21,7 @@ from depobs.scanner.models.pipeline import (
     NODE_LABEL_FORMATS,
     GROUP_ATTRS,
 )
-from depobs.scanner.serialize_util import extract_fields, get_in, iter_jsonlines
+from depobs.scanner.serialize_util import extract_fields, get_in
 from depobs.scanner.pipelines.util import exc_to_str
 
 log = logging.getLogger("depobs.scanner.pipelines.dep_graph")
@@ -203,15 +201,3 @@ def serialize(args: argparse.Namespace, g: nx.DiGraph) -> Dict[str, str]:
     group_graph_nodes(args.groupby, g, pdot)
     pdot.set("rankdir", "LR")
     return {"dep_graph_pdot": str(pdot), "dot_filename": args.dot_filename}
-
-
-pipeline = Pipeline(
-    name="dep_graph",
-    desc=__doc__,
-    fields=set(),
-    argparser=parse_args,
-    reader=iter_jsonlines,
-    runner=run_pipeline,
-    serializer=serialize,
-    writer=on_next_save_to_jsonl,
-)

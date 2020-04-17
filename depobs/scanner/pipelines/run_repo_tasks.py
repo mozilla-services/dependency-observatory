@@ -26,16 +26,12 @@ from typing import (
 )
 import typing
 
-from depobs.scanner.rx_util import on_next_save_to_jsonl
 from depobs.scanner.serialize_util import (
     get_in,
     extract_fields,
-    iter_jsonlines,
     REPO_FIELDS,
 )
 import depobs.scanner.docker.containers as containers
-import depobs.scanner.docker.volumes as volumes
-from depobs.scanner.models.pipeline import Pipeline
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
 from depobs.scanner.docker.images import build_images
@@ -55,7 +51,6 @@ from depobs.scanner.models.language import (
 from depobs.scanner.models.pipeline import (
     add_infile_and_outfile,
     add_docker_args,
-    add_volume_args,
 )
 from depobs.scanner.pipelines.util import exc_to_str
 
@@ -67,7 +62,6 @@ __doc__ = """Runs tasks on a checked out git ref with dep. files"""
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser = add_infile_and_outfile(pipeline_parser)
     parser = add_docker_args(parser)
-    parser = add_volume_args(parser)
     parser.add_argument(
         "--dry-run",
         action="store_true",
@@ -200,22 +194,9 @@ async def run_in_repo_at_ref(
 
     container_name = f"dep-obs-nodejs-metadata-{org_repo.org}-{org_repo.repo}-{hex(randrange(1 << 32))[2:]}"
     async with containers.run(
-        image.local.repo_name_tag,
-        name=container_name,
-        cmd="/bin/bash",
-        volumes=[
-            volumes.DockerVolumeConfig(
-                name=f"fpr-org_{org_repo.org}-repo_{org_repo.repo}",
-                mount_point="/repos",
-                labels=asdict(org_repo),
-                delete=not args.keep_volumes,
-            )
-        ]
-        if args.use_volumes
-        else [],
+        image.local.repo_name_tag, name=container_name, cmd="/bin/bash",
     ) as c:
-        if not args.use_volumes:
-            await c.run("mkdir -p /repos", wait=True, check=True)
+        await c.run("mkdir -p /repos", wait=True, check=True)
         await containers.ensure_repo(
             c,
             org_repo.github_clone_url,
@@ -465,13 +446,3 @@ IN_FIELDS: Dict[str, Union[type, str, Dict[str, str]]] = {
     **{"dependency_file": DependencyFile(path=pathlib.Path("./"), sha256="").to_dict()},
 }
 OUT_FIELDS = {**{k: v for k, v in IN_FIELDS.items() if k != "dependency_file"}}
-
-pipeline = Pipeline(
-    name="run_repo_tasks",
-    desc=__doc__,
-    fields=set(OUT_FIELDS.keys()),
-    argparser=parse_args,
-    reader=iter_jsonlines,
-    runner=run_pipeline,
-    writer=on_next_save_to_jsonl,
-)

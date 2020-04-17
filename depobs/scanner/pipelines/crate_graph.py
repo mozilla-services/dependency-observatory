@@ -3,7 +3,6 @@ from dataclasses import dataclass
 import functools
 import itertools
 import logging
-import json
 import random
 from typing import Dict, Tuple, Sequence, Iterable, Generator, AsyncGenerator
 
@@ -12,9 +11,7 @@ from networkx.drawing.nx_pydot import to_pydot
 from networkx.utils import make_str
 import pydot
 
-from depobs.scanner.rx_util import on_next_save_to_jsonl
 from depobs.scanner.graph_util import rust_crates_and_packages_to_networkx_digraph
-from depobs.scanner.models.pipeline import Pipeline
 from depobs.scanner.models.rust import (
     RustCrate,
     RustPackageID,
@@ -212,15 +209,3 @@ def serialize(args: argparse.Namespace, g: nx.DiGraph) -> Dict[str, str]:
     strip_crate_and_package_attrs(pdot)
     pdot.set("rankdir", "LR")
     return {"crate_graph_pdot": str(pdot), "dot_filename": args.dot_filename}
-
-
-pipeline = Pipeline(
-    name="crate_graph",
-    desc=__doc__,
-    fields=set(),
-    argparser=parse_args,
-    reader=lambda infile: [json.load(infile)],
-    runner=run_pipeline,
-    serializer=serialize,
-    writer=on_next_save_to_jsonl,
-)

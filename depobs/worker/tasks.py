@@ -100,8 +100,8 @@ _NPMSIO_CLIENT_CONFIG = argparse.Namespace(
     dry_run=False,
 )
 _SCAN_NPM_TARBALL_ARGS = argparse.Namespace(
-    docker_pull=False,
-    docker_build=False,
+    docker_pull=True,
+    docker_build=True,
     docker_image=[],
     dry_run=False,
     language=["nodejs"],
@@ -171,7 +171,7 @@ async def scan_tarball_url(
         container_name = f"dependency-observatory-scanner-scan_tarball_url-{hex(randrange(1 << 32))[2:]}"
 
         async with containers.run(
-            image.local.repo_name_tag, name=container_name, cmd="/bin/bash", volumes=[],
+            image.local.repo_name_tag, name=container_name, cmd="/bin/bash",
         ) as c:
             # NB: running in /app will fail when /app is mounted for local
             version_results = await asyncio.gather(
@@ -248,7 +248,8 @@ def scan_npm_package(
                     _SCAN_NPM_TARBALL_ARGS, tarball_url, package_name, package_version
                 )
             )
-            log.info(f"got container task results:\n{container_task_results}")
+            log.info(f"got container task results for {package_name}@{package_version}")
+            log.debug(f"got container task results:\n{container_task_results}")
             for task_result in container_task_results["task_results"]:
                 postprocessed_container_task_result: Optional[
                     Dict[str, Any]

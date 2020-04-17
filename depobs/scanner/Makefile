@@ -69,7 +69,7 @@ run-fetch-package-data-and-save:
 
 run-repo-tasks-and-save:
 	printf '{"repo_url": "https://github.com/mozilla/fxa", "org": "mozilla", "repo": "fxa", "ref": {"value": "v1.153.0", "kind": "tag"},"versions": {"ripgrep": "ripgrep 11.0.2 (rev 3de31f7527)"},"dependency_file": {"path": "package.json", "sha256": "5a371f12ccff8f0f8b6e5f4c9354b672859f10b4af64469ed379d1b35f1ea584"}}\n{"repo_url": "https://github.com/mozilla/fxa", "org": "mozilla", "repo": "fxa", "ref": {"value": "v1.153.0", "kind": "tag"},"versions":{"ripgrep":"ripgrep 11.0.2 (rev 3de31f7527)"}, "dependency_file": {"path": "package-lock.json", "sha256": "665f4d2481d902fc36faffaab35915133a53f78ea59308360e96fb4c31f8b879"}}' \
-		| $(FPR) run_repo_tasks --docker-pull --docker-build --repo-task install --repo-task list_metadata --repo-task audit  --keep-volumes --dir './'  -o output.jsonl
+		| $(FPR) run_repo_tasks --docker-pull --docker-build --repo-task install --repo-task list_metadata --repo-task audit --dir './'  -o output.jsonl
 
 run-crate-graph:
 	$(FPR) -q crate_graph -i tests/fixtures/cargo_metadata_serialized.json | jq -r '.crate_graph_pdot' | dot -Tsvg > fpr-graph.svg
