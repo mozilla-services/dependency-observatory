@@ -92,7 +92,6 @@ def scan_npm_package(package_name: str, package_version: Optional[str] = None) -
         if package_version_validation_error is not None:
             raise package_version_validation_error
 
-
     return (package_name, package_version)
 
 
