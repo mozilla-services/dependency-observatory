@@ -182,6 +182,13 @@ async def _run(
     if check:
         last_inspect = await exec_.inspect()
         if last_inspect["ExitCode"] != 0:
+            stdout, stderr = [
+                "\n".join(line_iter)
+                for line_iter in exec_.decoded_start_result_stdout_and_stderr_line_iters
+            ]
+            log.info(
+                f"{self._id} command {cmd} failed with:\nstdout:\n{stdout}\nstderr:\n{stderr}"
+            )
             raise DockerRunException(
                 f"{self._id} command {cmd} failed with non-zero exit code {last_inspect['ExitCode']}"
             )
