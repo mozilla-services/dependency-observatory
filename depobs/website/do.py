@@ -33,7 +33,7 @@ def create_app(test_config=None):
         app.config.from_mapping(test_config)
 
     # setup up request-scoped DB connections
-    log.info(f"Initializing DO DB: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    log.info(f"connecting to database")
     models.db.init_app(app)
     if app.config["INIT_DB"]:
         models.create_tables_and_views(app)
