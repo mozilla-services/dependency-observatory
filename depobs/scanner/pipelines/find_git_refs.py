@@ -48,9 +48,7 @@ async def run_find_git_refs(org_repo: OrgRepo, args: argparse.Namespace):
     name = f"dep-obs-find-git-refs-{org_repo.org}-{org_repo.repo}-{hex(randrange(1 << 32))[2:]}"
     results = []
     async with containers.run(
-        "dep-obs/find-git-refs:latest",
-        name=name,
-        cmd="/bin/bash",
+        "dep-obs/find-git-refs:latest", name=name, cmd="/bin/bash",
     ) as c:
         await c.run("mkdir -p /repos", wait=True, check=True)
         await containers.ensure_repo(

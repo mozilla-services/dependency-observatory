@@ -194,9 +194,7 @@ async def run_in_repo_at_ref(
 
     container_name = f"dep-obs-nodejs-metadata-{org_repo.org}-{org_repo.repo}-{hex(randrange(1 << 32))[2:]}"
     async with containers.run(
-        image.local.repo_name_tag,
-        name=container_name,
-        cmd="/bin/bash",
+        image.local.repo_name_tag, name=container_name, cmd="/bin/bash",
     ) as c:
         await c.run("mkdir -p /repos", wait=True, check=True)
         await containers.ensure_repo(
