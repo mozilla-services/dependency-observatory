@@ -18,6 +18,18 @@ jobs:
             black --config pyproject.toml --diff .
             black --config pyproject.toml --check .
 
+  check-types:
+    docker:
+      - image: circleci/python:buster
+    steps:
+      - checkout
+      - run:
+          name: check code is properly typed
+          command: |
+            # install mypy and mypy extensions
+            pip install --user $(grep mypy depobs/requirements.txt)
+            mypy --config setup.cfg
+
   unit-test:
     docker:
       - image: circleci/python:buster
@@ -102,6 +114,11 @@ workflows:
           tags:
             only: /.*/
 
+      - check-types:
+        filters:
+          tags:
+            only: /.*/
+
       - unit-test:
         filters:
           tags:
@@ -115,6 +132,7 @@ workflows:
       - deploy:
           requires:
             - check-format
+            - check-types
             - unit-test
             - build-images
           filters:
