@@ -12,9 +12,13 @@ jobs:
     steps:
       - checkout
       - run:
+          name: install python deps
+          command: |
+            pip config --user set global.progress_bar off
+            pip install --user "$(grep black depobs/requirements.txt)"
+      - run:
           name: check code is formatted with black and output diff
           command: |
-            pip install --user "$(grep black depobs/requirements.txt)"
             black --config pyproject.toml --diff .
             black --config pyproject.toml --check .
 
@@ -24,10 +28,14 @@ jobs:
     steps:
       - checkout
       - run:
+          name: install python deps
+          command: |
+            pip config --user set global.progress_bar off
+            # unquoted grep so we install mypy and mypy extensions
+            pip install --user $(grep mypy depobs/requirements.txt)
+      - run:
           name: check code is properly typed
           command: |
-            # install mypy and mypy extensions
-            pip install --user $(grep mypy depobs/requirements.txt)
             mypy --config setup.cfg
 
   unit-test:
@@ -45,9 +53,13 @@ jobs:
           command: |
             CI=1 ./util/write_version_json.sh > depobs/version.json
       - run:
+          name: install python deps
+          command: |
+            pip config --user set global.progress_bar off
+            pip install --user -r depobs/requirements.txt
+      - run:
           name: run unit tests with coverage (no DB)
           command: |
-            pip install --user -r depobs/requirements.txt
             CI=1 ./util/run_tests_with_coverage.sh
       - run:
           name: generate coverage reports
