@@ -27,7 +27,6 @@ import aiodocker
 
 from depobs.scanner.docker.client import aiodocker_client
 import depobs.scanner.docker.log_reader as docker_log_reader
-import depobs.scanner.docker.volumes
 from depobs.scanner.models.git_ref import GitRef, GitRefKind
 from depobs.scanner.pipelines.util import exc_to_str
 
@@ -210,56 +209,41 @@ async def run(
     cmd: str = None,
     entrypoint: Optional[str] = None,
     working_dir: Optional[str] = None,
-    volumes: Optional[List[depobs.scanner.docker.volumes.DockerVolumeConfig]] = None,
 ) -> AsyncGenerator[aiodocker.docker.DockerContainer, None]:
     async with aiodocker_client() as client:
-        volume_configs: List[
-            depobs.scanner.docker.volumes.DockerVolumeConfig
-        ] = volumes if volumes is not None else []
-        async with depobs.scanner.docker.volumes.ensure_many(
-            log, client, volume_configs
-        ):
-            config: Dict[str, Any] = dict(
-                Cmd=cmd,
-                Image=repository_tag,
-                LogConfig={"Type": "json-file"},
-                AttachStdout=True,
-                AttachStderr=True,
-                Tty=True,
-                HostConfig={
-                    # "ContainerIDFile": "./"
-                    "Mounts": []
-                },
+        config: Dict[str, Any] = dict(
+            Cmd=cmd,
+            Image=repository_tag,
+            LogConfig={"Type": "json-file"},
+            AttachStdout=True,
+            AttachStderr=True,
+            Tty=True,
+            HostConfig={
+                # "ContainerIDFile": "./"
+                "Mounts": []
+            },
+        )
+        if entrypoint:
+            config["Entrypoint"] = entrypoint
+        if working_dir:
+            config["WorkingDir"] = working_dir
+        log.info(f"starting image {repository_tag} as {name}")
+        log.debug(f"container {name} starting {cmd} with config {config}")
+        container = await client.containers.run(config=config, name=name)
+        # fetch container info so we can include container name in logs
+        await container.show()
+        try:
+            yield container
+        except DockerRunException as e:
+            container_log_name = (
+                container["Name"] if "Name" in container._container else container["Id"]
             )
-            if entrypoint:
-                config["Entrypoint"] = entrypoint
-            if working_dir:
-                config["WorkingDir"] = working_dir
-            if volumes:
-                config["Volumes"] = {cfg.mount_point: dict() for cfg in volume_configs}
-                config["HostConfig"]["Mounts"] = [
-                    dict(Target=cfg.mount_point, Source=cfg.name, Type="volume")
-                    for cfg in volume_configs
-                ]
-            log.info(f"starting image {repository_tag} as {name}")
-            log.debug(f"container {name} starting {cmd} with config {config}")
-            container = await client.containers.run(config=config, name=name)
-            # fetch container info so we can include container name in logs
-            await container.show()
-            try:
-                yield container
-            except DockerRunException as e:
-                container_log_name = (
-                    container["Name"]
-                    if "Name" in container._container
-                    else container["Id"]
-                )
-                log.error(
-                    f"{container_log_name} error running docker command {cmd}:\n{exc_to_str()}"
-                )
-            finally:
-                await container.stop()
-                await container.delete()
+            log.error(
+                f"{container_log_name} error running docker command {cmd}:\n{exc_to_str()}"
+            )
+        finally:
+            await container.stop()
+            await container.delete()
 
 
 @contextlib.contextmanager

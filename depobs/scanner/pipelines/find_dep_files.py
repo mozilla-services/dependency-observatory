@@ -10,13 +10,11 @@ from typing import Any, AsyncGenerator, Dict, Generator, Iterable, Tuple, Union
 from depobs.scanner.serialize_util import get_in, extract_fields
 import depobs.scanner.docker.containers as containers
 from depobs.scanner.docker.images import build_images
-import depobs.scanner.docker.volumes as volumes
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
 from depobs.scanner.models.pipeline import (
     add_infile_and_outfile,
     add_docker_args,
-    add_volume_args,
 )
 from depobs.scanner.models.language import (
     dependency_file_patterns,
@@ -36,7 +34,6 @@ Given a repo_url, clones the repo, lists git refs for each tag
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser = add_infile_and_outfile(pipeline_parser)
     parser = add_docker_args(parser)
-    parser = add_volume_args(parser)
     parser.add_argument(
         "--glob",
         type=str,
@@ -62,19 +59,8 @@ async def run_find_dep_files(
         "dep-obs/find-dep-files:latest",
         name=name,
         cmd="/bin/bash",
-        volumes=[
-            volumes.DockerVolumeConfig(
-                name=f"fpr-org_{org_repo.org}-repo_{org_repo.repo}",
-                mount_point="/repos",
-                labels=asdict(org_repo),
-                delete=not args.keep_volumes,
-            )
-        ]
-        if args.use_volumes
-        else [],
     ) as c:
-        if not args.use_volumes:
-            await c.run("mkdir -p /repos", wait=True, check=True)
+        await c.run("mkdir -p /repos", wait=True, check=True)
         await containers.ensure_repo(
             c, org_repo.github_clone_url, working_dir="/repos/"
         )

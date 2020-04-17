@@ -171,7 +171,7 @@ async def scan_tarball_url(
         container_name = f"dependency-observatory-scanner-scan_tarball_url-{hex(randrange(1 << 32))[2:]}"
 
         async with containers.run(
-            image.local.repo_name_tag, name=container_name, cmd="/bin/bash", volumes=[],
+            image.local.repo_name_tag, name=container_name, cmd="/bin/bash",
         ) as c:
             # NB: running in /app will fail when /app is mounted for local
             version_results = await asyncio.gather(
