@@ -14,12 +14,10 @@ from sqlalchemy import (
     Table,
     UniqueConstraint,
 )
-from sqlalchemy.sql import func
+from sqlalchemy.sql import func, expression
 from sqlalchemy.orm import deferred, relationship
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.dialects.postgresql import ARRAY, ENUM, JSONB
-
-from sqlalchemy.sql import expression
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.types import DateTime
 
