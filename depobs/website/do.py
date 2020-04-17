@@ -38,7 +38,7 @@ def create_app(test_config=None):
     if app.config["INIT_DB"]:
         models.create_tables_and_views(app)
 
-    dockerflow = Dockerflow(app)
+    dockerflow = Dockerflow(app, db=models.db)
     dockerflow.init_app(app)
     app.register_blueprint(scans_blueprint)
     app.register_blueprint(views_blueprint)
