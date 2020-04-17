@@ -7,6 +7,7 @@ import logging
 import json
 import pathlib
 from io import BytesIO
+import shlex
 import tarfile
 import tempfile
 from typing import (
@@ -168,7 +169,10 @@ async def _run(
     """Create and run an instance of exec (Instance of Exec). Optionally wait for it to finish and check its exit code
     """
     config = dict(
-        Cmd=cmd.split(" "), AttachStdout=attach_stdout, AttachStderr=attach_stderr
+        Cmd=shlex.split(cmd),
+        AttachStdout=attach_stdout,
+        AttachStderr=attach_stderr,
+        Tty=tty,
     )
     if working_dir is not None:
         config["WorkingDir"] = working_dir
