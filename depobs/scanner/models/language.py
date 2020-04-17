@@ -56,6 +56,13 @@ class ContainerTask:
     # check and throw if the exit code is non-zero
     check: bool = False
 
+    # forward stdout and err back to caller instead of into container
+    attach_stdout: bool = True
+    attach_stderr: bool = True
+
+    # allocate a fake tty for the command
+    tty: bool = False
+
 
 @dataclass(frozen=True)
 class PackageManager:
