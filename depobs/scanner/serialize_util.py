@@ -29,9 +29,6 @@ def get_in(d: Dict, path: Iterable[JSONPathElement], default: Any = None):
     return d
 
 
-REPO_FIELDS = {"org", "repo", "commit", "branch", "tag", "ref"}
-
-
 def extract_fields(d: Dict, fields: Iterable[str]) -> Dict:
     "returns a new dict with top-level param fields extracted from param d"
     return {field: d.get(field) for field in fields}

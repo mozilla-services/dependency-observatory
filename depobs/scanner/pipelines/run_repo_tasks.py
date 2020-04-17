@@ -29,7 +29,6 @@ import typing
 from depobs.scanner.serialize_util import (
     get_in,
     extract_fields,
-    REPO_FIELDS,
 )
 import depobs.scanner.docker.containers as containers
 from depobs.scanner.models.org_repo import OrgRepo
@@ -432,17 +431,3 @@ async def run_pipeline(
                 log.debug(f"saved cached result for {cache_key}")
             except Exception as e:
                 log.error(f"error running tasks {tasks!r}:\n{exc_to_str()}")
-
-
-# TODO: improve validation and specify field providers
-IN_FIELDS: Dict[str, Union[type, str, Dict[str, str]]] = {
-    "repo_url": str,
-    **asdict(
-        OrgRepo.from_github_repo_url(
-            "https://github.com/mozilla-services/syncstorage-rs.git"
-        )
-    ),
-    **{"ref": GitRef.from_dict(dict(value="dummy", kind="tag")).to_dict()},
-    **{"dependency_file": DependencyFile(path=pathlib.Path("./"), sha256="").to_dict()},
-}
-OUT_FIELDS = {**{k: v for k, v in IN_FIELDS.items() if k != "dependency_file"}}

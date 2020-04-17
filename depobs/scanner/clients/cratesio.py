@@ -24,9 +24,6 @@ metadata into memory.
 """
 
 
-FIELDS = {"crate", "categories", "keywords", "versions"}
-
-
 def aiohttp_session(args: argparse.Namespace) -> aiohttp.ClientSession:
     return aiohttp.ClientSession(
         headers={

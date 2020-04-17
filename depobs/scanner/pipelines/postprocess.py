@@ -31,7 +31,6 @@ from depobs.scanner.serialize_util import (
     extract_fields,
     extract_nested_fields,
     iter_jsonlines,
-    REPO_FIELDS,
 )
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef

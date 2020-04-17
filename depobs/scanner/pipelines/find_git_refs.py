@@ -95,16 +95,3 @@ async def run_pipeline(
                 yield ref
         except Exception as e:
             log.error(f"error running find_git_refs:\n{exc_to_str()}")
-
-
-# fields and types for the input and output JSON
-IN_FIELDS: Dict[str, type] = {"repo_url": str}
-OUT_FIELDS: Dict[str, Union[type, str, Dict[str, str]]] = {
-    **IN_FIELDS,
-    **asdict(
-        OrgRepo.from_github_repo_url(
-            "https://github.com/mozilla-services/syncstorage-rs.git"
-        )
-    ),
-    **{"ref": GitRef.from_dict(dict(value="dummy", kind="tag")).to_dict()},
-}
