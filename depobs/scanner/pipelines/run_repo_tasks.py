@@ -153,7 +153,13 @@ async def run_task(
     )
     try:
         job_run = await c.run(
-            cmd=task.command, working_dir=working_dir, wait=True, check=task.check
+            cmd=task.command,
+            working_dir=working_dir,
+            wait=True,
+            check=task.check,
+            attach_stdout=task.attach_stdout,
+            attach_stderr=task.attach_stderr,
+            tty=task.tty,
         )
         last_inspect = await job_run.inspect()
     except containers.DockerRunException as e:
