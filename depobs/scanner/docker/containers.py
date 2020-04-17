@@ -78,6 +78,7 @@ class Exec:
     ) -> "Exec":
         """ Create and return an instance of Exec
         """
+        log.debug(f"execing with config {kwargs}")
         data = await container.docker._query_json(
             f"containers/{container._id}/exec", method="POST", data=kwargs
         )
@@ -191,7 +192,7 @@ async def _run(
                 for line_iter in exec_.decoded_start_result_stdout_and_stderr_line_iters
             ]
             log.info(
-                f"{self._id} command {cmd} failed with:\nstdout:\n{stdout}\nstderr:\n{stderr}"
+                f"{self._id} command {cmd!r} failed with:\nstdout:\n{stdout}\nstderr:\n{stderr}"
             )
             raise DockerRunException(
                 f"{self._id} command {cmd} failed with non-zero exit code {last_inspect['ExitCode']}"
