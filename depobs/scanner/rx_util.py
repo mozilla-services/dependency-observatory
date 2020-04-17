@@ -22,24 +22,28 @@ def save_to_tmpfile(prefix: str, item: Dict, file_ext=".json"):
     if file_ext == ".json":
         with tempfile.NamedTemporaryFile(
             mode="w+", encoding="utf-8", prefix=prefix, suffix=file_ext, delete=False
-        ) as tmpout:
+        ) as json_tmpout:
             try:
-                json.dump(item, tmpout, sort_keys=True, indent=2)
-                log.debug("saved to {}".format(tmpout.name))
+                json.dump(item, json_tmpout, sort_keys=True, indent=2)
+                log.debug("saved to {}".format(json_tmpout.name))
             except TypeError as e:
                 log.debug(
-                    "error dumping JSON to save item to {}: {}".format(tmpout.name, e)
+                    "error dumping JSON to save item to {}: {}".format(
+                        json_tmpout.name, e
+                    )
                 )
     elif file_ext == ".pickle":
         with tempfile.NamedTemporaryFile(
             mode="w+b", prefix=prefix, suffix=file_ext, delete=False
-        ) as tmpout:
+        ) as pickle_tmpout:
             try:
-                pickle.dump(item, tmpout)
-                log.debug("saved to {}".format(tmpout.name))
+                pickle.dump(item, pickle_tmpout)
+                log.debug("saved to {}".format(pickle_tmpout.name))
             except Exception as e:
                 log.debug(
-                    "error pickling to save item to {}: {}".format(tmpout.name, e)
+                    "error pickling to save item to {}: {}".format(
+                        pickle_tmpout.name, e
+                    )
                 )
     else:
         log.debug(
