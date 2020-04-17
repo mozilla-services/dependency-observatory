@@ -41,7 +41,7 @@ def always_true(_: AbstractSet[str]) -> bool:
     return True
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class ContainerTask:
     # task name for logginer e.g. audit, list_metadata
     name: str
@@ -55,6 +55,13 @@ class ContainerTask:
 
     # check and throw if the exit code is non-zero
     check: bool = False
+
+    # forward stdout and err back to caller instead of into container
+    attach_stdout: bool = True
+    attach_stderr: bool = True
+
+    # allocate a fake tty for the command
+    tty: bool = False
 
 
 @dataclass(frozen=True)

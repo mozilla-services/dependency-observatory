@@ -1,19 +1,34 @@
 import argparse
 import asyncio
+from collections import ChainMap
 import datetime
+import json
 import os
+from random import randrange
 import sys
-import subprocess
-from typing import AbstractSet, Callable, Dict, Generator, List, Optional, Tuple, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Generator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 import logging
 
+import celery
 from celery.utils.log import get_task_logger
 import celery.result
 import networkx as nx
 from networkx.algorithms.dag import descendants, is_directed_acyclic_graph
 
 from depobs.website.do import create_celery_app
+import depobs.website.models as models
 from depobs.website.models import (
+    NPMRegistryEntry,
     PackageReport,
     PackageLatestReport,
     get_package_report,
@@ -35,10 +50,26 @@ import depobs.worker.validators as validators
 from depobs.scanner.pipelines.util import exc_to_str as _
 from depobs.scanner.clients.npmsio import fetch_npmsio_scores
 from depobs.scanner.clients.npm_registry import fetch_npm_registry_metadata
-
 from depobs.scanner.db.schema import (
     PackageVersion,
     PackageGraph,
+)
+from depobs.scanner.pipelines.postprocess import postprocess_task
+from depobs.scanner.pipelines.run_repo_tasks import (
+    iter_task_envs,
+    build_images_for_envs,
+    run_task as run_repo_task,  # try to avoid confusing with celery tasks
+)
+from depobs.scanner.pipelines.save_to_db import (
+    insert_package_graph,
+    insert_package_audit,
+)
+import depobs.scanner.docker.containers as containers
+from depobs.scanner.models.language import (
+    ContainerTask,
+    DockerImage,
+    Language,
+    PackageManager,
 )
 
 log = get_task_logger(__name__)
@@ -68,6 +99,16 @@ _NPMSIO_CLIENT_CONFIG = argparse.Namespace(
     package_batch_size=1,
     dry_run=False,
 )
+_SCAN_NPM_TARBALL_ARGS = argparse.Namespace(
+    docker_pull=False,
+    docker_build=False,
+    docker_image=[],
+    dry_run=False,
+    language=["nodejs"],
+    package_manager=["npm"],
+    repo_task=["install", "list_metadata", "audit"],
+)
+
 
 app = create_celery_app()
 
@@ -77,8 +118,94 @@ def add(x, y):
     return x + y
 
 
-@app.task()
-def scan_npm_package(package_name: str, package_version: Optional[str] = None) -> None:
+async def scan_tarball_url(
+    args: argparse.Namespace,
+    tarball_url: str,
+    package_name: Optional[str] = None,
+    package_version: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Takes run_repo_tasks pipeline args and a tarball url and returns
+    the run_repo_task result object (from running the repo tasks
+    commands in a container).
+    """
+    task_envs: Tuple[
+        Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]
+    ] = list(iter_task_envs(args))
+    if args.docker_build:
+        await build_images_for_envs(args, task_envs)
+
+    assert len(task_envs) == 1
+    for lang, pm, image, version_commands, container_tasks in task_envs:
+        # TODO: add as new command in depobs.scanner.models.language?
+        # write a package.json file to so npm audit doesn't error out
+        container_tasks = [
+            ContainerTask(
+                name="write_package_json",
+                # \\ before " so shlex doesn't strip the "
+                command=f"""bash -c "cat <<EOF > /tmp/package.json\n{{\\"dependencies\\": {{\\"{package_name}\\": \\"{package_version}\\"}} }}\nEOF" """,
+                check=True,
+            ),
+            ContainerTask(
+                name="check_package_json",
+                command="""cat /tmp/package.json""",
+                check=True,
+            ),
+        ] + container_tasks
+        # TODO: handle this in depobs.scanner.models.language?
+        # fixup install command to take the tarball URL
+        for t in container_tasks:
+            if t.name == "install" and t.command == "npm install --save=true":
+                t.command = f"npm install --save=true {tarball_url}"
+
+        if args.dry_run:
+            log.info(
+                f"for {lang.name} {pm.name} would run in {image.local.repo_name_tag}"
+                f" {list(version_commands.values())} concurrently then"
+                f" {[t.command for t in tasks]} "
+            )
+            continue
+
+        # TODO: reuse flask request ID or celery task id
+        # use a unique container names to avoid conflicts
+        container_name = f"dependency-observatory-scanner-scan_tarball_url-{hex(randrange(1 << 32))[2:]}"
+
+        async with containers.run(
+            image.local.repo_name_tag, name=container_name, cmd="/bin/bash", volumes=[],
+        ) as c:
+            # NB: running in /app will fail when /app is mounted for local
+            version_results = await asyncio.gather(
+                *[
+                    containers.run_container_cmd_no_args_return_first_line_or_none(
+                        command, c, working_dir="/tmp"
+                    )
+                    for command in version_commands.values()
+                ]
+            )
+            versions = {
+                command_name: version_results[i]
+                for (i, (command_name, command)) in enumerate(version_commands.items())
+            }
+
+            task_results = [
+                await run_repo_task(c, task, "/tmp", container_name)
+                for task in container_tasks
+            ]
+            for tr in task_results:
+                if isinstance(tr, Exception):
+                    log.error(f"error running container task: {tr}")
+
+            result: Dict[str, Any] = dict(
+                versions=versions,
+                task_results=[tr for tr in task_results if isinstance(tr, dict)],
+            )
+            return result
+
+
+@app.task(bind=True)
+def scan_npm_package(
+    self: celery.Task, package_name: str, package_version: Optional[str] = None
+) -> None:
     package_name_validation_error = validators.get_npm_package_name_validation_error(
         package_name
     )
@@ -92,25 +219,58 @@ def scan_npm_package(package_name: str, package_version: Optional[str] = None) -
         if package_version_validation_error is not None:
             raise package_version_validation_error
 
-    # mozilla/dependencyscan:latest must already be built/pulled/otherwise
-    # present on the worker node
-    command = [
-        "docker",
-        "run",
-        "--rm",
-        "-e",
-        f"DB_URL={os.environ['SQLALCHEMY_DATABASE_URI']}",
-        "-v",
-        "/var/run/docker.sock:/var/run/docker.sock",
-        "mozilla/dependencyscan:latest",
-        "analyze_package.sh",
-        package_name,
-    ]
-    if package_version:
-        command.append(package_version)
+    # assumes an NPM registry entry
+    # fetch npm registry entry from DB
+    query = (
+        models.db.session.query(
+            NPMRegistryEntry.package_version,
+            NPMRegistryEntry.source_url,
+            NPMRegistryEntry.git_head,
+            NPMRegistryEntry.tarball,
+        ).filter_by(package_name=package_name)
+        # .order_by(NPMRegistryEntry.published_at.desc)
+    )
 
-    log.info(f"running {command} for package_name {package_name}@{package_version}")
-    subprocess.run(command, encoding="utf-8", capture_output=True).check_returncode()
+    # filter for indicated version (if any)
+    if package_version:
+        query = query.filter_by(package_version=package_version)
+
+    # we need a source_url and git_head or a tarball url to install
+    for (package_version, source_url, git_head, tarball_url) in query.all():
+        log.info(
+            f"scanning {package_name}@{package_version} with {source_url}#{git_head} or {tarball_url}"
+        )
+        if tarball_url:
+            # start an npm container, install the tarball, run list and audit
+            # assert tarball_url == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{package_version}.tgz
+            container_task_results = asyncio.run(
+                scan_tarball_url(
+                    _SCAN_NPM_TARBALL_ARGS, tarball_url, package_name, package_version
+                )
+            )
+            log.info(f"got container task results:\n{container_task_results}")
+            for task_result in container_task_results["task_results"]:
+                postprocessed_container_task_result: Optional[
+                    Dict[str, Any]
+                ] = postprocess_task(task_result, {"list_metadata", "audit"})
+                if not postprocessed_container_task_result:
+                    continue
+
+                task_data = postprocessed_container_task_result
+                task_name = task_data["name"]
+                if task_name == "list_metadata":
+                    insert_package_graph(models.db.session, task_data)
+                elif task_name == "audit":
+                    insert_package_audit(models.db.session, task_data)
+                else:
+                    log.warning(f"skipping unrecognized task {task_name}")
+
+        elif source_url and git_head:
+            # TODO: port scanner find_dep_files and run_repo_tasks pipelines as used in analyze_package.sh
+            raise NotImplementedError(
+                f"Installing from VCS source and ref not implemented to scan {package_name}@{package_version}"
+            )
+
     return (package_name, package_version)
 
 
@@ -305,7 +465,7 @@ def scan_npm_package_then_build_report_tree(
     )
 
 
-async def fetch_and_save_package_data(
+async def fetch_package_data(
     fetcher: Callable[[argparse.Namespace, List[str], int], Dict],
     args: argparse.Namespace,
     package_names: List[str],
@@ -313,7 +473,7 @@ async def fetch_and_save_package_data(
     async for package_result in fetcher(args, package_names, len(package_names)):
         if isinstance(package_result, Exception):
             raise package_result
-        # TODO: save to db
+
         # TODO: return multiple results
         return package_result
 
@@ -321,12 +481,13 @@ async def fetch_and_save_package_data(
 @app.task()
 def check_package_name_in_npmsio(package_name: str) -> bool:
     npmsio_score = asyncio.run(
-        fetch_and_save_package_data(
-            fetch_npmsio_scores, _NPMSIO_CLIENT_CONFIG, [package_name]
-        ),
+        fetch_package_data(fetch_npmsio_scores, _NPMSIO_CLIENT_CONFIG, [package_name]),
         debug=False,
     )
     log.info(f"package: {package_name} on npms.io? {npmsio_score is not None}")
+    log.info(f"saving npms.io score for {package_name}")
+    # inserts a unique entry for new analyzed_at fields
+    models.insert_npmsio_score(npmsio_score)
     return npmsio_score is not None
 
 
@@ -335,13 +496,18 @@ def check_package_in_npm_registry(
     package_name: str, package_version: Optional[str] = None
 ) -> Dict:
     npm_registry_entry = asyncio.run(
-        fetch_and_save_package_data(
+        fetch_package_data(
             fetch_npm_registry_metadata, _NPM_CLIENT_CONFIG, [package_name]
         ),
         debug=False,
     )
 
     package_name_exists = npm_registry_entry is not None
+    if package_name_exists:
+        # inserts new entries for new versions (but doesn't update old ones)
+        log.info(f"saving npm registry entry for {package_name}")
+        models.insert_npm_registry_entry(npm_registry_entry)
+
     log.info(f"package: {package_name} on npm registry? {package_name_exists}")
     if package_version is not None:
         package_version_exists = npm_registry_entry.get("versions", {}).get(

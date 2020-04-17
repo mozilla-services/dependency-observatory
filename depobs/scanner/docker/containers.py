@@ -7,6 +7,7 @@ import logging
 import json
 import pathlib
 from io import BytesIO
+import shlex
 import tarfile
 import tempfile
 from typing import (
@@ -77,6 +78,7 @@ class Exec:
     ) -> "Exec":
         """ Create and return an instance of Exec
         """
+        log.debug(f"execing with config {kwargs}")
         data = await container.docker._query_json(
             f"containers/{container._id}/exec", method="POST", data=kwargs
         )
@@ -168,7 +170,10 @@ async def _run(
     """Create and run an instance of exec (Instance of Exec). Optionally wait for it to finish and check its exit code
     """
     config = dict(
-        Cmd=cmd.split(" "), AttachStdout=attach_stdout, AttachStderr=attach_stderr
+        Cmd=shlex.split(cmd),
+        AttachStdout=attach_stdout,
+        AttachStderr=attach_stderr,
+        Tty=tty,
     )
     if working_dir is not None:
         config["WorkingDir"] = working_dir
@@ -182,6 +187,13 @@ async def _run(
     if check:
         last_inspect = await exec_.inspect()
         if last_inspect["ExitCode"] != 0:
+            stdout, stderr = [
+                "\n".join(line_iter)
+                for line_iter in exec_.decoded_start_result_stdout_and_stderr_line_iters
+            ]
+            log.info(
+                f"{self._id} command {cmd!r} failed with:\nstdout:\n{stdout}\nstderr:\n{stderr}"
+            )
             raise DockerRunException(
                 f"{self._id} command {cmd} failed with non-zero exit code {last_inspect['ExitCode']}"
             )
@@ -284,7 +296,7 @@ def temp_dockerfile_tgz(fileobject: BinaryIO) -> Generator[IO, None, None]:
 async def build(dockerfile: bytes, tag: str, pull: bool = False) -> str:
     # NB: can shell out to docker build if this doesn't work
     async with aiodocker_client() as client:
-        log.debug(f"building image {tag} with dockerfile:\n{dockerfile}")
+        log.debug(f"building image {tag} with dockerfile:\n{dockerfile!r}")
         with temp_dockerfile_tgz(BytesIO(dockerfile)) as tar_obj:
             async for build_log_line in client.images.build(
                 fileobj=tar_obj,

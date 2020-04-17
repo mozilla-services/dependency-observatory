@@ -63,10 +63,10 @@ def stream_no_to_DockerLogStream(stream_no: int) -> DockerLogStream:
 
 
 def read_message(msg_bytes: bytes) -> Tuple[DockerLogStream, bytes, bytes]:
-    log.debug(f"reading {len(msg_bytes)} byte message {msg_bytes}")
+    log.debug(f"reading {len(msg_bytes)} byte message {msg_bytes!r}")
     if len(msg_bytes) < HEADER_LENGTH:
         raise DockerLogReadError(
-            f"Too few bytes in {msg_bytes}. Need at least {HEADER_LENGTH}."
+            f"Too few bytes in {msg_bytes!r}. Need at least {HEADER_LENGTH}."
         )
 
     msg_header, rest = msg_bytes[:HEADER_LENGTH], msg_bytes[HEADER_LENGTH:]
@@ -89,12 +89,12 @@ def iter_messages(
     log.debug(f"itering through {len(msg_bytes)} msg bytes")
     while True:
         if not msg_bytes_remaining:
-            log.debug(f"nothing to read from {msg_bytes_remaining}")
+            log.debug(f"nothing to read from {msg_bytes_remaining!r}")
             break
 
         stream, content, msg_bytes_remaining = read_message(msg_bytes_remaining)
         log.debug(
-            f"read msg {stream} ({len(content)} bytes, {len(msg_bytes_remaining)} left) {content}"
+            f"read msg {stream!r} ({len(content)} bytes, {len(msg_bytes_remaining)} left) {content!r}"
         )
         yield stream, content
         if not msg_bytes_remaining:

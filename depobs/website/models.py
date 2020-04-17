@@ -2,7 +2,8 @@
 
 import os
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
+import logging
+from typing import Any, Dict, List, Optional, Tuple
 
 from flask_sqlalchemy import SQLAlchemy
 import networkx as nx
@@ -29,7 +30,15 @@ from depobs.scanner.db.schema import (
     PackageLink,
     PackageVersion,
 )
+from depobs.scanner.pipelines.save_to_db import (
+    insert_npmsio_data,
+    insert_npm_registry_data,
+)
 from depobs.database.mixins import TaskIDMixin
+
+
+log = logging.getLogger(__name__)
+
 
 db = SQLAlchemy()
 
@@ -219,7 +228,7 @@ def get_package_report(package, version=None):
         no_version_query = db.session.query(PackageReport).filter(
             PackageReport.package == package
         )
-        print(f"Query is {no_version_query}")
+        log.debug(f"Query is {no_version_query}")
         for rep in no_version_query:
             return rep
     else:
@@ -241,7 +250,7 @@ def get_most_recently_scored_package_report(
         query = query.filter_by(version=package_version)
     if scored_after is not None:
         query = query.filter(PackageReport.scoring_date >= scored_after)
-    print(f"Query is {query}")
+    log.debug(f"Query is {query}")
     return query.order_by(PackageReport.scoring_date.desc()).limit(1).one_or_none()
 
 
@@ -252,7 +261,7 @@ def get_placeholder_entry(
     query = db.session.query(PackageReport).filter_by(package=package_name)
     query = query.filter_by(version=package_version)
     query = query.filter(PackageReport.scoring_date == None)
-    print(f"Query is {query}")
+    log.debug(f"Query is {query}")
     return query.one_or_none()
 
 
@@ -299,10 +308,10 @@ def get_networkx_graph_and_nodes(
 
 def get_labelled_graphviz_graph(graph_id: int) -> str:
     graph: PackageGraph = get_graph_by_id(graph_id)
-    print(graph.root_package_version_id)
+    log.debug(graph.root_package_version_id)
     if graph.root_package_version_id is not None:
         root = get_packages_by_ids([graph.root_package_version_id])[0]
-        print(f"root {root.name}@{root.version}")
+        log.debug(f"root {root.name}@{root.version}")
     return str(graph_to_dot(get_networkx_graph_and_nodes(graph)[0]))
 
 
@@ -341,7 +350,7 @@ def get_latest_graph_including_package_as_parent(
         .one_or_none()
     )
     if link is None:
-        print(f"{package.name} {package.version} has no children")
+        log.info(f"{package.name} {package.version} has no children")
         return None
     graph_query = (
         db.session.query(PackageGraph)
@@ -349,7 +358,7 @@ def get_latest_graph_including_package_as_parent(
         .order_by(PackageGraph.inserted_at.desc())
         .limit(1)
     )
-    print(f"graph_query is {graph_query}")
+    log.debug(f"graph_query is {graph_query}")
     return graph_query.one_or_none()
 
 
@@ -366,7 +375,7 @@ def get_package_from_id(id: int) -> Optional[PackageVersion]:
         db.session.query(PackageVersion).filter(PackageVersion.id == id).one_or_none()
     )
     if package_version is None:
-        print(f"no package found for get_package_id {id}")
+        log.info(f"no package found for get_package_id {id}")
     return package_version
 
 
@@ -473,6 +482,14 @@ def store_package_reports(prs: List[PackageReport]) -> None:
     db.session.commit()
 
 
+def insert_npmsio_score(npmsio_score: Dict[str, Any]) -> None:
+    return insert_npmsio_data(db.session, [npmsio_score])
+
+
+def insert_npm_registry_entry(npm_registry_entry: Dict[str, Any]) -> None:
+    return insert_npm_registry_data(db.session, [npm_registry_entry])
+
+
 VIEWS: Dict[str, str] = {
     "latest_reports": """
 CREATE OR REPLACE VIEW latest_reports AS
@@ -487,7 +504,7 @@ WHERE r2.rn = 1
 
 def create_views(engine):
     connection = engine.connect()
-    print(f"creating views if they don't exist: {list(VIEWS.keys())}")
+    log.info(f"creating views if they don't exist: {list(VIEWS.keys())}")
     for view_command in VIEWS.values():
         _ = connection.execute(view_command)
     connection.close()
@@ -496,7 +513,7 @@ def create_views(engine):
 def create_tables_and_views(app):
     with app.app_context():
         scanner_tables = scanner_schema_declarative_base.metadata.tables
-        print(
+        log.info(
             f"creating scanner tables if they don't exist: {list(scanner_tables.keys())}"
         )
         scanner_schema_declarative_base.metadata.create_all(bind=db.engine,)
@@ -505,7 +522,7 @@ def create_tables_and_views(app):
             for table_name in db.Model.metadata.tables
             if table_name not in VIEWS.keys()
         ]
-        print(f"creating tables if they don't exist: {non_view_table_names}")
+        log.info(f"creating tables if they don't exist: {non_view_table_names}")
         db.Model.metadata.create_all(
             bind=db.engine,
             tables=[

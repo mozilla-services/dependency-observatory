@@ -142,34 +142,24 @@ def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentPar
 async def run_task(
     c: aiodocker.containers.DockerContainer,
     task: ContainerTask,
-    org_repo: OrgRepo,
-    git_ref: GitRef,
-    path: pathlib.Path,
+    working_dir: str,
     container_name: str,
-    cwd_files: AbstractSet[str],
 ) -> Union[Dict[str, Any], Exception]:
     last_inspect = dict(ExitCode=None)
     stdout = "dummy-stdout"
-    working_dir = str(pathlib.Path("/repos/repo") / path)
-
-    # use getattr since mypy thinks we're passing a self arg otherwise
-
-    # TODO: run this check at runtime since npm install can generate or update a package-lock.json
-    # git grep --untracked
-    if not getattr(task, "has_files_check")(cwd_files):
-        log.warn(f"Missing files to run {task.name} {task.command} in {working_dir!r}")
-        return Exception(
-            f"Missing files to run {task.name} {task.command} in {working_dir!r}"
-        )
-    else:
-        log.debug(f"have files to run {task.name} in {working_dir!r}: {cwd_files}")
 
     log.info(
-        f"{container_name} at {git_ref} in {working_dir} for task {task.name} running {task.command}"
+        f"task {task.name} running {task.command} in {working_dir} of {container_name}"
     )
     try:
         job_run = await c.run(
-            cmd=task.command, working_dir=working_dir, wait=True, check=task.check
+            cmd=task.command,
+            working_dir=working_dir,
+            wait=True,
+            check=task.check,
+            attach_stdout=task.attach_stdout,
+            attach_stderr=task.attach_stderr,
+            tty=task.tty,
         )
         last_inspect = await job_run.inspect()
     except containers.DockerRunException as e:
@@ -182,7 +172,6 @@ async def run_task(
         "\n".join(line_iter)
         for line_iter in job_run.decoded_start_result_stdout_and_stderr_line_iters
     ]
-
     c_stdout, c_stderr = await asyncio.gather(c.log(stdout=True), c.log(stderr=True))
     log.debug(f"{container_name} stdout: {c_stdout}")
     log.debug(f"{container_name} stderr: {c_stderr}")
@@ -191,7 +180,6 @@ async def run_task(
         "command": task.command,
         "container_name": container_name,
         "working_dir": working_dir,
-        "relative_path": str(path),
         "exit_code": last_inspect["ExitCode"],
         "stdout": stdout,
         "stderr": stderr,
@@ -263,7 +251,7 @@ async def run_in_repo_at_ref(
         else:
             task_results = [
                 await run_task(
-                    c, task, org_repo, git_ref, path, container_name, cwd_files
+                    c, task, str(pathlib.Path("/repos/repo") / path), container_name
                 )
                 for task in tasks
             ]
@@ -368,23 +356,32 @@ def iter_task_envs(
         yield language, package_manager, image, version_commands, tasks
 
 
+async def build_images_for_envs(
+    args: argparse.Namespace,
+    task_envs: Tuple[
+        Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]
+    ],
+) -> None:
+    image_keys: AbstractSet[str] = {
+        image.local.repo_name_tag for (_, _, image, _, _) in task_envs
+    }
+    images: Iterable[DockerImage] = [
+        docker_images[image_key] for image_key in image_keys
+    ]
+    log.info(
+        f"building images: {[image.base.repo_name_tag + ' as ' + image.local.repo_name_tag for image in images]}"
+    )
+    built_image_tags: Iterable[str] = await build_images(args.docker_pull, images)
+    log.info(f"successfully built and tagged images {built_image_tags}")
+
+
 async def run_pipeline(
     source: Generator[Dict[str, Any], None, None], args: argparse.Namespace
 ) -> AsyncGenerator[Dict, None]:
     log.info(f"{pipeline.name} pipeline started with args {args}")
     task_envs = list(iter_task_envs(args))
     if args.docker_build:
-        image_keys: AbstractSet[str] = {
-            image.local.repo_name_tag for (_, _, image, _, _) in task_envs
-        }
-        images: Iterable[DockerImage] = [
-            docker_images[image_key] for image_key in image_keys
-        ]
-        log.info(
-            f"building images: {[image.base.repo_name_tag + ' as ' + image.local.repo_name_tag for image in images]}"
-        )
-        built_image_tags: Iterable[str] = await build_images(args.docker_pull, images)
-        log.info(f"successfully built and tagged images {built_image_tags}")
+        await build_images_for_envs(args, task_envs)
 
     # cache of results by lang name, package manager name,
     # image.local.repo_name_tag, org/repo, dep files dir path, dep file sha256s
