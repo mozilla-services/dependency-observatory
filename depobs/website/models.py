@@ -222,6 +222,17 @@ class PackageLatestReport(db.Model):
         )
 
 
+class CeleryTasks(db.Model):
+    __tablename__ = "celery_taskmeta"
+
+    id = Column("id", Integer, primary_key=True)
+
+    task_id = Column(String(155))
+    status = Column(String(50))
+    date_done = Column(DateTime)
+    name = Column(String(155))
+
+
 def get_package_report(package, version=None):
     if None == version:
         # TODO order-by is hard with semver. Think about splitting out versions
@@ -460,10 +471,21 @@ def get_statistics():
     )
     advisories_count = db.session.query(Advisory.id).count()
     reports_count = db.session.query(PackageReport.id).count()
+
+    tasks_results = (
+        db.session.query(CeleryTasks.status, func.count(CeleryTasks.id))
+        .group_by(CeleryTasks.status)
+        .all()
+    )
+    tasks_count = dict()
+    for k, v in tasks_results:
+        tasks_count[k.lower()] = v
+
     return dict(
         package_versions=pkg_version_count,
         advisories=advisories_count,
         reports=reports_count,
+        tasks=tasks_count,
     )
 
 
