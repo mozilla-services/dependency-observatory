@@ -310,19 +310,47 @@ def parse_cargo_task(task_name: str, task_result: Dict) -> Optional[Dict]:
         raise NotImplementedError()
 
 
-def parse_command(
-    task_name: str, task_command: str, task_data: Dict, line: Dict
-) -> Optional[Dict]:
+def parse_command(task_name: str, task_command: str, task_data: Dict) -> Optional[Dict]:
     for package_manager_name, package_manager in package_managers.items():
         if any(task_command == task.command for task in package_manager.tasks.values()):
             if package_manager_name == "npm":
                 return parse_npm_task(task_name, task_data)
             elif package_manager_name == "yarn":
-                return parse_yarn_task(task_name, line)
+                return parse_yarn_task(task_name, task_data)
             elif package_manager_name == "cargo":
                 return parse_cargo_task(task_name, task_data)
     log.warning(f"unrecognized command {task_command}")
     return None
+
+
+def postprocess_task(
+    task_data: Dict[str, Any], task_names_to_process: AbstractSet[str],
+) -> Optional[Dict[str, Any]]:
+    # filter for node list_metadata output to parse and flatten deps
+    task_name = get_in(task_data, ["name"], None)
+    if task_name not in task_names_to_process:
+        return None
+
+    task_command = get_in(task_data, ["command"], None)
+
+    task_result = extract_fields(
+        task_data, ["command", "container_name", "exit_code", "name", "working_dir",],
+    )
+
+    updates = parse_command(task_name, task_command, task_data)
+    if updates:
+        if task_name == "list_metadata":
+            log.info(
+                f"wrote {task_result['name']} w/"
+                f" {updates['dependencies_count']} deps and {updates.get('problems_count', 0)} problems"
+                # f" {updates['graph_stats']}"
+            )
+        elif task_name == "audit":
+            log.info(
+                f"wrote {task_result['name']} w/ {updates['vulnerabilities_count']} vulns"
+            )
+        task_result.update(updates)
+    return task_result
 
 
 async def run_pipeline(
@@ -347,41 +375,7 @@ async def run_pipeline(
         result["tasks"] = []
 
         for task_data in get_in(line, ["task_results"], []):
-            # filter for node list_metadata output to parse and flatten deps
-            task_name = get_in(task_data, ["name"], None)
-            if task_name not in args.repo_task:
-                continue
-
-            task_command = get_in(task_data, ["command"], None)
-
-            task_result = extract_fields(
-                task_data,
-                [
-                    "command",
-                    "container_name",
-                    "exit_code",
-                    "name",
-                    "relative_path",
-                    "working_dir",
-                ],
-            )
-
-            updates = parse_command(task_name, task_command, task_data, line)
-            if updates:
-                if task_name == "list_metadata":
-                    log.info(
-                        f"wrote {task_result['name']} {result['org']}/{result['repo']} {task_result['relative_path']}"
-                        f" {result['ref']['value']} w/"
-                        f" {updates['dependencies_count']} deps and {updates.get('problems_count', 0)} problems"
-                        # f" {updates['graph_stats']}"
-                    )
-                elif task_name == "audit":
-                    log.info(
-                        f"wrote {task_result['name']} {result['org']}/{result['repo']} {task_result['relative_path']}"
-                        f" {result['ref']['value']} w/"
-                        f" {updates['vulnerabilities_count']} vulns"
-                    )
-                task_result.update(updates)
+            task_result = postprocess_task(task_data, args.repo_task)
             result["tasks"].append(task_result)
         yield result
 
