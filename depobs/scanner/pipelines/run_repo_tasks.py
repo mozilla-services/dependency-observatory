@@ -368,23 +368,32 @@ def iter_task_envs(
         yield language, package_manager, image, version_commands, tasks
 
 
+async def build_images_for_envs(
+    args: argparse.Namespace,
+    task_envs: Tuple[
+        Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]
+    ],
+) -> None:
+    image_keys: AbstractSet[str] = {
+        image.local.repo_name_tag for (_, _, image, _, _) in task_envs
+    }
+    images: Iterable[DockerImage] = [
+        docker_images[image_key] for image_key in image_keys
+    ]
+    log.info(
+        f"building images: {[image.base.repo_name_tag + ' as ' + image.local.repo_name_tag for image in images]}"
+    )
+    built_image_tags: Iterable[str] = await build_images(args.docker_pull, images)
+    log.info(f"successfully built and tagged images {built_image_tags}")
+
+
 async def run_pipeline(
     source: Generator[Dict[str, Any], None, None], args: argparse.Namespace
 ) -> AsyncGenerator[Dict, None]:
     log.info(f"{pipeline.name} pipeline started with args {args}")
     task_envs = list(iter_task_envs(args))
     if args.docker_build:
-        image_keys: AbstractSet[str] = {
-            image.local.repo_name_tag for (_, _, image, _, _) in task_envs
-        }
-        images: Iterable[DockerImage] = [
-            docker_images[image_key] for image_key in image_keys
-        ]
-        log.info(
-            f"building images: {[image.base.repo_name_tag + ' as ' + image.local.repo_name_tag for image in images]}"
-        )
-        built_image_tags: Iterable[str] = await build_images(args.docker_pull, images)
-        log.info(f"successfully built and tagged images {built_image_tags}")
+        await build_images_for_envs(args, task_envs)
 
     # cache of results by lang name, package manager name,
     # image.local.repo_name_tag, org/repo, dep files dir path, dep file sha256s
