@@ -100,8 +100,8 @@ _NPMSIO_CLIENT_CONFIG = argparse.Namespace(
     dry_run=False,
 )
 _SCAN_NPM_TARBALL_ARGS = argparse.Namespace(
-    docker_pull=False,
-    docker_build=False,
+    docker_pull=True,
+    docker_build=True,
     docker_image=[],
     dry_run=False,
     language=["nodejs"],
