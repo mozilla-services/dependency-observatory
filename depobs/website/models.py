@@ -443,6 +443,21 @@ def get_vulnerabilities(package: str, version: str):
     )
 
 
+def get_statistics():
+    pkg_version_count = (
+        db.session.query(PackageVersion.name, PackageVersion.version,)
+        .distinct()
+        .count()
+    )
+    advisories_count = db.session.query(Advisory.id).count()
+    reports_count = db.session.query(PackageReport.id).count()
+    return dict(
+        package_versions=pkg_version_count,
+        advisories=advisories_count,
+        reports=reports_count,
+    )
+
+
 def insert_package_report_placeholder_or_update_task_id(
     package_name: str, package_version: str, task_id: str
 ) -> PackageReport:

@@ -138,6 +138,11 @@ def get_graph(graph_id):
     return graphviz.Source(dot_graph).pipe(format="svg").decode("utf-8")
 
 
+@api.route("/statistics", methods=["GET"])
+def get_statistics() -> Dict:
+    return models.get_statistics()
+
+
 @api.after_request
 def add_standard_headers_to_static_routes(response):
     response.headers.update(STANDARD_HEADERS)
