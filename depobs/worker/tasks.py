@@ -248,7 +248,8 @@ def scan_npm_package(
                     _SCAN_NPM_TARBALL_ARGS, tarball_url, package_name, package_version
                 )
             )
-            log.info(f"got container task results:\n{container_task_results}")
+            log.info(f"got container task results for {package_name}@{package_version}")
+            log.debug(f"got container task results:\n{container_task_results}")
             for task_result in container_task_results["task_results"]:
                 postprocessed_container_task_result: Optional[
                     Dict[str, Any]
