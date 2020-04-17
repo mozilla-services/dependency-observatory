@@ -41,7 +41,7 @@ def always_true(_: AbstractSet[str]) -> bool:
     return True
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class ContainerTask:
     # task name for logginer e.g. audit, list_metadata
     name: str
