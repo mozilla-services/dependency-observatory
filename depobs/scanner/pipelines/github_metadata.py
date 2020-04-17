@@ -380,6 +380,3 @@ async def run_pipeline(
                 break
 
         assert all(get_response(task) for task in worker_tasks.values())
-
-
-FIELDS: AbstractSet[str] = set()  # "crate", "categories", "keywords", "versions"}

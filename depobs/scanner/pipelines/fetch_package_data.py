@@ -99,14 +99,3 @@ async def run_pipeline(
                 yield package_result
     else:
         raise NotImplementedError(f"unrecognized task {args.package_task}")
-
-
-# TODO: improve validation and specify field providers
-IN_FIELDS: Dict[str, Union[type, str, Dict[str, str]]] = {
-    # might be able to infer these
-    "language": str,  # Language.name
-    "package_manager": str,  # PackageManager.name
-    # NPMPackage, RustCrate, or RustCrate (resolved or unresolved)
-    "name": str,  # the package name
-    "version": Optional[str],
-}

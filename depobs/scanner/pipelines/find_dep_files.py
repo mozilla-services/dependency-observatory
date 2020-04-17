@@ -120,19 +120,3 @@ async def run_pipeline(
                 yield dep_file
         except Exception as e:
             log.error(f"error running find_dep_files:\n{exc_to_str()}")
-
-
-# fields and types for the input and output JSON
-IN_FIELDS: Dict[str, Union[type, str, Dict[str, str]]] = {
-    "repo_url": str,
-    **asdict(
-        OrgRepo.from_github_repo_url(
-            "https://github.com/mozilla-services/syncstorage-rs.git"
-        )
-    ),
-    **{"ref": GitRef.from_dict(dict(value="dummy", kind="tag")).to_dict()},
-}
-OUT_FIELDS: Dict[str, Union[type, str, Dict[str, str]]] = {
-    **IN_FIELDS,
-    **{"dependency_file": DependencyFile(path=pathlib.Path("./"), sha256="").to_dict()},
-}

@@ -21,7 +21,6 @@ from typing import (
 from depobs.scanner.serialize_util import (
     get_in,
     extract_fields,
-    REPO_FIELDS,
 )
 import depobs.scanner.docker.containers as containers
 from depobs.scanner.models.org_repo import OrgRepo
@@ -162,10 +161,6 @@ async def run_pipeline(
                 )
         if i > 0:
             last_commit_metas = commit_metas
-
-
-# TODO: rename to output fields
-FIELDS: AbstractSet[str] = set()
 
 
 def serialize(_: argparse.Namespace, result: Dict):
