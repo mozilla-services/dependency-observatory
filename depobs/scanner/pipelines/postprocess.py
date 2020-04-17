@@ -25,7 +25,6 @@ from typing import (
 )
 import typing
 
-from depobs.scanner.rx_util import on_next_save_to_jsonl
 from depobs.scanner.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
 from depobs.scanner.serialize_util import (
     get_in,
@@ -34,7 +33,6 @@ from depobs.scanner.serialize_util import (
     iter_jsonlines,
     REPO_FIELDS,
 )
-from depobs.scanner.models.pipeline import Pipeline
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
 from depobs.scanner.models.language import (
@@ -378,17 +376,3 @@ async def run_pipeline(
             task_result = postprocess_task(task_data, args.repo_task)
             result["tasks"].append(task_result)
         yield result
-
-
-FIELDS: AbstractSet = set()
-
-
-pipeline = Pipeline(
-    name=NAME,
-    desc=__doc__,
-    fields=FIELDS,
-    argparser=parse_args,
-    reader=iter_jsonlines,
-    runner=run_pipeline,
-    writer=on_next_save_to_jsonl,
-)

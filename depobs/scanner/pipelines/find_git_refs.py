@@ -6,12 +6,10 @@ import logging
 from random import randrange
 from typing import Tuple, Dict, Generator, AsyncGenerator, Union, Iterable
 
-from depobs.scanner.rx_util import on_next_save_to_jsonl
 from depobs.scanner.serialize_util import get_in, extract_fields, iter_jsonlines
 import depobs.scanner.docker.containers as containers
 from depobs.scanner.docker.images import build_images
 import depobs.scanner.docker.volumes as volumes
-from depobs.scanner.models.pipeline import Pipeline
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
 from depobs.scanner.models.language import DockerImage, docker_images
@@ -126,14 +124,3 @@ OUT_FIELDS: Dict[str, Union[type, str, Dict[str, str]]] = {
     ),
     **{"ref": GitRef.from_dict(dict(value="dummy", kind="tag")).to_dict()},
 }
-
-
-pipeline = Pipeline(
-    name="find_git_refs",
-    desc=__doc__,
-    fields=set(OUT_FIELDS.keys()),
-    argparser=parse_args,
-    reader=iter_jsonlines,
-    runner=run_pipeline,
-    writer=on_next_save_to_jsonl,
-)

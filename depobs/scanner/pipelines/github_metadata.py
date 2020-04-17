@@ -24,10 +24,7 @@ import aiohttp
 import snug
 import quiz
 
-from depobs.scanner.rx_util import on_next_save_to_jsonl
-from depobs.scanner.serialize_util import iter_jsonlines
 from depobs.scanner.quiz_util import raw_result_to_dict
-from depobs.scanner.models.pipeline import Pipeline
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.github import (
     ResourceKind,
@@ -386,14 +383,3 @@ async def run_pipeline(
 
 
 FIELDS: AbstractSet[str] = set()  # "crate", "categories", "keywords", "versions"}
-
-
-pipeline = Pipeline(
-    name="github_metadata",
-    desc=__doc__,
-    argparser=parse_args,
-    fields=FIELDS,
-    reader=iter_jsonlines,
-    runner=run_pipeline,
-    writer=on_next_save_to_jsonl,
-)

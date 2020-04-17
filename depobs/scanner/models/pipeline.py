@@ -168,30 +168,3 @@ def add_volume_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
         help="Keep volumes after cloning the repo. Defaults to False.",
     )
     return parser
-
-
-@dataclass
-class Pipeline:
-    """
-    A Pipeline to run. run_pipeline.py will:
-
-    0. use the .argparser to read any additional program arguments
-    1. read the infile with .reader
-    2. process the parsed infile with .runner
-    3. optionally serializer the processed result with .serializer
-    4. write the output to outfile with .writer
-    """
-
-    # pipeline name
-    name: str
-    # pipeline description
-    desc: str
-
-    # top-level fields to serialize for output
-    fields: AbstractSet[str]
-
-    reader: Callable
-    runner: Callable
-    writer: Callable
-    serializer: Optional[Callable] = field(default=identity_serializer)
-    argparser: Optional[Callable] = field(default=add_infile_and_outfile)

@@ -7,12 +7,10 @@ import pathlib
 from random import randrange
 from typing import Any, AsyncGenerator, Dict, Generator, Iterable, Tuple, Union
 
-from depobs.scanner.rx_util import on_next_save_to_jsonl
-from depobs.scanner.serialize_util import get_in, extract_fields, iter_jsonlines
+from depobs.scanner.serialize_util import get_in, extract_fields
 import depobs.scanner.docker.containers as containers
 from depobs.scanner.docker.images import build_images
 import depobs.scanner.docker.volumes as volumes
-from depobs.scanner.models.pipeline import Pipeline
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
 from depobs.scanner.models.pipeline import (
@@ -154,13 +152,3 @@ OUT_FIELDS: Dict[str, Union[type, str, Dict[str, str]]] = {
     **IN_FIELDS,
     **{"dependency_file": DependencyFile(path=pathlib.Path("./"), sha256="").to_dict()},
 }
-
-pipeline = Pipeline(
-    name="find_dep_files",
-    desc=__doc__,
-    fields=set(OUT_FIELDS.keys()),
-    argparser=parse_args,
-    reader=iter_jsonlines,
-    runner=run_pipeline,
-    writer=on_next_save_to_jsonl,
-)

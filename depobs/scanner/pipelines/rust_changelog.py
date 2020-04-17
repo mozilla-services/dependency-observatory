@@ -18,15 +18,12 @@ from typing import (
     AsyncGenerator,
 )
 
-from depobs.scanner.rx_util import on_next_save_to_jsonl
 from depobs.scanner.serialize_util import (
     get_in,
     extract_fields,
-    iter_jsonlines,
     REPO_FIELDS,
 )
 import depobs.scanner.docker.containers as containers
-from depobs.scanner.models.pipeline import Pipeline
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
 from depobs.scanner.models.rust import cargo_metadata_to_rust_crate_and_packages
@@ -216,15 +213,3 @@ deps:
             )
         result[manifest_path] = diff
     return result
-
-
-pipeline = Pipeline(
-    name="rust_changelog",
-    desc=__doc__,
-    fields=FIELDS,
-    argparser=parse_args,
-    reader=iter_jsonlines,
-    runner=run_pipeline,
-    serializer=serialize,
-    writer=on_next_save_to_jsonl,
-)

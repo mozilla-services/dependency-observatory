@@ -26,16 +26,13 @@ from typing import (
 )
 import typing
 
-from depobs.scanner.rx_util import on_next_save_to_jsonl
 from depobs.scanner.serialize_util import (
     get_in,
     extract_fields,
-    iter_jsonlines,
     REPO_FIELDS,
 )
 import depobs.scanner.docker.containers as containers
 import depobs.scanner.docker.volumes as volumes
-from depobs.scanner.models.pipeline import Pipeline
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
 from depobs.scanner.docker.images import build_images
@@ -465,13 +462,3 @@ IN_FIELDS: Dict[str, Union[type, str, Dict[str, str]]] = {
     **{"dependency_file": DependencyFile(path=pathlib.Path("./"), sha256="").to_dict()},
 }
 OUT_FIELDS = {**{k: v for k, v in IN_FIELDS.items() if k != "dependency_file"}}
-
-pipeline = Pipeline(
-    name="run_repo_tasks",
-    desc=__doc__,
-    fields=set(OUT_FIELDS.keys()),
-    argparser=parse_args,
-    reader=iter_jsonlines,
-    runner=run_pipeline,
-    writer=on_next_save_to_jsonl,
-)
