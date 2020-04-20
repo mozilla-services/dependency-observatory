@@ -30,7 +30,6 @@ pip-api==0.0.14
 pluggy==0.13.1
 psycopg2==2.8.5
 py==1.8.1
-pycodestyle==2.5.0
 pydot==1.4.1
 pyparsing==2.4.7
 pytest-asyncio==0.10.0
