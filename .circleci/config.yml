@@ -38,38 +38,6 @@ jobs:
           command: |
             mypy --config setup.cfg
 
-  unit-test:
-    docker:
-      - image: circleci/python:buster
-    environment:
-      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://postgres:postgres@db/dependency_observatory
-      INIT_DB: 0
-      CELERY_BROKER_URL: sqla+postgresql://postgres:postgres@db/dependency_observatory
-      CELERY_RESULT_BACKEND: db+postgresql://postgres:postgres@db/dependency_observatory
-    steps:
-      - checkout
-      - run:
-          name: write a version.json in depobs/
-          command: |
-            CI=1 ./util/write_version_json.sh > depobs/version.json
-      - run:
-          name: install python deps
-          command: |
-            pip config --user set global.progress_bar off
-            pip install --user -r depobs/requirements.txt
-      - run:
-          name: run unit tests with coverage (no DB)
-          command: |
-            CI=1 ./util/run_tests_with_coverage.sh
-      - run:
-          name: generate coverage reports
-          command: |
-            coverage report
-            coverage html
-            mv /tmp/htmlcov/ .
-      - store_artifacts:
-          path: htmlcov
-
   build-images:
     docker:
       - image: circleci/python:buster
@@ -90,6 +58,39 @@ jobs:
           key: v1-{{ .Branch }}-{{ epoch }}
           paths:
             - /tmp/docker.tgz
+
+  unit-test:
+    docker:
+      - image: circleci/python:buster
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          key: v1-{{.Branch}}
+      - run:
+          name: write a version.json in depobs/
+          command: |
+            CI=1 ./util/write_version_json.sh > depobs/version.json
+      - run:
+          name: install python deps
+          command: |
+            pip config --user set global.progress_bar off
+            pip install --user -r depobs/requirements.txt
+      - run:
+          name: start docker-compose stack
+          command: docker-compose up -d
+      - run:
+          name: run unit tests with coverage
+          command: |
+            CI=1 ./util/run_tests_with_coverage.sh
+      - run:
+          name: generate coverage reports
+          command: |
+            coverage report
+            coverage html
+            mv /tmp/htmlcov/ .
+      - store_artifacts:
+          path: htmlcov
 
   deploy:
     docker:
@@ -131,12 +132,14 @@ workflows:
           tags:
             only: /.*/
 
-      - unit-test:
-        filters:
-          tags:
-            only: /.*/
-
       - build-images:
+          filters:
+            tags:
+              only: /.*/
+
+      - unit-test:
+          requires:
+            - build-images
           filters:
             tags:
               only: /.*/
