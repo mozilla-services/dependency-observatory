@@ -338,8 +338,8 @@ def iter_task_envs(
 
 async def build_images_for_envs(
     args: argparse.Namespace,
-    task_envs: Tuple[
-        Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]
+    task_envs: List[
+        Tuple[Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]]
     ],
 ) -> None:
     image_keys: AbstractSet[str] = {
