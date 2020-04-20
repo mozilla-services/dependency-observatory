@@ -68,21 +68,21 @@ jobs:
       - restore_cache:
           key: v1-{{.Branch}}
       - run:
-          name: write a version.json in depobs/
+          name: build docker-compose tests stack
           command: |
-            CI=1 ./util/write_version_json.sh > depobs/version.json
+            cd tests
+            docker-compose build
+            docker-compose up -d
       - run:
           name: install python deps
           command: |
             pip config --user set global.progress_bar off
             pip install --user -r depobs/requirements.txt
       - run:
-          name: start docker-compose stack
-          command: docker-compose up -d
-      - run:
           name: run unit tests with coverage
           command: |
-            CI=1 ./util/run_tests_with_coverage.sh
+            cd tests
+            CI=1 ../util/run_tests_with_coverage.sh
       - run:
           name: generate coverage reports
           command: |

@@ -1,0 +1,70 @@
+version: "3"
+services:
+  db:
+    container_name: dependency-observatory-db
+    image: postgres:12
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=dependency_observatory
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: .
+    container_name: dependency-observatory-api-tests
+    image: mozilla/dependency-observatory-tests
+    environment:
+      - CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
+      - CELERY_RESULT_BACKEND=db+postgresql://postgres:postgres@db/dependency_observatory
+      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
+      - INIT_DB=1
+      - FLASK_APP=/app/depobs/website/do.py
+      - FLASK_ENV=development
+      - HOST=0.0.0.0
+      - PORT=8000
+    depends_on:
+      - db
+    links:
+      - db
+    ports:
+      - "8000:8000"
+
+  # celery worker for scanner
+  worker:
+    build:
+      context: .
+    container_name: dependency-observatory-worker-tests
+    image: mozilla/dependency-observatory-tests
+    depends_on:
+      - db
+    environment:
+      - CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
+      - CELERY_RESULT_BACKEND=db+postgresql://postgres:postgres@db/dependency_observatory
+      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
+    links:
+      - db
+    # let the worker spin up new sibling docker containers
+    # NB: exposes the docker daemon to those containers
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./:/app
+    user: "root"
+    command: celery -A depobs.worker.tasks worker --loglevel=info
+
+  # should run then exit on compose up
+  # run it again to load more data from ./scanner/fixtures/postprocessed_repo_tasks.jsonl
+  scan-fixture-loader:
+    image: mozilla/dependencyscan:latest
+    depends_on:
+      - db
+    environment:
+      - DB_URL=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
+    volumes:
+      - ./depobs/worker/fixtures:/fixtures
+    command: bash -c "
+        gunzip -c /fixtures/npmsio_scores.jsonl.gz | python fpr/run_pipeline.py save_to_db --create-tables --input-type dep_meta_npmsio;
+        gunzip -c /fixtures/npm_registry_meta.jsonl.gz | python fpr/run_pipeline.py save_to_db --create-tables --input-type dep_meta_npm_reg;
+        gunzip -c /fixtures/postprocessed_repo_tasks.jsonl.gz | python fpr/run_pipeline.py save_to_db --create-tables --input-type postprocessed_repo_task;
+      "
