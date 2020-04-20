@@ -16,7 +16,6 @@ services:
     container_name: dependency-observatory-api
     image: mozilla/dependency-observatory
     volumes:
-      - ./depobs/version.json:/app/version.json # prevent the mount below from overwriting the generated version.json
       - ./:/app
     environment:
       - CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory

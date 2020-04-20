@@ -44,7 +44,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 WORKDIR /app
 
 COPY . depobs
-RUN ln -s depobs/version.json /app/version.json
 RUN pip install --upgrade --no-cache-dir -r depobs/requirements.txt
 
 USER app
