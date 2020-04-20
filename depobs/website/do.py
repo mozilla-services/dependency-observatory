@@ -23,7 +23,7 @@ flasklog.setLevel(logging.ERROR)
 # https://github.com/mozilla-services/python-dockerflow/issues/44
 class Customflow(Dockerflow):
     def summary_extra(self):
-        out = Dockerflow.summary_extra(self)
+        out = super().summary_extra()
         out["query_string"] = request.query_string.decode("utf-8")
         return out
 
