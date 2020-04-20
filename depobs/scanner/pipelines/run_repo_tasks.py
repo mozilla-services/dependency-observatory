@@ -338,8 +338,8 @@ def iter_task_envs(
 
 async def build_images_for_envs(
     args: argparse.Namespace,
-    task_envs: Tuple[
-        Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]
+    task_envs: List[
+        Tuple[Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]]
     ],
 ) -> None:
     image_keys: AbstractSet[str] = {
@@ -358,7 +358,7 @@ async def build_images_for_envs(
 async def run_pipeline(
     source: Generator[Dict[str, Any], None, None], args: argparse.Namespace
 ) -> AsyncGenerator[Dict, None]:
-    log.info(f"{pipeline.name} pipeline started with args {args}")
+    log.info(f"{__name__} pipeline started with args {args}")
     task_envs = list(iter_task_envs(args))
     if args.docker_build:
         await build_images_for_envs(args, task_envs)

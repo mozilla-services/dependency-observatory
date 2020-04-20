@@ -68,7 +68,7 @@ def is_dict_with_name(package: Any) -> bool:
 async def run_pipeline(
     source: Generator[Dict[str, Any], None, None], args: argparse.Namespace
 ) -> AsyncGenerator[Dict, None]:
-    log.info(f"{pipeline.name} pipeline started with task {args.package_task}")
+    log.info(f"{__name__} pipeline started with task {args.package_task}")
 
     if args.package_task in ["fetch_npmsio_scores", "fetch_npm_registry_metadata"]:
         packages = [package for package in source]
@@ -85,7 +85,7 @@ async def run_pipeline(
         async for package_result in fetcher(args, package_names, len(package_names)):
             if isinstance(package_result, Exception):
                 log.error(
-                    f"error running {pipeline.name} {args.package_task}:\n{exc_to_str()}"
+                    f"error running {__name__} {args.package_task}:\n{exc_to_str()}"
                 )
             else:
                 yield package_result
@@ -93,7 +93,7 @@ async def run_pipeline(
         async for package_result in fetch_cratesio_metadata(args, source):
             if isinstance(package_result, Exception):
                 log.error(
-                    f"error running {pipeline.name} {args.package_task}:\n{exc_to_str()}"
+                    f"error running {__name__} {args.package_task}:\n{exc_to_str()}"
                 )
             else:
                 yield package_result

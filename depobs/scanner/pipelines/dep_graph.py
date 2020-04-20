@@ -184,7 +184,7 @@ def style_graph_nodes(styles: Iterable[str], g: nx.DiGraph) -> nx.DiGraph:
 async def run_pipeline(
     source: Generator[Dict, None, None], args: argparse.Namespace
 ) -> AsyncGenerator[nx.DiGraph, None]:
-    log.info(f"pipeline {pipeline.name} started")
+    log.info(f"pipeline {__name__} started")
     for item in source:
         nx_graph: nx.DiGraph = npm_packages_to_networkx_digraph(
             NPMPackage(**package_dict) for package_dict in item.get("dependencies", [])
