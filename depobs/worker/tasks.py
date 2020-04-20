@@ -22,6 +22,7 @@ import logging
 import celery
 from celery.utils.log import get_task_logger
 import celery.result
+from flask import current_app
 import networkx as nx
 from networkx.algorithms.dag import descendants, is_directed_acyclic_graph
 
@@ -77,37 +78,6 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 ch.setFormatter(formatter)
-
-# http client config
-# an npm registry access token for fetch_npm_registry_metadata. Defaults NPM_PAT env var. Should be read-only.
-NPM_PAT = os.environ.get("NPM_PAT", None)
-
-# celery will try to import these if they're public vars (no _ prefix)
-_NPM_CLIENT_CONFIG = argparse.Namespace(
-    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
-    total_timeout=30,
-    max_connections=1,
-    max_retries=1,
-    package_batch_size=1,
-    dry_run=False,
-    npm_auth_token=NPM_PAT,
-)
-_NPMSIO_CLIENT_CONFIG = argparse.Namespace(
-    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
-    total_timeout=10,
-    max_connections=1,
-    package_batch_size=1,
-    dry_run=False,
-)
-_SCAN_NPM_TARBALL_ARGS = argparse.Namespace(
-    docker_pull=True,
-    docker_build=True,
-    docker_image=[],
-    dry_run=False,
-    language=["nodejs"],
-    package_manager=["npm"],
-    repo_task=["install", "list_metadata", "audit"],
-)
 
 
 app = create_celery_app()
@@ -245,7 +215,10 @@ def scan_npm_package(
             # assert tarball_url == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{package_version}.tgz
             container_task_results = asyncio.run(
                 scan_tarball_url(
-                    _SCAN_NPM_TARBALL_ARGS, tarball_url, package_name, package_version
+                    argparse.Namespace(**current_app.config["SCAN_NPM_TARBALL_ARGS"]),
+                    tarball_url,
+                    package_name,
+                    package_version,
                 )
             )
             log.info(f"got container task results for {package_name}@{package_version}")
@@ -482,7 +455,11 @@ async def fetch_package_data(
 @app.task()
 def check_package_name_in_npmsio(package_name: str) -> bool:
     npmsio_score = asyncio.run(
-        fetch_package_data(fetch_npmsio_scores, _NPMSIO_CLIENT_CONFIG, [package_name]),
+        fetch_package_data(
+            fetch_npmsio_scores,
+            argparse.Namespace(**current_app.config["NPMSIO_CLIENT"]),
+            [package_name],
+        ),
         debug=False,
     )
     log.info(f"package: {package_name} on npms.io? {npmsio_score is not None}")
@@ -498,7 +475,9 @@ def check_package_in_npm_registry(
 ) -> Dict:
     npm_registry_entry = asyncio.run(
         fetch_package_data(
-            fetch_npm_registry_metadata, _NPM_CLIENT_CONFIG, [package_name]
+            fetch_npm_registry_metadata,
+            argparse.Namespace(**current_app.config["NPM_CLIENT"]),
+            [package_name],
         ),
         debug=False,
     )
