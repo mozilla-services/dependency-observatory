@@ -8,7 +8,6 @@ from typing import Any, Callable, Dict, List, Sequence, Tuple, Union, Optional
 
 import pytest
 
-import context
 import depobs.scanner.models.nodejs as m
 
 

@@ -8,8 +8,6 @@ from typing import Callable, Any
 
 import pytest
 
-import context
-
 import depobs.scanner.serialize_util as m
 
 

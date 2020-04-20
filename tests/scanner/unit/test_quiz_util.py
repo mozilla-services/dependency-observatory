@@ -5,7 +5,6 @@ import functools
 
 import pytest
 
-import context
 import depobs.scanner.quiz_util as m
 
 

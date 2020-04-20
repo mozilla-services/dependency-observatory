@@ -7,7 +7,6 @@ from typing import Any, Callable, Dict, List, Tuple, Union
 
 import pytest
 
-import context
 import depobs.scanner.models.github as m
 
 
