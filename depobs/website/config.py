@@ -85,7 +85,7 @@ NPM_CLIENT = dict(
     package_batch_size=1,
     dry_run=False,
     # an npm registry access token for fetch_npm_registry_metadata. Defaults NPM_PAT env var. Should be read-only.
-    npm_pat=os.environ.get("NPM_PAT", None),
+    npm_auth_token=os.environ.get("NPM_PAT", None),
 )
 
 NPMSIO_CLIENT = dict(
