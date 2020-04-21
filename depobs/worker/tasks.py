@@ -25,8 +25,8 @@ import celery.result
 from flask import current_app
 
 from depobs.website.do import create_celery_app
-import depobs.website.models as models
-from depobs.website.models import (
+import depobs.database.models as models
+from depobs.database.models import (
     NPMRegistryEntry,
     PackageReport,
     PackageLatestReport,

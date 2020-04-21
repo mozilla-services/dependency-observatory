@@ -30,7 +30,7 @@ class Customflow(Dockerflow):
 
 def create_app(test_config=None):
     # reimport to pick up changes for testing and autoreload
-    import depobs.website.models as models
+    import depobs.database.models as models
     from depobs.website.scans import scans_blueprint
     from depobs.website.views import views_blueprint
 

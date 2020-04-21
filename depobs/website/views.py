@@ -5,7 +5,7 @@ from flask import abort, Blueprint, Response, request, send_from_directory
 import graphviz
 from werkzeug.exceptions import BadRequest, NotFound
 
-from depobs.website import models
+from depobs.database import models
 from depobs.website.scans import (
     validate_npm_package_version_query_params,
     validate_scored_after_ts_query_param,
