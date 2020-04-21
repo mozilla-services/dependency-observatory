@@ -28,7 +28,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
             build-essential \
             libpq-dev \
             graphviz \
-	    jq \
             && \
         curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add - && \
         add-apt-repository \
