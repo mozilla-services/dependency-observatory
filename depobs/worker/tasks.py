@@ -463,9 +463,10 @@ def check_package_name_in_npmsio(package_name: str) -> bool:
         debug=False,
     )
     log.info(f"package: {package_name} on npms.io? {npmsio_score is not None}")
-    log.info(f"saving npms.io score for {package_name}")
-    # inserts a unique entry for new analyzed_at fields
-    models.insert_npmsio_score(npmsio_score)
+    if npmsio_score is not None:
+        log.info(f"saving npms.io score for {package_name}")
+        # inserts a unique entry for new analyzed_at fields
+        models.insert_npmsio_score(npmsio_score)
     return npmsio_score is not None
 
 
