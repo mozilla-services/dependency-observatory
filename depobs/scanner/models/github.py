@@ -28,7 +28,7 @@ from depobs.scanner.quiz_util import (
     SelectionKwargsValue,
     multi_upsert_kwargs,
 )
-from depobs.scanner.serialize_util import (
+from depobs.util.serialize_util import (
     get_in as get_in_dict,
     extract_fields,
     JSONPath,

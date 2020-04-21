@@ -6,7 +6,7 @@ import logging
 from random import randrange
 from typing import Tuple, Dict, Generator, AsyncGenerator, Union, Iterable
 
-from depobs.scanner.serialize_util import get_in, extract_fields, iter_jsonlines
+from depobs.util.serialize_util import get_in, extract_fields, iter_jsonlines
 import depobs.scanner.docker.containers as containers
 from depobs.scanner.docker.images import build_images
 from depobs.scanner.models.org_repo import OrgRepo

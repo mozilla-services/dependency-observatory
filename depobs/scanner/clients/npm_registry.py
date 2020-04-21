@@ -7,7 +7,7 @@ from typing import Any, AsyncGenerator, Dict, Iterable, Optional
 import logging
 
 from depobs.scanner.pipelines.util import exc_to_str
-from depobs.scanner.serialize_util import grouper
+from depobs.util.serialize_util import grouper
 
 log = logging.getLogger(__name__)
 

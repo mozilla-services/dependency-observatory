@@ -50,7 +50,7 @@ import depobs.worker.validators as validators
 from depobs.scanner.pipelines.util import exc_to_str as _
 from depobs.scanner.clients.npmsio import fetch_npmsio_scores
 from depobs.scanner.clients.npm_registry import fetch_npm_registry_metadata
-from depobs.scanner.db.schema import (
+from depobs.database.models import (
     PackageVersion,
     PackageGraph,
 )

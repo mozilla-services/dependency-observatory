@@ -7,7 +7,7 @@ import pathlib
 from random import randrange
 from typing import Any, AsyncGenerator, Dict, Generator, Iterable, Tuple, Union
 
-from depobs.scanner.serialize_util import get_in, extract_fields
+from depobs.util.serialize_util import get_in, extract_fields
 import depobs.scanner.docker.containers as containers
 from depobs.scanner.docker.images import build_images
 from depobs.scanner.models.org_repo import OrgRepo

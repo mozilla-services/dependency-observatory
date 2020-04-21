@@ -21,7 +21,7 @@ from depobs.scanner.models.pipeline import (
     NODE_LABEL_FORMATS,
     GROUP_ATTRS,
 )
-from depobs.scanner.serialize_util import extract_fields, get_in
+from depobs.util.serialize_util import extract_fields, get_in
 from depobs.scanner.pipelines.util import exc_to_str
 
 log = logging.getLogger(__name__)

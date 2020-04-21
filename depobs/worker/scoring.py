@@ -5,10 +5,10 @@ from typing import Dict, List
 import networkx as nx
 from networkx.algorithms.dag import descendants
 
-from depobs.scanner.db.schema import PackageVersion
 from depobs.scanner.graph_traversal import outer_in_iter
-from depobs.website.models import (
+from depobs.database.models import (
     PackageReport,
+    PackageVersion,
     PackageLatestReport,
     get_npms_io_score,
     get_npm_registry_data,
