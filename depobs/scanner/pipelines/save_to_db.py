@@ -433,7 +433,7 @@ def insert_npm_registry_data(
 async def run_pipeline(
     source: Generator[Dict[str, Any], None, None], args: argparse.Namespace
 ) -> AsyncGenerator[None, None]:
-    log.info(f"{pipeline.name} pipeline started")
+    log.info(f"{__name__} pipeline started")
     engine = create_engine(args.db_url)
     if args.create_tables:
         Base.metadata.create_all(engine)

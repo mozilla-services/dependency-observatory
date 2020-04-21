@@ -100,7 +100,7 @@ async def run_find_dep_files(
 async def run_pipeline(
     source: Generator[Dict[str, Any], None, None], args: argparse.Namespace
 ) -> AsyncGenerator[Dict[str, Any], None]:
-    log.info(f"started pipeline {pipeline.name} with globs: {args.glob}")
+    log.info(f"started pipeline {__name__} with globs: {args.glob}")
     if args.docker_build:
         images: Iterable[DockerImage] = [docker_images["dep-obs/find-dep-files:latest"]]
         log.info(

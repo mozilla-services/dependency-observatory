@@ -353,7 +353,7 @@ def postprocess_task(
 async def run_pipeline(
     source: Generator[Dict[str, Any], None, None], args: argparse.Namespace
 ) -> AsyncGenerator[Dict, None]:
-    log.info(f"{pipeline.name} pipeline started")
+    log.info(f"{__name__} pipeline started")
 
     for i, line in enumerate(source):
         result = extract_fields(
