@@ -3,7 +3,7 @@ import logging
 import logging.config
 
 import celery
-from flask import Flask
+from flask import Flask, request
 from dockerflow.flask import Dockerflow
 from dockerflow.logging import JsonLogFormatter
 
@@ -16,6 +16,16 @@ log = logging.getLogger(__name__)
 # silence flask request logging
 flasklog = logging.getLogger("werkzeug")
 flasklog.setLevel(logging.ERROR)
+
+
+# override the summary logger from the Dockerflow class to add
+# logging of query string
+# https://github.com/mozilla-services/python-dockerflow/issues/44
+class Customflow(Dockerflow):
+    def summary_extra(self):
+        out = super().summary_extra()
+        out["query_string"] = request.query_string.decode("utf-8")
+        return out
 
 
 def create_app(test_config=None):
@@ -38,7 +48,7 @@ def create_app(test_config=None):
     if app.config["INIT_DB"]:
         models.create_tables_and_views(app)
 
-    dockerflow = Dockerflow(app, db=models.db)
+    dockerflow = Customflow(app, db=models.db)
     dockerflow.init_app(app)
     app.register_blueprint(scans_blueprint)
     app.register_blueprint(views_blueprint)
