@@ -24,6 +24,7 @@ LOGGING = {
         "request.summary": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.models": {"handlers": ["console"], "level": "INFO"},
         "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
+        "depobs.worker.scoring": {"handlers": ["console"], "level": "INFO",},
         "depobs.scanner.clients.cratesio": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.clients.npmsio": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.clients.npm_registry": {
