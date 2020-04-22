@@ -10,7 +10,6 @@ from depobs.scanner.pipelines.util import exc_to_str
 from depobs.scanner.serialize_util import grouper
 
 log = logging.getLogger(f"depobs.scanner.clients.npm_registry")
-log.setLevel(logging.DEBUG)
 
 
 def aiohttp_session(args: argparse.Namespace) -> aiohttp.ClientSession:
