@@ -24,12 +24,31 @@ LOGGING = {
         "request.summary": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.models": {"handlers": ["console"], "level": "INFO"},
         "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
+        "depobs.scanner.clients.cratesio": {"handlers": ["console"], "level": "INFO"},
+        "depobs.scanner.clients.npmsio": {"handlers": ["console"], "level": "INFO"},
+        "depobs.scanner.clients.npm_registry": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
         "depobs.scanner.docker.images": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.docker.containers": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.docker.log_reader": {"handlers": ["console"], "level": "WARN"},
-        "depobs.scanner.pipelines.run_repo_tasks": {"handlers": ["console"], "level": "INFO"},
-        "depobs.scanner.pipelines.postprocess": {"handlers": ["console"], "level": "INFO"},
-        "depobs.scanner.pipelines.save_to_db": {"handlers": ["console"], "level": "INFO"},
+        "depobs.scanner.pipelines.fetch_package_data": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.scanner.pipelines.run_repo_tasks": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.scanner.pipelines.postprocess": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.scanner.pipelines.save_to_db": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
     },
 }
 
