@@ -7,7 +7,7 @@ import depobs.scanner.docker.containers as containers
 from depobs.scanner.models.docker_image import DockerImage
 from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("depobs.scanner.docker.images")
+log = logging.getLogger(__name__)
 
 
 async def build_images(

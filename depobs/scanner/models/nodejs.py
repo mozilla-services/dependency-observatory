@@ -12,7 +12,7 @@ from depobs.scanner.serialize_util import (
     JSONPathElement,
 )
 
-log = logging.getLogger("depobs.scanner.models.nodejs")
+log = logging.getLogger(__name__)
 
 NPMPackageID = str
 

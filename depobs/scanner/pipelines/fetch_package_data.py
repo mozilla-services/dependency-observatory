@@ -15,7 +15,7 @@ from depobs.scanner.models.package_meta_result import Result
 from depobs.scanner.pipelines.util import exc_to_str
 
 
-log = logging.getLogger("depobs.scanner.pipelines.fetch_package_data")
+log = logging.getLogger(__name__)
 
 __doc__ = """Fetches additional data about a dependency."""
 

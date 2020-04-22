@@ -5,7 +5,7 @@ from typing import Dict, Tuple, Sequence, List, Optional
 
 from depobs.scanner.serialize_util import extract_fields, get_in
 
-log = logging.getLogger("depobs.scanner.models.rust")
+log = logging.getLogger(__name__)
 
 
 @dataclass

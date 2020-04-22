@@ -38,7 +38,7 @@ from depobs.scanner.models.rust import cargo_metadata_to_rust_crates
 from depobs.scanner.models.pipeline import add_infile_and_outfile, add_aiohttp_args
 from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("depobs.scanner.pipelines.github_metadata")
+log = logging.getLogger(__name__)
 
 __doc__ = """Given an input file with repo urls metadata output fetches
 dependency and vulnerability metadata from GitHub and an optional GitHub PAT

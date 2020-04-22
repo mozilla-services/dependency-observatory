@@ -30,7 +30,7 @@ import depobs.scanner.docker.log_reader as docker_log_reader
 from depobs.scanner.models.git_ref import GitRef, GitRefKind
 from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("depobs.scanner.docker.containers")
+log = logging.getLogger(__name__)
 
 
 # https://docs.docker.com/engine/api/v1.37/#operation/ExecInspect

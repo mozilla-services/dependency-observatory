@@ -8,7 +8,7 @@ import aiohttp
 from depobs.scanner.serialize_util import grouper
 from depobs.scanner.models.package_meta_result import Result
 
-log = logging.getLogger("depobs.scanner.clients.npmsio")
+log = logging.getLogger(__name__)
 
 
 def aiohttp_session(args: argparse.Namespace) -> aiohttp.ClientSession:

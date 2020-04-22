@@ -19,7 +19,7 @@ from typing import (
 
 T = TypeVar("T")
 
-log = logging.getLogger("depobs.scanner.docker.log_reader")
+log = logging.getLogger(__name__)
 
 
 class DockerLogReadError(Exception):
