@@ -1,5 +1,6 @@
 const PACKAGE_PREFIX = '/package';
 const PARENTS_PREFIX = '/parents';
+const VULNERABILITIES_PREFIX = '/vulnerabilities';
 
 function getLinkURL(name, version) {
     return '/?manager=npm&package=' + encodeURIComponent(name) + '&version=' + encodeURIComponent(version);
@@ -52,6 +53,7 @@ function gotPackageInfo(pkgInfo) {
     document.getElementById('scan-results').className = "";
     let fail = 0;
     let warn = 0;
+    let info = 0
 
     let pkgLink = 'https://www.npmjs.com/package/' + pkgInfo['package'] +'/v/' + pkgInfo['version'];
 
@@ -68,18 +70,20 @@ function gotPackageInfo(pkgInfo) {
     fail += setElement(pkgInfo, 'directVulnsCritical_score');
     fail += setElement(pkgInfo, 'directVulnsHigh_score');
     warn += setElement(pkgInfo, 'directVulnsMedium_score');
-    warn += setElement(pkgInfo, 'directVulnsLow_score');
+    info += setElement(pkgInfo, 'directVulnsLow_score');
     fail += setElement(pkgInfo, 'indirectVulnsCritical_score');
     fail += setElement(pkgInfo, 'indirectVulnsHigh_score');
     warn += setElement(pkgInfo, 'indirectVulnsMedium_score');
-    warn += setElement(pkgInfo, 'indirectVulnsLow_score');
+    info += setElement(pkgInfo, 'indirectVulnsLow_score');
 
     const vulnHeader = document.getElementById("vuln-header");
-    console.log('Fail ' + fail + ' warn ' + warn);
+    console.log('Fail ' + fail + ' warn ' + warn + ' info ' + info);
     if (fail > 0) {
         vulnHeader.className += " bg-danger text-white";
     } else if (warn > 0) {
         vulnHeader.className += " bg-warning text-dark";
+    } else if (info > 0) {
+        vulnHeader.className += " bg-info text-white";
     } else {
         vulnHeader.className += " bg-success text-white";
     }
@@ -98,7 +102,7 @@ function gotPackageInfo(pkgInfo) {
         let score = calculate_score(depJson[i]);
         let grade = get_grade(score);
 
-        let row = table.insertRow(i+1);
+        let row = table.insertRow(i+2);
         let cell = row.insertCell(0);
         let linkUrl = getLinkURL(pkg, ver);
         let a = document.createElement('a');
@@ -122,7 +126,70 @@ function gotPackageInfo(pkgInfo) {
         cell.innerText = depJson[i]['immediate_deps'];
         cell = row.insertCell(4);
         cell.innerText = depJson[i]['all_deps'];
+        cell = row.insertCell(5);
+        cell.innerText = int_or_blank(depJson[i]['directVulnsCritical_score'] + depJson[i]['indirectVulnsCritical_score']);
+        cell = row.insertCell(6);
+        cell.innerText = int_or_blank(depJson[i]['directVulnsHigh_score'] + depJson[i]['indirectVulnsHigh_score']);
+        cell = row.insertCell(7);
+        cell.innerText = int_or_blank(depJson[i]['directVulnsMedium_score'] + depJson[i]['indirectVulnsMedium_score']);
+        cell = row.insertCell(8);
+        cell.innerText = int_or_blank(depJson[i]['directVulnsLow_score'] + depJson[i]['indirectVulnsLow_score']);
     }
+    if (pkgInfo['directVulnsCritical_score'] + pkgInfo['directVulnsHigh_score'] + 
+            pkgInfo['directVulnsMedium_score'] + pkgInfo['directVulnsLow_score'] > 0) {
+        // This package has some vulnerabilities, so show them
+        fetch(getPrefixedURL(VULNERABILITIES_PREFIX, pkgInfo['package'], pkgInfo['version']))
+            .then((response) => {
+                if (response.status == 200) {
+                    response.json().then(function(vulnInfo) {
+                        gotVulnerabilitiesInfo(vulnInfo);
+                    });
+                }
+             })
+            .then((data) => {
+                console.log(data);
+             });
+    }
+}
+
+function gotVulnerabilitiesInfo(vulnInfo) {
+    let table = document.getElementById("vulns");
+    let vulnJson = vulnInfo['vulnerabilities'];
+
+    for(let i = 0; i < vulnJson.length; i++) {
+        let row = table.insertRow(i);
+        let cell = row.insertCell(0);
+
+        var div = document.createElement('div');
+        var severity = vulnJson[i].severity;
+        if (severity === 'low') {
+            div.setAttribute('class', 'bg-info text-light text-center');
+        } else if (severity === 'medium') {
+            div.setAttribute('class', 'bg-warning text-dark text-center');
+        } else if (severity === 'high') {
+            div.setAttribute('class', 'bg-danger text-light text-center');
+        } else if (severity === 'critical') {
+            div.setAttribute('class', 'bg-danger text-light text-center');
+        } else {
+            div.setAttribute('class', 'bg-warning text-dark text-center');
+        }
+        div.textContent = vulnJson[i].severity.toUpperCase();
+        cell.appendChild(div);
+
+        cell = row.insertCell(1);
+        a = document.createElement('a');
+        a.appendChild(document.createTextNode(vulnJson[i].title));
+        a.title = vulnJson[i].title;
+        a.href = vulnJson[i].url;
+        cell.appendChild(a);
+    }
+}
+
+function int_or_blank(n) {
+    if (n === 0) {
+        return '';
+    }
+    return n;
 }
 
 function calculate_element_score(json, total, score, scoringElem, i, descText) {
