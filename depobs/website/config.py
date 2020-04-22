@@ -24,6 +24,7 @@ LOGGING = {
         "request.summary": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.models": {"handlers": ["console"], "level": "INFO"},
         "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
+        "depobs.scanner.docker.images": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.docker.containers": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.docker.log_reader": {"handlers": ["console"], "level": "WARN"},
     },
