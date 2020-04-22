@@ -48,7 +48,7 @@ from depobs.scanner.serialize_util import (
 )
 from sqlalchemy.dialects.postgresql import array
 
-log = logging.getLogger(f"depobs.scanner.pipelines.save_to_db")
+log = logging.getLogger("depobs.scanner.pipelines.save_to_db")
 
 
 __doc__ = """Saves JSON lines to a postgres DB"""
