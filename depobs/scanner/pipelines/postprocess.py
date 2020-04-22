@@ -251,7 +251,7 @@ def parse_yarn_task(task_name: str, task_result: Dict) -> Optional[Dict]:
 
 def parse_cargo_list_metadata(parsed_stdout: Dict):
     if parsed_stdout.get("version", None) != 1:
-        log.warning(
+        log.warn(
             f"unsupported cargo metadata version {parsed_stdout.get('version', None)}"
         )
 
