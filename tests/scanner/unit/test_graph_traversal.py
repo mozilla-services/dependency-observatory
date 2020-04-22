@@ -1,15 +1,17 @@
+# -*- coding: utf-8 -*-
+
 import pytest
 
-import depobs.worker.tasks as tasks
+import depobs.scanner.graph_traversal as m
 
 
 outer_in_iter_failing_testcases = {
-    "no_nodes_no_edges": tasks.nx.empty_graph(n=0, create_using=tasks.nx.DiGraph),
-    "self_loop": (tasks.nx.DiGraph([(0, 0)]), [set([0])],),
-    "two_node_loop": tasks.nx.DiGraph([(0, 1), (1, 0)]),
-    "three_node_loop": tasks.nx.DiGraph([(0, 1), (1, 2), (2, 0)]),
-    "two_two_node_loops": tasks.nx.DiGraph([(0, 1), (1, 0), (0, 2), (2, 0)]),
-    "nested_three_and_two_node_loops": tasks.nx.DiGraph(
+    "no_nodes_no_edges": m.nx.empty_graph(n=0, create_using=m.nx.DiGraph),
+    "self_loop": (m.nx.DiGraph([(0, 0)]), [set([0])],),
+    "two_node_loop": m.nx.DiGraph([(0, 1), (1, 0)]),
+    "three_node_loop": m.nx.DiGraph([(0, 1), (1, 2), (2, 0)]),
+    "two_two_node_loops": m.nx.DiGraph([(0, 1), (1, 0), (0, 2), (2, 0)]),
+    "nested_three_and_two_node_loops": m.nx.DiGraph(
         [(0, 1), (1, 2), (2, 0), (0, 1), (1, 0), (0, 2), (2, 0)]
     ),
 }
@@ -22,20 +24,17 @@ outer_in_iter_failing_testcases = {
 )
 def test_outer_in_iter_bad_input(bad_graph, expected_exception):
     with pytest.raises(expected_exception):
-        next(tasks.outer_in_iter(bad_graph))
+        next(m.outer_in_iter(bad_graph))
 
 
 outer_in_iter_testcases = {
-    "one_node_no_edges": (
-        tasks.nx.trivial_graph(create_using=tasks.nx.DiGraph),
-        [set([0])],
-    ),
+    "one_node_no_edges": (m.nx.trivial_graph(create_using=m.nx.DiGraph), [set([0])],),
     "five_node_path_graph": (
-        tasks.nx.path_graph(5, create_using=tasks.nx.DiGraph),
+        m.nx.path_graph(5, create_using=m.nx.DiGraph),
         [set([i]) for i in range(4, -1, -1)],
     ),
     "small_tree": (
-        tasks.nx.DiGraph([(0, 1), (1, 2), (1, 3), (1, 4), (2, 4)]),
+        m.nx.DiGraph([(0, 1), (1, 2), (1, 3), (1, 4), (2, 4)]),
         [set([3, 4]), set([2]), set([1]), set([0])],
     ),
 }
@@ -47,7 +46,7 @@ outer_in_iter_testcases = {
     ids=outer_in_iter_testcases.keys(),
 )
 def test_outer_in_iter(graph, expected_nodes):
-    nodes = list(tasks.outer_in_iter(graph))
+    nodes = list(m.outer_in_iter(graph))
     # visits all nodes
     assert set(graph.nodes()) == set().union(*nodes)
 
@@ -72,7 +71,7 @@ def test_outer_in_iter(graph, expected_nodes):
 
 
 outer_in_graph_iter_failing_testcases = {
-    "no_nodes_no_edges": tasks.nx.empty_graph(n=0, create_using=tasks.nx.DiGraph),
+    "no_nodes_no_edges": m.nx.empty_graph(n=0, create_using=m.nx.DiGraph),
 }
 
 
@@ -83,23 +82,23 @@ outer_in_graph_iter_failing_testcases = {
 )
 def test_outer_in_graph_iter_bad_input(bad_graph, expected_exception):
     with pytest.raises(expected_exception):
-        next(tasks.outer_in_graph_iter(bad_graph))
+        next(m.outer_in_graph_iter(bad_graph))
 
 
 graph_iter_testcases = {
     **outer_in_iter_testcases,
-    "two_node_loop": (tasks.nx.DiGraph([(0, 1), (1, 0)]), [set([0, 1])],),
-    "three_node_loop": (tasks.nx.DiGraph([(0, 1), (1, 2), (2, 0)]), [set([0, 1, 2])],),
+    "two_node_loop": (m.nx.DiGraph([(0, 1), (1, 0)]), [set([0, 1])],),
+    "three_node_loop": (m.nx.DiGraph([(0, 1), (1, 2), (2, 0)]), [set([0, 1, 2])],),
     "path_to_three_node_loop": (
-        tasks.nx.DiGraph([(4, 3), (3, 2), (0, 1), (1, 2), (2, 0),]),
+        m.nx.DiGraph([(4, 3), (3, 2), (0, 1), (1, 2), (2, 0),]),
         [set([0, 1, 2]), set([3]), set([4]),],
     ),
     "two_two_node_loops": (
-        tasks.nx.DiGraph([(0, 1), (1, 0), (0, 2), (2, 0)]),
+        m.nx.DiGraph([(0, 1), (1, 0), (0, 2), (2, 0)]),
         [set([0, 1, 2])],
     ),
     "nested_three_and_two_node_loops": (
-        tasks.nx.DiGraph([(0, 1), (1, 2), (2, 0), (0, 1), (1, 0), (0, 2), (2, 0)],),
+        m.nx.DiGraph([(0, 1), (1, 2), (2, 0), (0, 1), (1, 0), (0, 2), (2, 0)],),
         [set([0, 1, 2])],
     ),
 }
@@ -111,7 +110,7 @@ graph_iter_testcases = {
     ids=graph_iter_testcases.keys(),
 )
 def test_outer_in_graph_iter(graph, expected_nodes):
-    nodes = list(tasks.outer_in_graph_iter(graph))
+    nodes = list(m.outer_in_graph_iter(graph))
     # visits all nodes
     assert set(graph.nodes()) == set().union(*nodes)
 
