@@ -45,9 +45,7 @@ from depobs.scanner.models.nodejs import NPMPackage, flatten_deps
 from depobs.scanner.pipelines.util import exc_to_str
 
 
-NAME = "postprocess"
-
-log = logging.getLogger(f"depobs.scanner.pipelines.{NAME}")
+log = logging.getLogger(f"depobs.scanner.pipelines.postprocess")
 
 
 __doc__ = """Post processes tasks for various outputs e.g. flattening deps,
