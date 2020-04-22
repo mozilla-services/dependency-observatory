@@ -74,10 +74,6 @@ from depobs.scanner.models.language import (
 )
 
 log = get_task_logger(__name__)
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-ch.setFormatter(formatter)
 
 
 app = create_celery_app()

@@ -45,9 +45,7 @@ from depobs.scanner.models.nodejs import NPMPackage, flatten_deps
 from depobs.scanner.pipelines.util import exc_to_str
 
 
-NAME = "postprocess"
-
-log = logging.getLogger(f"depobs.scanner.pipelines.{NAME}")
+log = logging.getLogger("depobs.scanner.pipelines.postprocess")
 
 
 __doc__ = """Post processes tasks for various outputs e.g. flattening deps,
@@ -253,7 +251,7 @@ def parse_yarn_task(task_name: str, task_result: Dict) -> Optional[Dict]:
 
 def parse_cargo_list_metadata(parsed_stdout: Dict):
     if parsed_stdout.get("version", None) != 1:
-        log.warning(
+        log.warn(
             f"unsupported cargo metadata version {parsed_stdout.get('version', None)}"
         )
 

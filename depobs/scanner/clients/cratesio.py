@@ -12,8 +12,7 @@ from depobs.scanner.models.rust import (
 from depobs.scanner.models.package_meta_result import Result
 
 
-log = logging.getLogger(f"depobs.scanner.clients.cratesio")
-log.setLevel(logging.WARN)
+log = logging.getLogger("depobs.scanner.clients.cratesio")
 
 
 __doc__ = """Given cargo metadata output fetches metadata from the crates.io
