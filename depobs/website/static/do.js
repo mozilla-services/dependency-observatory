@@ -26,16 +26,20 @@ function getPackageInfo(pkg, ver) {
     fetch(getPrefixedURL(PACKAGE_PREFIX, pkg, ver))
         .then((response) => {
             if (response.status == 200) {
+                document.getElementById('scan-started').className = "d-none";
                 response.json().then(function(pkgInfo) {
                     gotPackageInfo(pkgInfo);
                 });
             } else if (response.status == 202) {
                 document.getElementById('scan-started').className = "";
+                setTimeout(getPackageInfo, 5000, pkg, ver);
             } else if (response.status == 404) {
                 // Show an error an the form
+                document.getElementById('scan-started').className = "d-none";
                 document.getElementById('no-package').className = "";
                 document.getElementById('no-scan').className = "";
             } else {
+                document.getElementById('scan-started').className = "d-none";
                 document.getElementById('scan-error').className = "";
             }
          })
