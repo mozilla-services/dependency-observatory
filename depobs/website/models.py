@@ -3,12 +3,14 @@
 import os
 from datetime import datetime
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Iterable
 
+import flask
 from flask_sqlalchemy import SQLAlchemy
 import networkx as nx
 from networkx.drawing.nx_pydot import to_pydot
 import pydot
+import sqlalchemy
 from sqlalchemy import (
     Column,
     Integer,
@@ -40,7 +42,7 @@ from depobs.database.mixins import TaskIDMixin
 log = logging.getLogger(__name__)
 
 
-db = SQLAlchemy()
+db: SQLAlchemy = SQLAlchemy()
 
 
 class Dependency(db.Model):
@@ -165,7 +167,7 @@ class PackageLatestReport(db.Model):
         backref="parents",
     )
 
-    def json_with_dependencies(self, depth=1):
+    def json_with_dependencies(self, depth: int = 1) -> Dict[str, Any]:
         return dict(
             id=self.id,
             package=self.package,
@@ -194,7 +196,7 @@ class PackageLatestReport(db.Model):
             else [],
         )
 
-    def json_with_parents(self, depth=1):
+    def json_with_parents(self, depth: int = 1) -> Dict[str, Any]:
         return dict(
             id=self.id,
             package=self.package,
@@ -222,7 +224,7 @@ class PackageLatestReport(db.Model):
         )
 
 
-def get_package_report(package, version=None):
+def get_package_report(package: str, version: str = None) -> Optional[PackageReport]:
     if None == version:
         # TODO order-by is hard with semver. Think about splitting out versions
         no_version_query = db.session.query(PackageReport).filter(
@@ -269,7 +271,7 @@ def get_most_recently_inserted_package_from_name_and_version(
     package_name: str,
     package_version: Optional[str] = None,
     inserted_after: Optional[datetime] = None,
-):
+) -> Optional[PackageVersion]:
     query = db.session.query(PackageVersion).filter_by(name=package_name)
     if package_version is not None:
         query = query.filter_by(version=package_version)
@@ -278,7 +280,7 @@ def get_most_recently_inserted_package_from_name_and_version(
     return query.order_by(PackageVersion.inserted_at.desc()).limit(1).one_or_none()
 
 
-def get_packages_by_ids(package_ids: List[int]) -> List[PackageVersion]:
+def get_packages_by_ids(package_ids: Iterable[int]) -> List[PackageVersion]:
     return (
         db.session.query(PackageVersion)
         .filter(PackageVersion.id.in_(package_ids))
@@ -298,7 +300,7 @@ def get_networkx_graph_and_nodes(
         (link.parent_package_id, link.child_package_id) for link in graph_links
     ]
     graph_nodes: List[PackageVersion] = get_packages_by_ids(
-        set([pid for link in graph_links_by_package_id for pid in link])
+        [pid for link in graph_links_by_package_id for pid in link]
     )
     return (
         db_graph_and_links_to_nx_graph(graph, graph_links_by_package_id, graph_nodes),
@@ -396,33 +398,47 @@ def get_vulnerabilities_report(package: str, version: str) -> Dict:
     return dict(package=package, version=version, vulnerabilities=vulns)
 
 
-def get_npms_io_score(package: str, version: str):
-    return db.session.query(NPMSIOScore.score).filter_by(
-        package_name=package, package_version=version
+def get_npms_io_score(package: str, version: str) -> sqlalchemy.orm.query.Query:
+    return (
+        db.session.query(NPMSIOScore.score)
+        .filter_by(package_name=package, package_version=version)
+        .order_by(NPMSIOScore.analyzed_at.desc())
     )
 
 
-def get_NPMRegistryEntry(package: str, version: str):
-    return db.session.query(NPMRegistryEntry).filter_by(
-        package_name=package, package_version=version
+def get_NPMRegistryEntry(package: str, version: str) -> sqlalchemy.orm.query.Query:
+    return (
+        db.session.query(NPMRegistryEntry)
+        .filter_by(package_name=package, package_version=version)
+        .order_by(
+            NPMRegistryEntry.inserted_at.desc(), NPMRegistryEntry.inserted_at.desc()
+        )
     )
 
 
-def get_maintainers_contributors(package: str, version: str):
+def get_maintainers_contributors(
+    package: str, version: str
+) -> sqlalchemy.orm.query.Query:
     return db.session.query(
         NPMRegistryEntry.maintainers, NPMRegistryEntry.contributors
     ).filter_by(package_name=package, package_version=version)
 
 
-def get_npm_registry_data(package: str, version: str):
-    return db.session.query(
-        NPMRegistryEntry.published_at,
-        NPMRegistryEntry.maintainers,
-        NPMRegistryEntry.contributors,
-    ).filter_by(package_name=package, package_version=version)
+def get_npm_registry_data(package: str, version: str) -> sqlalchemy.orm.query.Query:
+    return (
+        db.session.query(
+            NPMRegistryEntry.published_at,
+            NPMRegistryEntry.maintainers,
+            NPMRegistryEntry.contributors,
+        )
+        .filter_by(package_name=package, package_version=version)
+        .order_by(
+            NPMRegistryEntry.inserted_at.desc(), NPMRegistryEntry.inserted_at.desc()
+        )
+    )
 
 
-def get_vulnerability_counts(package: str, version: str):
+def get_vulnerability_counts(package: str, version: str) -> sqlalchemy.orm.query.Query:
     return (
         db.session.query(
             Advisory.package_name,
@@ -437,7 +453,7 @@ def get_vulnerability_counts(package: str, version: str):
     )
 
 
-def get_vulnerabilities(package: str, version: str):
+def get_vulnerabilities(package: str, version: str) -> sqlalchemy.orm.query.Query:
     return (
         db.session.query(
             Advisory.package_name,
@@ -452,7 +468,7 @@ def get_vulnerabilities(package: str, version: str):
     )
 
 
-def get_statistics():
+def get_statistics() -> Dict[str, int]:
     pkg_version_count = (
         db.session.query(PackageVersion.name, PackageVersion.version,)
         .distinct()
@@ -487,7 +503,7 @@ def insert_package_report_placeholder_or_update_task_id(
     return pr
 
 
-def store_package_report(pr) -> None:
+def store_package_report(pr: PackageReport) -> None:
     db.session.add(pr)
     db.session.commit()
 
@@ -498,11 +514,11 @@ def store_package_reports(prs: List[PackageReport]) -> None:
 
 
 def insert_npmsio_score(npmsio_score: Dict[str, Any]) -> None:
-    return insert_npmsio_data(db.session, [npmsio_score])
+    return insert_npmsio_data(db.session, (s for s in [npmsio_score]))
 
 
 def insert_npm_registry_entry(npm_registry_entry: Dict[str, Any]) -> None:
-    return insert_npm_registry_data(db.session, [npm_registry_entry])
+    return insert_npm_registry_data(db.session, (e for e in [npm_registry_entry]))
 
 
 VIEWS: Dict[str, str] = {
@@ -517,7 +533,7 @@ WHERE r2.rn = 1
 }
 
 
-def create_views(engine):
+def create_views(engine: sqlalchemy.engine.Engine) -> None:
     connection = engine.connect()
     log.info(f"creating views if they don't exist: {list(VIEWS.keys())}")
     for view_command in VIEWS.values():
@@ -525,8 +541,9 @@ def create_views(engine):
     connection.close()
 
 
-def create_tables_and_views(app):
-    with app.app_context():
+def create_tables_and_views(app: flask.app.Flask) -> None:
+    # TODO: fix using the stub for flask.ctx.AppContext
+    with app.app_context():  # type: ignore
         scanner_tables = scanner_schema_declarative_base.metadata.tables
         log.info(
             f"creating scanner tables if they don't exist: {list(scanner_tables.keys())}"
