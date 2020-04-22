@@ -39,7 +39,7 @@ from depobs.scanner.models.pipeline import (
 )
 from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("depobs.scanner.pipelines.rust_changelog")
+log = logging.getLogger(__name__)
 
 __doc__ = """
 Given ordered cargo metadata output for git refs from the same repo:

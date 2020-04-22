@@ -9,7 +9,7 @@ from depobs.scanner.models.rust import RustCrate, RustPackageID, RustPackage
 
 T = TypeVar("T")
 
-log = logging.getLogger("depobs.scanner.models.graph_util")
+log = logging.getLogger(__name__)
 
 
 NODE_ID_FORMATS = {

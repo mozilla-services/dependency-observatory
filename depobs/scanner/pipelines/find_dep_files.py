@@ -24,7 +24,7 @@ from depobs.scanner.models.language import (
 )
 from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("depobs.scanner.pipelines.find_dep_files")
+log = logging.getLogger(__name__)
 
 __doc__ = """
 Given a repo_url, clones the repo, lists git refs for each tag

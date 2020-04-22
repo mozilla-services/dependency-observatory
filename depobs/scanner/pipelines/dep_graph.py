@@ -24,7 +24,7 @@ from depobs.scanner.models.pipeline import (
 from depobs.scanner.serialize_util import extract_fields, get_in
 from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("depobs.scanner.pipelines.dep_graph")
+log = logging.getLogger(__name__)
 
 __doc__ = """Parses the output of the cargo metadata pipeline and writes a .dot
 file of the dependencies to outfile"""

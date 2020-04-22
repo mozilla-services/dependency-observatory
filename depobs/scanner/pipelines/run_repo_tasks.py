@@ -53,7 +53,7 @@ from depobs.scanner.models.pipeline import (
 )
 from depobs.scanner.pipelines.util import exc_to_str
 
-log = logging.getLogger("depobs.scanner.pipelines.run_repo_tasks")
+log = logging.getLogger(__name__)
 
 __doc__ = """Runs tasks on a checked out git ref with dep. files"""
 
