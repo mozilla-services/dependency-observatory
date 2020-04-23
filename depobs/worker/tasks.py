@@ -259,10 +259,6 @@ def score_package(
     pr.package = package_name
     pr.version = package_version
 
-    plr = PackageLatestReport()
-    plr.package = package_name
-    plr.version = package_version
-
     pr.npmsio_score = get_npms_io_score(package_name, package_version).first()
 
     pr.directVulnsCritical_score = 0
