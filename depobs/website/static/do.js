@@ -15,7 +15,7 @@ window.onload = function() {
     let pkg = urlParams.get('package');
     let ver = urlParams.get('version');
     // TODO do some more sanity checking here?
-    if (pkg == null) {
+    if (! pkg) {
         // No request, show the form
         document.getElementById('no-scan').className = "";
     } else {
@@ -41,7 +41,11 @@ function getPackageInfo(pkg, ver) {
                 document.getElementById('no-scan').className = "";
             } else {
                 document.getElementById('scan-started').className = "d-none";
-                document.getElementById('scan-error').className = "";
+                document.getElementById('no-package').className = "";
+                document.getElementById('no-scan').className = "";
+                response.json().then(function(jsonError) {
+                    document.getElementById('no-package-error').innerText = jsonError.description;
+                });
             }
          })
         .then((data) => {
