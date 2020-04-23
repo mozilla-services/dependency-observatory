@@ -61,7 +61,9 @@ function gotPackageInfo(pkgInfo) {
     setElement(pkgInfo, 'version');
     let npmsio_score = pkgInfo['npmsio_score'];
     if (npmsio_score) {
-        setElementValue(pkgInfo, 'npmsio_score', npmsio_score.toFixed(2));
+        setElementLink(pkgInfo, 'npmsio_score', 
+            'https://api.npms.io/v2/package/' + encodeURIComponent(pkgInfo['package']), 
+            val=npmsio_score.toFixed(2), title='JSON output from NPM including the NPMS IO Score');
     }
     setElement(pkgInfo, 'authors');
     setElement(pkgInfo, 'contributors');
@@ -347,14 +349,17 @@ function setElementValue(json, elem, val) {
     return val;
 }
 
-function setElementLink(json, elem, link) {
+function setElementLink(json, elem, link, val='', title='') {
     const el = document.getElementById(elem);
-    const val = json[elem];
+    if (val === '') {
+        val = json[elem];
+    }
     if (el) {
         let a = document.createElement('a');
         let linkText = document.createTextNode(val);
         a.appendChild(linkText);
         a.href = link;
+        a.title = title;
         el.appendChild(a);
     } else {
         console.log('No element for id: ' + elem);
