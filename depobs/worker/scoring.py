@@ -105,6 +105,7 @@ def score_package(
 def score_package_and_children(
     g: nx.DiGraph, package_versions: List[PackageVersion]
 ) -> List[PackageReport]:
+    assert len(package_versions) >= len(g.nodes)
     # refs: https://github.com/mozilla-services/dependency-observatory/issues/130#issuecomment-608017713
     package_versions_by_id: Dict[int, PackageVersion] = {
         pv.id: pv for pv in package_versions
