@@ -86,9 +86,7 @@ def score_package(
     pr.indirectVulnsMedium_score = 0
     pr.indirectVulnsLow_score = 0
 
-    dep_rep_count = 0
     for report in direct_dep_reports:
-        dep_rep_count += 1
         for severity in ("Critical", "High", "Medium", "Low"):
             current_count = getattr(pr, f"indirectVulns{severity}_score", 0)
             dep_vuln_count = (
@@ -98,11 +96,6 @@ def score_package(
                 pr, f"indirectVulns{severity}_score", current_count + dep_vuln_count,
             )
         pr.dependencies.append(report)
-
-    if dep_rep_count != pr.immediate_deps:
-        log.error(
-            f"expected {pr.immediate_deps} dependencies but got {dep_rep_count} for package {package_name} / version {package_version}"
-        )
 
     pr.scoring_date = datetime.now()
     pr.status = "scanned"
