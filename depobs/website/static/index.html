@@ -35,7 +35,7 @@
                <div class="col-12 col-md-10 offset-md-1 col-xl-8 offset-xl-2">
                   <h1 class="h6 margin-bottom">Welcome to Mozilla's Dependency Observatory - explain more here.</h1>
                   <div class="d-none" id="no-package">
-                     <div class="alert alert-danger">
+                     <div  id="no-package-error" class="alert alert-danger">
                         That package and version have not been found on NPM.
                      </div>
                   </div>
@@ -48,7 +48,7 @@
                                  <option value="npm">NPM</option>
                               </select>
                               <input type="text" class="form-control" id="packageName" name="package" placeholder="enter package name here" aria-label="package name" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
-                              <input type="text" class="form-control" id="versionName" name="version" placeholder="enter package version here" aria-label="package version" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                              <input type="text" class="form-control" id="versionName" name="version" placeholder="enter optional package version here" aria-label="package version" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
                               <button class="btn btn-primary" type="submit">Find Now</button>
                            </div>
                         </form>
