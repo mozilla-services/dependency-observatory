@@ -6,7 +6,7 @@ import networkx as nx
 from networkx.algorithms.dag import descendants
 
 from depobs.scanner.db.schema import PackageVersion
-from depobs.scanner.graph_traversal import outer_in_graph_iter
+from depobs.scanner.graph_traversal import outer_in_iter
 from depobs.website.models import (
     PackageReport,
     PackageLatestReport,
@@ -112,9 +112,7 @@ def score_package_and_children(
     # fill this up
     package_reports_by_id: Dict[int, PackageReport] = {}
 
-    for package_version_ids in outer_in_graph_iter(g):
-        # TODO: score connected component of package_version_ids
-
+    for package_version_ids in outer_in_iter(g):
         for package_version_id in package_version_ids:
             package = package_versions_by_id[package_version_id]
             package_reports_by_id[package_version_id] = score_package(
