@@ -23,8 +23,6 @@ import celery
 from celery.utils.log import get_task_logger
 import celery.result
 from flask import current_app
-import networkx as nx
-from networkx.algorithms.dag import descendants, is_directed_acyclic_graph
 
 from depobs.website.do import create_celery_app
 import depobs.website.models as models
@@ -45,6 +43,7 @@ from depobs.website.models import (
     get_placeholder_entry,
     get_networkx_graph_and_nodes,
 )
+from depobs.worker.scoring import score_package, score_package_and_children
 import depobs.worker.validators as validators
 
 # import exc_to_str to resolve import cycle for the following depobs.scanner.clients
@@ -77,6 +76,8 @@ log = get_task_logger(__name__)
 
 
 app = create_celery_app()
+
+score_package = app.task(score_package)
 
 
 @app.task()
@@ -242,156 +243,6 @@ def scan_npm_package(
             )
 
     return (package_name, package_version)
-
-
-@app.task()
-def score_package(
-    package_name: str,
-    package_version: str,
-    direct_dep_reports: List[PackageReport],
-    all_deps_count: int = 0,
-) -> PackageReport:
-    log.info(
-        f"scoring package: {package_name}@{package_version} with direct deps {list((r.package, r.version) for r in direct_dep_reports)}"
-    )
-    pr = PackageReport()
-    pr.package = package_name
-    pr.version = package_version
-
-    plr = PackageLatestReport()
-    plr.package = package_name
-    plr.version = package_version
-
-    pr.npmsio_score = get_npms_io_score(package_name, package_version).first()
-
-    pr.directVulnsCritical_score = 0
-    pr.directVulnsHigh_score = 0
-    pr.directVulnsMedium_score = 0
-    pr.directVulnsLow_score = 0
-
-    # Direct vulnerability counts
-    for package, version, severity, count in get_vulnerability_counts(
-        package_name, package_version
-    ):
-        severity = severity.lower()
-        log.info(
-            f"scoring package: {package_name}@{package_version} found vulnerable dep: \t{package}\t{version}\t{severity}\t{count}"
-        )
-        if severity == "critical":
-            pr.directVulnsCritical_score = count
-        elif severity == "high":
-            pr.directVulnsHigh_score = count
-        elif severity in ("medium", "moderate"):
-            pr.directVulnsMedium_score = count
-        elif severity == "low":
-            pr.directVulnsLow_score = count
-        else:
-            log.error(
-                f"unexpected severity {severity} for package {package} / version {version}"
-            )
-
-    for published_at, maintainers, contributors in get_npm_registry_data(
-        package_name, package_version
-    ):
-        pr.release_date = published_at
-        if maintainers is not None:
-            pr.authors = len(maintainers)
-        else:
-            pr.authors = 0
-        if contributors is not None:
-            pr.contributors = len(contributors)
-        else:
-            pr.contributors = 0
-
-    pr.immediate_deps = len(direct_dep_reports)
-    pr.all_deps = all_deps_count
-
-    # Indirect counts
-    pr.indirectVulnsCritical_score = 0
-    pr.indirectVulnsHigh_score = 0
-    pr.indirectVulnsMedium_score = 0
-    pr.indirectVulnsLow_score = 0
-
-    dep_rep_count = 0
-    for report in direct_dep_reports:
-        dep_rep_count += 1
-        for severity in ("Critical", "High", "Medium", "Low"):
-            setattr(
-                pr,
-                f"indirectVulns{severity}_score",
-                getattr(report, f"directVulns{severity}_score", 0)
-                + getattr(report, f"indirectVulns{severity}_score", 0),
-            )
-        pr.dependencies.append(report)
-
-    if dep_rep_count != pr.immediate_deps:
-        log.error(
-            f"expected {pr.immediate_deps} dependencies but got {dep_rep_count} for package {package_name} / version {package_version}"
-        )
-
-    pr.scoring_date = datetime.datetime.now()
-    pr.status = "scanned"
-    return pr
-
-
-def outer_in_iter(g: nx.DiGraph) -> Generator[List[int], None, None]:
-    """
-    For a DAG with unique node IDs with type int, iterates from outer
-    / leafmost / least depended upon nodes to inner nodes yielding sets
-    of node IDs.
-
-    Yields each node ID once and visits them such that successive node ID sets
-    only depend on/point to previously visited nodes.
-    """
-    if len(g.edges) == 0 or len(g.nodes) == 0:
-        raise Exception("graph has no edges or nodes")
-    if not is_directed_acyclic_graph(g):
-        raise Exception("graph is not a DAG")
-
-    visited: AbstractSet[int] = set()
-    leaf_nodes = set([node for node in g.nodes() if g.out_degree(node) == 0])
-    yield leaf_nodes
-    visited.update(leaf_nodes)
-
-    while True:
-        points_to_visited = set(src for (src, _) in g.in_edges(visited))
-        only_points_to_visited = set(
-            node
-            for node in points_to_visited
-            if all(dst in visited for (_, dst) in g.out_edges(node))
-        )
-        new_only_points_to_visited = only_points_to_visited - visited
-        if not bool(new_only_points_to_visited):  # visited nothing new
-            assert len(visited) == len(g.nodes)
-            break
-        yield new_only_points_to_visited
-        visited.update(only_points_to_visited)
-
-
-def score_package_and_children(g: nx.DiGraph, package_versions: List[PackageVersion]):
-    # refs: https://github.com/mozilla-services/dependency-observatory/issues/130#issuecomment-608017713
-    package_versions_by_id: Dict[int, PackageVersion] = {
-        pv.id: pv for pv in package_versions
-    }
-    # fill this up
-    package_reports_by_id: Dict[int, PackageReport] = {}
-
-    for package_version_ids in outer_in_iter(g):
-        for package_version_id in package_version_ids:
-            package = package_versions_by_id[package_version_id]
-            package_reports_by_id[package_version_id] = score_package(
-                package.name,
-                package.version,
-                direct_dep_reports=[
-                    package_reports_by_id[direct_dep_package_version_id]
-                    for direct_dep_package_version_id in g.successors(
-                        package_version_id
-                    )
-                ],
-                all_deps_count=len(descendants(g, package_version_id)),
-            )
-
-    return package_reports_by_id.values()
 
 
 @app.task()
