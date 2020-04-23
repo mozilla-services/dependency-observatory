@@ -35,6 +35,7 @@ def score_package(
     plr.package = package_name
     plr.version = package_version
 
+    # NB: raises for a missing score
     pr.npmsio_score = get_npms_io_score(package_name, package_version).first()
 
     pr.directVulnsCritical_score = 0
@@ -89,11 +90,12 @@ def score_package(
     for report in direct_dep_reports:
         dep_rep_count += 1
         for severity in ("Critical", "High", "Medium", "Low"):
+            current_count = getattr(pr, f"indirectVulns{severity}_score", 0)
+            dep_vuln_count = (
+                getattr(report, f"directVulns{severity}_score", 0) or 0
+            ) + (getattr(report, f"indirectVulns{severity}_score", 0) or 0)
             setattr(
-                pr,
-                f"indirectVulns{severity}_score",
-                getattr(report, f"directVulns{severity}_score", 0)
-                + getattr(report, f"indirectVulns{severity}_score", 0),
+                pr, f"indirectVulns{severity}_score", current_count + dep_vuln_count,
             )
         pr.dependencies.append(report)
 
