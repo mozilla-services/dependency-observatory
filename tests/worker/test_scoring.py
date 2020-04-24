@@ -384,3 +384,56 @@ def test_score_package_and_children(
         reports, expected_package_reports_with_deps_json
     ):
         assert report.json_with_dependencies() == expected_report_json
+
+
+count_advisories_by_severity_testcases = {
+    "none": ([], m.Counter()),
+    "empty_str_ignored": ([m.Advisory(severity=""),], m.Counter(),),
+    "none_ignored": ([m.Advisory(severity=None),], m.Counter(),),
+    "one_critical_upper_case_counted": (
+        [m.Advisory(severity="CRITICAL")],
+        m.Counter({m.AdvisorySeverity.CRITICAL: 1}),
+    ),
+    "one_critical_mixed_case_counted": (
+        [m.Advisory(severity="cRitiCal")],
+        m.Counter({m.AdvisorySeverity.CRITICAL: 1}),
+    ),
+    "one_medium_one_moderate_counted": (
+        [m.Advisory(severity="medium"), m.Advisory(severity="moderate")],
+        m.Counter({m.AdvisorySeverity.MEDIUM: 2}),
+    ),
+    "one_critical_counted": (
+        [m.Advisory(severity="critical")],
+        m.Counter({m.AdvisorySeverity.CRITICAL: 1}),
+    ),
+    "two_critical_counted": (
+        [m.Advisory(severity="critical"), m.Advisory(severity="critical")],
+        m.Counter({m.AdvisorySeverity.CRITICAL: 2}),
+    ),
+    "two_critical_one_high_counted": (
+        [
+            m.Advisory(severity="critical"),
+            m.Advisory(severity="critical"),
+            m.Advisory(severity="high"),
+        ],
+        m.Counter({m.AdvisorySeverity.CRITICAL: 2, m.AdvisorySeverity.HIGH: 1}),
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    "advisories, expected_counter",
+    count_advisories_by_severity_testcases.values(),
+    ids=count_advisories_by_severity_testcases.keys(),
+)
+def test_count_advisories_by_severity(
+    advisories: List[m.Advisory], expected_counter: m.Counter
+):
+    assert m.count_advisories_by_severity(advisories) == expected_counter
+
+
+def test_zeroed_severity_counter():
+    zeroed = m.zeroed_severity_counter()
+    for severity in m.AdvisorySeverity:
+        assert zeroed[severity] == 0
+    assert len(zeroed) == len(m.AdvisorySeverity)

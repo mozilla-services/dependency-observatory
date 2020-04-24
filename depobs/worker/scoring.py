@@ -1,4 +1,6 @@
+from collections import Counter
 from datetime import datetime
+import enum
 import logging
 from typing import Dict, List
 
@@ -7,11 +9,13 @@ from networkx.algorithms.dag import descendants
 
 from depobs.scanner.graph_traversal import outer_in_iter
 from depobs.database.models import (
+    Advisory,
     PackageReport,
     PackageVersion,
     get_npms_io_score,
     get_npm_registry_data,
     get_vulnerability_counts,
+    get_advisories_by_package_versions,
 )
 
 log = logging.getLogger(__name__)
@@ -124,3 +128,39 @@ def score_package_and_children(
             )
 
     return list(package_reports_by_id.values())
+
+
+class AdvisorySeverity(enum.Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+    # an alias for medium
+    MODERATE = "medium"
+
+
+def zeroed_severity_counter() -> Counter:
+    """
+    Returns a counter with zeroes for each AdvisorySeverity level
+    """
+    counter: Counter = Counter()
+    for severity in AdvisorySeverity:
+        counter[severity] = 0
+    return counter
+
+
+def count_advisories_by_severity(advisories: List[Advisory]) -> Counter:
+    """Given a list of advisories returns a collections.Counter with
+    counts for non-zero severities.
+
+    Normalizes severity names according to the AdvisorySeverity
+    enum. (e.g. treat "moderate" as MEDIUM)
+    """
+    counter = Counter(
+        AdvisorySeverity[advisory.severity.upper()]
+        for advisory in advisories
+        if isinstance(advisory.severity, str)
+        and advisory.severity.upper() in AdvisorySeverity.__members__.keys()
+    )
+    return counter
