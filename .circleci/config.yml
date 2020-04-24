@@ -74,15 +74,10 @@ jobs:
             docker-compose build
             docker-compose up -d
       - run:
-          name: install python deps
-          command: |
-            pip config --user set global.progress_bar off
-            pip install --user -r depobs/requirements.txt
-      - run:
-          name: run unit tests with coverage
+          name: run unit tests
           command: |
             cd tests
-            CI=1 ../util/run_tests_with_coverage.sh
+            ../util/run_tests.sh
       - run:
           name: generate coverage reports
           command: |
