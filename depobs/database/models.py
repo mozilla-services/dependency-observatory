@@ -27,7 +27,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import backref, deferred, relationship
 from sqlalchemy.sql import func, expression
-from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.dialects.postgresql import ARRAY, ENUM, JSONB
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.types import DateTime
@@ -41,7 +41,7 @@ from depobs.util.serialize_util import extract_nested_fields, get_in
 log = logging.getLogger(__name__)
 
 
-db = SQLAlchemy()
+db: SQLAlchemy = SQLAlchemy()
 
 
 class utcnow(expression.FunctionElement):
@@ -49,7 +49,7 @@ class utcnow(expression.FunctionElement):
 
 
 @compiles(utcnow, "postgresql")
-def pg_utcnow(element, compiler, **kw):
+def pg_utcnow(element: Any, compiler: Any, **kw: Dict) -> str:
     return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
 
 
@@ -57,17 +57,15 @@ def pg_utcnow(element, compiler, **kw):
 lang_enum = ENUM("node", "rust", "python", name="language_enum")
 package_manager_enum = ENUM("npm", "yarn", name="package_manager_enum")
 
-Base: sqlalchemy.ext.declarative.declarative_base = declarative_base()
 
-
-class Dependency(Base):
+class Dependency(db.Model):
     __tablename__ = "package_dependencies"
 
     depends_on_id = Column(Integer, ForeignKey("reports.id"), primary_key=True)
     used_by_id = Column(Integer, ForeignKey("reports.id"), primary_key=True)
 
 
-class PackageReport(TaskIDMixin, Base):
+class PackageReport(TaskIDMixin, db.Model):
     __tablename__ = "reports"
 
     id = Column("id", Integer, primary_key=True)
@@ -93,7 +91,7 @@ class PackageReport(TaskIDMixin, Base):
     all_deps = Column(Integer)
 
     # this relationship is used for persistence
-    dependencies = relationship(
+    dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
         "PackageReport",
         secondary=Dependency.__table__,
         primaryjoin=id == Dependency.__table__.c.depends_on_id,
@@ -148,7 +146,7 @@ class PackageReport(TaskIDMixin, Base):
         }
 
 
-class PackageLatestReport(Base):
+class PackageLatestReport(db.Model):
     __tablename__ = "latest_reports"
 
     id = Column("id", Integer, primary_key=True)
@@ -174,7 +172,7 @@ class PackageLatestReport(Base):
     all_deps = Column(Integer)
 
     # this relationship is used for persistence
-    dependencies = relationship(
+    dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
         "PackageLatestReport",
         secondary=Dependency.__table__,
         primaryjoin=id == Dependency.__table__.c.depends_on_id,
@@ -239,7 +237,7 @@ class PackageLatestReport(Base):
         )
 
 
-class PackageVersion(Base):
+class PackageVersion(db.Model):
     __tablename__ = "package_versions"
 
     id = Column(Integer, Sequence("package_version_id_seq"), primary_key=True)
@@ -261,7 +259,7 @@ class PackageVersion(Base):
     updated_at = deferred(Column(DateTime(timezone=False), onupdate=utcnow()))
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(cls) -> Iterable[Index]:
         return (
             Index(
                 f"{cls.__tablename__}_unique_idx",
@@ -278,7 +276,7 @@ class PackageVersion(Base):
         )
 
 
-class PackageLink(Base):
+class PackageLink(db.Model):
     __tablename__ = "package_links"
 
     id = Column(
@@ -296,7 +294,7 @@ class PackageLink(Base):
     inserted_at = deferred(Column(DateTime(timezone=False), server_default=utcnow()))
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(cls) -> Iterable[Index]:
         return (
             # ForeignKeyConstraint(
             #     ["child_package_id"],
@@ -324,7 +322,7 @@ class PackageLink(Base):
         )
 
 
-class PackageGraph(Base):
+class PackageGraph(db.Model):
     __tablename__ = "package_graphs"
 
     id = Column(Integer, Sequence("package_graphs_id_seq"), primary_key=True)
@@ -345,7 +343,7 @@ class PackageGraph(Base):
     inserted_at = deferred(Column(DateTime(timezone=False), server_default=utcnow()))
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(cls) -> Iterable[Index]:
         return (
             Index(
                 f"{cls.__tablename__}_root_package_id_idx", "root_package_version_id"
@@ -366,7 +364,7 @@ class PackageGraph(Base):
         )
 
 
-class Advisory(Base):
+class Advisory(db.Model):
     __tablename__ = "advisories"
 
     id = Column(Integer, Sequence("advisories_id_seq"), primary_key=True, unique=True)
@@ -405,7 +403,7 @@ class Advisory(Base):
     updated_at = deferred(Column(DateTime(timezone=False), onupdate=utcnow()))
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(cls) -> Iterable[Index]:
         return (
             Index(f"{cls.__tablename__}_language_idx", "language"),
             Index(f"{cls.__tablename__}_pkg_name_idx", "package_name"),
@@ -423,7 +421,7 @@ class Advisory(Base):
         )
 
 
-class NPMSIOScore(Base):
+class NPMSIOScore(db.Model):
     __tablename__ = "npmsio_scores"
 
     """
@@ -499,7 +497,7 @@ class NPMSIOScore(Base):
     updated_at = deferred(Column(DateTime(timezone=False), onupdate=utcnow()))
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(cls) -> Iterable[Index]:
         return (
             # TODO: add indexes on interesting score columns?
             Index(
@@ -512,7 +510,7 @@ class NPMSIOScore(Base):
             Index(
                 f"{cls.__tablename__}_analyzed_idx",
                 "analyzed_at",
-                expression.desc(cls.analyzed_at),
+                expression.desc(cls.analyzed_at),  # type: ignore
             ),
             Index(
                 f"{cls.__tablename__}_updated_idx",
@@ -527,7 +525,7 @@ class NPMSIOScore(Base):
         )
 
 
-class NPMRegistryEntry(Base):
+class NPMRegistryEntry(db.Model):
     __tablename__ = "npm_registry_entries"
 
     """
@@ -662,7 +660,7 @@ class NPMRegistryEntry(Base):
     # files e.g. ['index.js', 'lib', 'tests']
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(cls) -> Iterable[Index]:
         return (
             Index(
                 f"{cls.__tablename__}_unique_idx",
@@ -695,7 +693,9 @@ class NPMRegistryEntry(Base):
         )
 
 
-def get_package_report(package, version=None):
+def get_package_report(
+    package: str, version: Optional[str] = None
+) -> Optional[PackageReport]:
     if None == version:
         # TODO order-by is hard with semver. Think about splitting out versions
         no_version_query = db.session.query(PackageReport).filter(
@@ -1170,14 +1170,15 @@ def create_tables_and_views(app: flask.app.Flask) -> None:
     with app.app_context():  # type: ignore
         non_view_table_names = [
             table_name
-            for table_name in Base.metadata.tables
+            for table_name in db.Model.metadata.tables
             if table_name not in VIEWS.keys()
         ]
         log.info(f"creating tables if they don't exist: {non_view_table_names}")
-        Base.metadata.create_all(
+        db.Model.metadata.create_all(
             bind=db.engine,
             tables=[
-                Base.metadata.tables[table_name] for table_name in non_view_table_names
+                db.Model.metadata.tables[table_name]
+                for table_name in non_view_table_names
             ],
         )
         create_views(db.engine)
