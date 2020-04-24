@@ -15,7 +15,7 @@ from depobs.database.models import (
     PackageVersion,
     get_npms_io_score,
     get_npm_registry_data,
-    get_vulnerability_counts,
+    get_package_from_name_and_version,
     get_advisories_by_package_versions,
 )
 
@@ -32,11 +32,18 @@ def score_package(
         f"scoring package: {package_name}@{package_version} with direct deps {list((r.package, r.version) for r in direct_dep_reports)}"
     )
 
-    direct_vuln_counts = zeroed_severity_counter()
-    # direct_vuln_counts = count_advisories_by_severity(
-    #     get_advisories_by_package_versions([package_version])
-    # )
-    # direct_vuln_counts.update(zeroed_severity_counter())
+    package_version_obj: Optional[PackageVersion] = get_package_from_name_and_version(
+        package_name, package_version
+    )
+    if package_version_obj is None:
+        raise Exception(
+            f"could not find PackageVersion to fetch vulnerabilities for {package_name}@{package_version}"
+        )
+
+    direct_vuln_counts = count_advisories_by_severity(
+        get_advisories_by_package_versions([package_version_obj])
+    )
+    direct_vuln_counts.update(zeroed_severity_counter())
     indirect_distinct_vuln_counts = zeroed_severity_counter()
     # indirect_distinct_vuln_counts = count_advisories_by_severity(
     #     set(get_distinct_advisories_by_package_versions(direct_deps + indirect_deps))
@@ -82,27 +89,6 @@ def score_package(
             for (severity, count) in dict(indirect_distinct_vuln_counts).items()
         },
     )
-
-    # Direct vulnerability counts
-    for package, version, severity, count in get_vulnerability_counts(
-        package_name, package_version
-    ):
-        severity = severity.lower()
-        log.info(
-            f"scoring package: {package_name}@{package_version} found vulnerable dep: \t{package}\t{version}\t{severity}\t{count}"
-        )
-        if severity == "critical":
-            pr.directVulnsCritical_score = count
-        elif severity == "high":
-            pr.directVulnsHigh_score = count
-        elif severity in ("medium", "moderate"):
-            pr.directVulnsMedium_score = count
-        elif severity == "low":
-            pr.directVulnsLow_score = count
-        else:
-            log.error(
-                f"unexpected severity {severity} for package {package} / version {version}"
-            )
 
     for report in direct_dep_reports:
         for severity in ("Critical", "High", "Medium", "Low"):

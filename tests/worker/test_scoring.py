@@ -40,6 +40,7 @@ score_package_testcases = {
         [],
         None,
         0,
+        m.PackageVersion(name="foo", version="0.0.0"),
         [],
         {**_default_report_json, "package": "foo", "version": "0.0.0",},
     ),
@@ -47,6 +48,7 @@ score_package_testcases = {
         [],
         None,
         0.53,
+        m.PackageVersion(name="foo", version="0.0.0"),
         [],
         {
             **_default_report_json,
@@ -55,25 +57,25 @@ score_package_testcases = {
             "version": "0.0.0",
         },
     ),
-    "nonzero_npmsio_score_direct_vulns": (
+    "nonzero_npmsio_score_direct_advisories": (
         [
-            # TODO: confirm get_vulnerability_counts doesn't return "medium" and "moderate" severities
-            (None, None, "critical", 1),
-            (None, None, "high", 1),
-            (None, None, "medium", 1),
-            (None, None, "moderate", 1),
-            (None, None, "low", 1),
-            (None, None, "unexpected", 1),
+            m.Advisory(severity="critical"),
+            m.Advisory(severity="high"),
+            m.Advisory(severity="medium"),
+            m.Advisory(severity="moderate"),
+            m.Advisory(severity="low"),
+            m.Advisory(severity="unexpected"),
         ],
         None,
         0.53,
+        m.PackageVersion(name="foo", version="0.0.0"),
         [],
         {
             **_default_report_json,
             "directVulnsCritical_score": 1,
             "directVulnsHigh_score": 1,
             "directVulnsLow_score": 1,
-            "directVulnsMedium_score": 1,
+            "directVulnsMedium_score": 2,
             "npmsio_score": 0.53,
             "package": "foo",
             "version": "0.0.0",
@@ -83,6 +85,7 @@ score_package_testcases = {
         [],
         (None, None, None),
         0.53,
+        m.PackageVersion(name="foo", version="0.0.0"),
         [],
         {
             **_default_report_json,
@@ -101,6 +104,7 @@ score_package_testcases = {
             ["contributor1@example.com", "contributor2@example.com"],
         ),
         0.53,
+        m.PackageVersion(name="foo", version="0.0.0"),
         [],
         {
             **_default_report_json,
@@ -120,6 +124,7 @@ score_package_testcases = {
             ["contributor1@example.com", "contributor2@example.com"],
         ),
         0.53,
+        m.PackageVersion(name="foo", version="0.0.0"),
         [
             m.PackageReport(
                 directVulnsCritical_score=None,
@@ -203,19 +208,18 @@ score_package_testcases = {
 
 
 @pytest.mark.parametrize(
-    "vulns, npm_registry_data, npmsio_score, direct_dep_reports, expected_package_report_with_deps_json",
+    "advisories, npm_registry_data, npmsio_score, package_version, direct_dep_reports, expected_package_report_with_deps_json",
     score_package_testcases.values(),
     ids=score_package_testcases.keys(),
 )
 def test_score_package(
     mocker,
-    vulns: Iterator[
-        Tuple[str, str, str, int]
-    ],  # generates: package (name), version, severity, count
+    advisories: Iterator[m.Advisory],
     npm_registry_data: Optional[
         Tuple[Any, List[str], List[str]]
     ],  # published_at, maintainers, contributors
     npmsio_score: Optional[int],
+    package_version: Optional[m.PackageVersion],
     direct_dep_reports: List[m.PackageReport],
     expected_package_report_with_deps_json: Dict[str, Any],
 ):
@@ -231,7 +235,14 @@ def test_score_package(
         "depobs.worker.scoring.get_npm_registry_data",
         **{"return_value.one_or_none.return_value": npm_registry_data},
     )
-    mocker.patch("depobs.worker.scoring.get_vulnerability_counts", return_value=vulns)
+    mocker.patch(
+        "depobs.worker.scoring.get_advisories_by_package_versions",
+        return_value=advisories,
+    )
+    mocker.patch(
+        "depobs.worker.scoring.get_package_from_name_and_version",
+        return_value=package_version,
+    )
 
     scored: m.PackageReport = m.score_package(
         package_name="foo",
@@ -331,16 +342,14 @@ outer_in_iter_testcases = {
 
 
 @pytest.mark.parametrize(
-    "vulns, npm_registry_data, npmsio_scores, graph, package_versions, expected_package_reports_with_deps_json",
+    "advisories, npm_registry_data, npmsio_scores, graph, package_versions, expected_package_reports_with_deps_json",
     outer_in_iter_testcases.values(),
     ids=outer_in_iter_testcases.keys(),
 )
 def test_score_package_and_children(
     mocker,
     # mocked calls
-    vulns: List[
-        Iterator[Tuple[str, str, str, int]]
-    ],  # generates: package (name), version, severity, count
+    advisories: List[Iterator[m.Advisory]],
     npm_registry_data: List[
         Iterator[Tuple[Any, List[str], List[str]]]
     ],  # generates: published_at, maintainers, contributors
@@ -365,7 +374,14 @@ def test_score_package_and_children(
         "depobs.worker.scoring.get_npm_registry_data",
         **{"return_value.one_or_none.side_effect": npm_registry_data},
     )
-    mocker.patch("depobs.worker.scoring.get_vulnerability_counts", side_effect=vulns)
+    mocker.patch(
+        "depobs.worker.scoring.get_advisories_by_package_versions",
+        side_effect=advisories,
+    )
+    mocker.patch(
+        "depobs.worker.scoring.get_package_from_name_and_version",
+        side_effect=package_versions,
+    )
 
     reports = m.score_package_and_children(graph, package_versions)
 
