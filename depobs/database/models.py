@@ -91,7 +91,7 @@ class PackageReport(TaskIDMixin, db.Model):
     all_deps = Column(Integer)
 
     # this relationship is used for persistence
-    dependencies = relationship(
+    dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
         "PackageReport",
         secondary=Dependency.__table__,
         primaryjoin=id == Dependency.__table__.c.depends_on_id,
@@ -172,7 +172,7 @@ class PackageLatestReport(db.Model):
     all_deps = Column(Integer)
 
     # this relationship is used for persistence
-    dependencies = relationship(
+    dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
         "PackageLatestReport",
         secondary=Dependency.__table__,
         primaryjoin=id == Dependency.__table__.c.depends_on_id,
@@ -510,7 +510,7 @@ class NPMSIOScore(db.Model):
             Index(
                 f"{cls.__tablename__}_analyzed_idx",
                 "analyzed_at",
-                expression.desc(cls.analyzed_at),
+                expression.desc(cls.analyzed_at),  # type: ignore
             ),
             Index(
                 f"{cls.__tablename__}_updated_idx",
