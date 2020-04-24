@@ -30,17 +30,37 @@ def score_package(
     log.info(
         f"scoring package: {package_name}@{package_version} with direct deps {list((r.package, r.version) for r in direct_dep_reports)}"
     )
-    pr = PackageReport()
-    pr.package = package_name
-    pr.version = package_version
 
-    # NB: raises for a missing score
-    pr.npmsio_score = get_npms_io_score(package_name, package_version).first()
+    direct_vuln_counts = zeroed_severity_counter()
+    # direct_vuln_counts = count_advisories_by_severity(
+    #     get_advisories_by_package_versions([package_version])
+    # )
+    # direct_vuln_counts.update(zeroed_severity_counter())
+    indirect_distinct_vuln_counts = zeroed_severity_counter()
+    # indirect_distinct_vuln_counts = count_advisories_by_severity(
+    #     set(get_distinct_advisories_by_package_versions(direct_deps + indirect_deps))
+    # )
+    # indirect_distinct_vuln_counts.update(zeroed_severity_counter())
 
-    pr.directVulnsCritical_score = 0
-    pr.directVulnsHigh_score = 0
-    pr.directVulnsMedium_score = 0
-    pr.directVulnsLow_score = 0
+    pr = PackageReport(
+        package=package_name,
+        version=package_version,
+        all_deps=all_deps_count,
+        immediate_deps=len(direct_dep_reports),
+        # NB: raises for a missing score
+        # refs #227
+        npmsio_score=get_npms_io_score(package_name, package_version).first(),  # type: ignore
+        scoring_date=datetime.now(),
+        status="scanned",
+        **{
+            f"directVulns{severity.name.capitalize()}_score": count
+            for (severity, count) in dict(direct_vuln_counts).items()
+        },
+        **{
+            f"indirectVulns{severity.name.capitalize()}_score": count
+            for (severity, count) in dict(indirect_distinct_vuln_counts).items()
+        },
+    )
 
     # Direct vulnerability counts
     for package, version, severity, count in get_vulnerability_counts(
@@ -76,15 +96,6 @@ def score_package(
         else:
             pr.contributors = 0
 
-    pr.immediate_deps = len(direct_dep_reports)
-    pr.all_deps = all_deps_count
-
-    # Indirect counts
-    pr.indirectVulnsCritical_score = 0
-    pr.indirectVulnsHigh_score = 0
-    pr.indirectVulnsMedium_score = 0
-    pr.indirectVulnsLow_score = 0
-
     for report in direct_dep_reports:
         for severity in ("Critical", "High", "Medium", "Low"):
             current_count = getattr(pr, f"indirectVulns{severity}_score", 0)
@@ -95,9 +106,6 @@ def score_package(
                 pr, f"indirectVulns{severity}_score", current_count + dep_vuln_count,
             )
         pr.dependencies.append(report)
-
-    pr.scoring_date = datetime.now()
-    pr.status = "scanned"
     return pr
 
 
