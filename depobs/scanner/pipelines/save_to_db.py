@@ -27,7 +27,7 @@ from sqlalchemy import tuple_
 from sqlalchemy.orm import Load, load_only
 
 from depobs.database.models import (
-    Base,
+    db,
     Advisory,
     PackageVersion,
     PackageLink,
@@ -35,6 +35,7 @@ from depobs.database.models import (
     NPMSIOScore,
     NPMRegistryEntry,
 )
+from depobs.scanner.db.connect import create_engine, create_session
 from depobs.scanner.models.pipeline import add_infile_and_outfile, add_db_arg
 from depobs.scanner.pipelines.postprocess import (
     parse_stdout_as_json,
@@ -51,6 +52,9 @@ log = logging.getLogger(__name__)
 
 
 __doc__ = """Saves JSON lines to a postgres DB"""
+
+
+Base = db.Model
 
 
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
