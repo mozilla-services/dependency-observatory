@@ -1,8 +1,9 @@
+from datetime import datetime
 from collections import Counter
 from datetime import datetime
 import enum
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple, Union
 
 import networkx as nx
 from networkx.algorithms.dag import descendants
@@ -42,6 +43,23 @@ def score_package(
     # )
     # indirect_distinct_vuln_counts.update(zeroed_severity_counter())
 
+    npm_registry_data: Optional[
+        Tuple[
+            Optional[datetime],
+            Optional[List[Union[Dict, str]]],
+            Optional[List[Union[Dict, str]]],
+        ]
+    ] = get_npm_registry_data(
+        package_name,
+        package_version
+        # refs #227
+    ).one_or_none()  # type: ignore
+    published_at, maintainers, contributors = None, None, None
+    if npm_registry_data is not None:
+        published_at, maintainers, contributors = npm_registry_data
+        maintainers = maintainers if maintainers else []
+        contributors = contributors if contributors else []
+
     pr = PackageReport(
         package=package_name,
         version=package_version,
@@ -50,6 +68,9 @@ def score_package(
         # NB: raises for a missing score
         # refs #227
         npmsio_score=get_npms_io_score(package_name, package_version).first(),  # type: ignore
+        authors=len(maintainers) if maintainers is not None else None,
+        contributors=len(contributors) if contributors is not None else None,
+        release_date=published_at,
         scoring_date=datetime.now(),
         status="scanned",
         **{
@@ -82,19 +103,6 @@ def score_package(
             log.error(
                 f"unexpected severity {severity} for package {package} / version {version}"
             )
-
-    for published_at, maintainers, contributors in get_npm_registry_data(
-        package_name, package_version
-    ):
-        pr.release_date = published_at
-        if maintainers is not None:
-            pr.authors = len(maintainers)
-        else:
-            pr.authors = 0
-        if contributors is not None:
-            pr.contributors = len(contributors)
-        else:
-            pr.contributors = 0
 
     for report in direct_dep_reports:
         for severity in ("Critical", "High", "Medium", "Low"):

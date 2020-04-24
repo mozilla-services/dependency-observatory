@@ -38,14 +38,14 @@ _default_report_json = {
 score_package_testcases = {
     "zero_npmsio_score": (
         [],
-        [],
+        None,
         0,
         [],
         {**_default_report_json, "package": "foo", "version": "0.0.0",},
     ),
     "nonzero_npmsio_score": (
         [],
-        [],
+        None,
         0.53,
         [],
         {
@@ -65,7 +65,7 @@ score_package_testcases = {
             (None, None, "low", 1),
             (None, None, "unexpected", 1),
         ],
-        [],
+        None,
         0.53,
         [],
         {
@@ -81,7 +81,7 @@ score_package_testcases = {
     ),
     "nonzero_npmsio_score_null_npm_reg_data": (
         [],
-        [(None, None, None)],
+        (None, None, None),
         0.53,
         [],
         {
@@ -95,13 +95,11 @@ score_package_testcases = {
     ),
     "nonzero_npmsio_score_npm_reg_data": (
         [],
-        [
-            (
-                "release day!",
-                ["author1@example.com"],
-                ["contributor1@example.com", "contributor2@example.com"],
-            )
-        ],
+        (
+            "release day!",
+            ["author1@example.com"],
+            ["contributor1@example.com", "contributor2@example.com"],
+        ),
         0.53,
         [],
         {
@@ -116,13 +114,11 @@ score_package_testcases = {
     ),
     "nonzero_npmsio_score_direct_dep_reports": (
         [],
-        [
-            (
-                "release day!",
-                ["author1@example.com"],
-                ["contributor1@example.com", "contributor2@example.com"],
-            )
-        ],
+        (
+            "release day!",
+            ["author1@example.com"],
+            ["contributor1@example.com", "contributor2@example.com"],
+        ),
         0.53,
         [
             m.PackageReport(
@@ -216,9 +212,9 @@ def test_score_package(
     vulns: Iterator[
         Tuple[str, str, str, int]
     ],  # generates: package (name), version, severity, count
-    npm_registry_data: Iterator[
+    npm_registry_data: Optional[
         Tuple[Any, List[str], List[str]]
-    ],  # generates: published_at, maintainers, contributors
+    ],  # published_at, maintainers, contributors
     npmsio_score: Optional[int],
     direct_dep_reports: List[m.PackageReport],
     expected_package_report_with_deps_json: Dict[str, Any],
@@ -232,7 +228,8 @@ def test_score_package(
         **{"return_value.first.return_value": npmsio_score},
     )
     mocker.patch(
-        "depobs.worker.scoring.get_npm_registry_data", return_value=npm_registry_data
+        "depobs.worker.scoring.get_npm_registry_data",
+        **{"return_value.one_or_none.return_value": npm_registry_data},
     )
     mocker.patch("depobs.worker.scoring.get_vulnerability_counts", return_value=vulns)
 
@@ -253,7 +250,7 @@ outer_in_iter_testcases = {
     # NB: digraph node IDs need to match PackageVersion ids
     "one_node_no_edges": (
         [[]],
-        [[]],
+        [None],
         [0.0],
         m.nx.trivial_graph(create_using=m.nx.DiGraph),
         [m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.0")],
@@ -278,7 +275,7 @@ outer_in_iter_testcases = {
     ),
     "three_node_path_graph": (
         [[], [], []],
-        [[], [], []],
+        [None, None, None],
         [0.25, 0.9, 0.34],
         m.nx.path_graph(3, create_using=m.nx.DiGraph),
         [
@@ -365,7 +362,8 @@ def test_score_package_and_children(
         **{"return_value.first.side_effect": npmsio_scores},
     )
     mocker.patch(
-        "depobs.worker.scoring.get_npm_registry_data", side_effect=npm_registry_data
+        "depobs.worker.scoring.get_npm_registry_data",
+        **{"return_value.one_or_none.side_effect": npm_registry_data},
     )
     mocker.patch("depobs.worker.scoring.get_vulnerability_counts", side_effect=vulns)
 
