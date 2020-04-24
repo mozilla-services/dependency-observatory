@@ -49,7 +49,7 @@ class utcnow(expression.FunctionElement):
 
 
 @compiles(utcnow, "postgresql")
-def pg_utcnow(element, compiler, **kw):
+def pg_utcnow(element: Any, compiler: Any, **kw: Dict) -> str:
     return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
 
 
@@ -259,7 +259,7 @@ class PackageVersion(db.Model):
     updated_at = deferred(Column(DateTime(timezone=False), onupdate=utcnow()))
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(cls) -> Iterable[Index]:
         return (
             Index(
                 f"{cls.__tablename__}_unique_idx",
@@ -294,7 +294,7 @@ class PackageLink(db.Model):
     inserted_at = deferred(Column(DateTime(timezone=False), server_default=utcnow()))
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(cls) -> Iterable[Index]:
         return (
             # ForeignKeyConstraint(
             #     ["child_package_id"],
@@ -343,7 +343,7 @@ class PackageGraph(db.Model):
     inserted_at = deferred(Column(DateTime(timezone=False), server_default=utcnow()))
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(cls) -> Iterable[Index]:
         return (
             Index(
                 f"{cls.__tablename__}_root_package_id_idx", "root_package_version_id"
@@ -403,7 +403,7 @@ class Advisory(db.Model):
     updated_at = deferred(Column(DateTime(timezone=False), onupdate=utcnow()))
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(cls) -> Iterable[Index]:
         return (
             Index(f"{cls.__tablename__}_language_idx", "language"),
             Index(f"{cls.__tablename__}_pkg_name_idx", "package_name"),
@@ -497,7 +497,7 @@ class NPMSIOScore(db.Model):
     updated_at = deferred(Column(DateTime(timezone=False), onupdate=utcnow()))
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(cls) -> Iterable[Index]:
         return (
             # TODO: add indexes on interesting score columns?
             Index(
@@ -660,7 +660,7 @@ class NPMRegistryEntry(db.Model):
     # files e.g. ['index.js', 'lib', 'tests']
 
     @declared_attr
-    def __table_args__(cls):
+    def __table_args__(cls) -> Iterable[Index]:
         return (
             Index(
                 f"{cls.__tablename__}_unique_idx",
@@ -693,7 +693,9 @@ class NPMRegistryEntry(db.Model):
         )
 
 
-def get_package_report(package, version=None):
+def get_package_report(
+    package: str, version: Optional[str] = None
+) -> Optional[PackageReport]:
     if None == version:
         # TODO order-by is hard with semver. Think about splitting out versions
         no_version_query = db.session.query(PackageReport).filter(
