@@ -752,6 +752,16 @@ def get_graph_links(graph: PackageGraph) -> List[PackageLink]:
     )
 
 
+def get_package_from_name_and_version(
+    name: str, version: str
+) -> Optional[PackageVersion]:
+    return (
+        db.session.query(PackageVersion)
+        .filter_by(name=name, version=version)
+        .one_or_none()
+    )
+
+
 def get_package_from_id(id: int) -> Optional[PackageVersion]:
     package_version = (
         db.session.query(PackageVersion).filter(PackageVersion.id == id).one_or_none()
