@@ -26,7 +26,7 @@ from typing import (
 )
 import typing
 
-from depobs.scanner.serialize_util import (
+from depobs.util.serialize_util import (
     get_in,
     extract_fields,
 )

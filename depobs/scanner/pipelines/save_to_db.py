@@ -26,8 +26,7 @@ import sqlalchemy
 from sqlalchemy import tuple_
 from sqlalchemy.orm import Load, load_only
 
-from depobs.scanner.db.connect import create_engine, create_session
-from depobs.scanner.db.schema import (
+from depobs.database.models import (
     Base,
     Advisory,
     PackageVersion,
@@ -41,7 +40,7 @@ from depobs.scanner.pipelines.postprocess import (
     parse_stdout_as_json,
     parse_stdout_as_jsonlines,
 )
-from depobs.scanner.serialize_util import (
+from depobs.util.serialize_util import (
     extract_fields,
     extract_nested_fields,
     get_in,
@@ -263,169 +262,6 @@ def insert_package_audit(session: sqlalchemy.orm.Session, task_data: Dict) -> No
             dict(vulnerable_package_version_ids=sorted(vpvids))
         )
         session.commit()
-
-
-def insert_npmsio_data(
-    session: sqlalchemy.orm.Session, source: Generator[Dict[str, Any], None, None]
-) -> None:
-    for line in source:
-        fields = extract_nested_fields(
-            line,
-            {
-                "package_name": ["collected", "metadata", "name"],
-                "package_version": ["collected", "metadata", "version"],
-                "analyzed_at": ["analyzedAt"],  # e.g. "2019-11-27T19:31:42.541Z"
-                # overall score from .score.final on the interval [0, 1]
-                "score": ["score", "final"],
-                # score components on the interval [0, 1]
-                "quality": ["score", "detail", "quality"],
-                "popularity": ["score", "detail", "popularity"],
-                "maintenance": ["score", "detail", "maintenance"],
-                # score subcomponent/detail fields from .evaluation.<component>.<subcomponent>
-                # generally frequencies and subscores are decimals between [0, 1]
-                # or counts of downloads, stars, etc.
-                # acceleration is signed (+/-)
-                "branding": ["evaluation", "quality", "branding"],
-                "carefulness": ["evaluation", "quality", "carefulness"],
-                "health": ["evaluation", "quality", "health"],
-                "tests": ["evaluation", "quality", "tests"],
-                "community_interest": ["evaluation", "popularity", "communityInterest"],
-                "dependents_count": ["evaluation", "popularity", "dependentsCount"],
-                "downloads_acceleration": [
-                    "evaluation",
-                    "popularity",
-                    "downloadsAcceleration",
-                ],
-                "downloads_count": ["evaluation", "popularity", "downloadsCount"],
-                "commits_frequency": ["evaluation", "maintenance", "commitsFrequency"],
-                "issues_distribution": [
-                    "evaluation",
-                    "maintenance",
-                    "issuesDistribution",
-                ],
-                "open_issues": ["evaluation", "maintenance", "openIssues"],
-                "releases_frequency": [
-                    "evaluation",
-                    "maintenance",
-                    "releasesFrequency",
-                ],
-            },
-        )
-        fields[
-            "source_url"
-        ] = f"https://api.npms.io/v2/package/{fields['package_name']}"
-
-        # only insert new rows
-        if (
-            session.query(NPMSIOScore.id)
-            .filter_by(
-                package_name=fields["package_name"],
-                package_version=fields["package_version"],
-                analyzed_at=fields["analyzed_at"],
-            )
-            .one_or_none()
-        ):
-            log.debug(
-                f"skipping inserting npms.io score for {fields['package_name']}@{fields['package_version']}"
-                f" analyzed at {fields['analyzed_at']}"
-            )
-        else:
-            session.add(NPMSIOScore(**fields))
-            session.commit()
-            log.info(
-                f"added npms.io score for {fields['package_name']}@{fields['package_version']}"
-                f" analyzed at {fields['analyzed_at']}"
-            )
-
-
-def insert_npm_registry_data(
-    session: sqlalchemy.orm.Session, source: Generator[Dict[str, Any], None, None]
-) -> None:
-    for line in source:
-        # save version specific data
-        for version, version_data in line["versions"].items():
-            fields = extract_nested_fields(
-                version_data,
-                {
-                    "package_name": ["name"],
-                    "package_version": ["version"],
-                    "shasum": ["dist", "shasum"],
-                    "tarball": ["dist", "tarball"],
-                    "git_head": ["gitHead"],
-                    "repository_type": ["repository", "type"],
-                    "repository_url": ["repository", "url"],
-                    "description": ["description"],
-                    "url": ["url"],
-                    "license_type": ["license"],
-                    "keywords": ["keywords"],
-                    "has_shrinkwrap": ["_hasShrinkwrap"],
-                    "bugs_url": ["bugs", "url"],
-                    "bugs_email": ["bugs", "email"],
-                    "author_name": ["author", "name"],
-                    "author_email": ["author", "email"],
-                    "author_url": ["author", "url"],
-                    "maintainers": ["maintainers"],
-                    "contributors": ["contributors"],
-                    "publisher_name": ["_npmUser", "name"],
-                    "publisher_email": ["_npmUser", "email"],
-                    "publisher_node_version": ["_nodeVersion"],
-                    "publisher_npm_version": ["_npmVersion"],
-                },
-            )
-            # license can we a string e.g. 'MIT'
-            # or dict e.g. {'type': 'MIT', 'url': 'https://github.com/jonschlinkert/micromatch/blob/master/LICENSE'}
-            fields["license_url"] = None
-            if isinstance(fields["license_type"], dict):
-                fields["license_url"] = fields["license_type"].get("url", None)
-                fields["license_type"] = fields["license_type"].get("type", None)
-
-            # looking at you debuglog@0.0.{3,4} with:
-            # [{"name": "StrongLoop", "url": "http://strongloop.com/license/"}, "MIT"],
-            if not (
-                (
-                    isinstance(fields["license_type"], str)
-                    or fields["license_type"] is None
-                )
-                and (
-                    isinstance(fields["license_url"], str)
-                    or fields["license_url"] is None
-                )
-            ):
-                log.warning(f"skipping weird license format {fields['license_type']}")
-                fields["license_url"] = None
-                fields["license_type"] = None
-
-            # published_at .time[<version>] e.g. '2014-05-23T21:21:04.170Z' (not from
-            # the version info object)
-            # where time: an object mapping versions to the time published, along with created and modified timestamps
-            fields["published_at"] = get_in(line, ["time", version])
-            fields["package_modified_at"] = get_in(line, ["time", "modified"])
-
-            fields[
-                "source_url"
-            ] = f"https://registry.npmjs.org/{fields['package_name']}"
-
-            if (
-                session.query(NPMRegistryEntry.id)
-                .filter_by(
-                    package_name=fields["package_name"],
-                    package_version=fields["package_version"],
-                    shasum=fields["shasum"],
-                    tarball=fields["tarball"],
-                )
-                .one_or_none()
-            ):
-                log.debug(
-                    f"skipping inserting npm registry entry for {fields['package_name']}@{fields['package_version']}"
-                    f" from {fields['tarball']} with sha {fields['shasum']}"
-                )
-            else:
-                session.add(NPMRegistryEntry(**fields))
-                session.commit()
-                log.info(
-                    f"added npm registry entry for {fields['package_name']}@{fields['package_version']}"
-                    f" from {fields['tarball']} with sha {fields['shasum']}"
-                )
 
 
 async def run_pipeline(

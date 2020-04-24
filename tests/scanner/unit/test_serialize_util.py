@@ -8,7 +8,7 @@ from typing import Callable, Any
 
 import pytest
 
-import depobs.scanner.serialize_util as m
+import depobs.util.serialize_util as m
 
 
 default_get_in_obj = {"a": 1, "b": {"foo": [-1, {}]}}

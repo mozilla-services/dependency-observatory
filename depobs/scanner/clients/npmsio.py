@@ -5,7 +5,7 @@ from typing import Any, AsyncGenerator, Dict, Iterable, Optional
 
 import aiohttp
 
-from depobs.scanner.serialize_util import grouper
+from depobs.util.serialize_util import grouper
 from depobs.scanner.models.package_meta_result import Result
 
 log = logging.getLogger(__name__)
