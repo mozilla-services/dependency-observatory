@@ -99,7 +99,8 @@ def score_package(
             setattr(
                 pr, f"indirectVulns{severity}_score", current_count + dep_vuln_count,
             )
-        pr.dependencies.append(report)
+
+    pr.dependencies.extend(direct_dep_reports)
     return pr
 
 
