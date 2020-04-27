@@ -1,8 +1,6 @@
 import os
 import argparse
 import sys
-from dataclasses import dataclass, field
-from typing import AbstractSet, Callable, Optional
 
 from depobs.scanner.graph_util import NODE_ID_FORMATS, NODE_LABEL_FORMATS, GROUP_ATTRS
 
