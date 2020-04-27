@@ -46,10 +46,6 @@ def iter_jsonlines(
         yield json.loads(line)
 
 
-def identity_serializer(_: argparse.Namespace, result: Dict) -> Dict:
-    return result
-
-
 def grouper(iterable: Iterable[Any], n: int, fillvalue: Any = None):
     "Collect data into fixed-length chunks or blocks"
     # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
