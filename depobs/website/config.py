@@ -101,6 +101,7 @@ CELERYD_TASK_TIME_LIMIT = 3600
 
 # depobs.scanner config
 
+
 NPM_CLIENT = dict(
     user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
     total_timeout=30,
@@ -120,12 +121,19 @@ NPMSIO_CLIENT = dict(
     dry_run=False,
 )
 
-SCAN_NPM_TARBALL_ARGS = dict(
-    docker_pull=True,
-    docker_build=True,
-    docker_image=[],
-    dry_run=False,
-    language=["nodejs"],
-    package_manager=["npm"],
-    repo_task=["install", "list_metadata", "audit"],
+# shared docker args for multiple tasks
+_docker_args = dict(
+    docker_pull=True,  # pull base docker images before building them
+    docker_build=True,  # build docker images
+    docker_image=[],  # non-default docker images to use for the task
 )
+
+SCAN_NPM_TARBALL_ARGS = {
+    **_docker_args,
+    **dict(
+        dry_run=False,
+        language=["nodejs"],
+        package_manager=["npm"],
+        repo_task=["install", "list_metadata", "audit"],
+    ),
+}
