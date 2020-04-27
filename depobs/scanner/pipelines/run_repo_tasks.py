@@ -47,7 +47,6 @@ from depobs.scanner.models.language import (
     package_manager_names,
     package_managers,
 )
-from depobs.scanner.models.pipeline import add_docker_args
 from depobs.scanner.pipelines.util import exc_to_str
 
 log = logging.getLogger(__name__)
@@ -56,7 +55,6 @@ __doc__ = """Runs tasks on a checked out git ref with dep. files"""
 
 
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = add_docker_args(parser)
     parser.add_argument(
         "--dry-run",
         action="store_true",

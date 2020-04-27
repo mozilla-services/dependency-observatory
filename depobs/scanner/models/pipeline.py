@@ -84,21 +84,3 @@ def add_graphviz_graph_args(parser: argparse.ArgumentParser) -> argparse.Argumen
         help="crate graph dotfile output name",
     )
     return parser
-
-
-def add_docker_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.add_argument(
-        "--docker-pull",
-        action="store_true",
-        required=False,
-        default=False,
-        help="Pull base docker images before building them. Default to False.",
-    )
-    parser.add_argument(
-        "--docker-build",
-        action="store_true",
-        required=False,
-        default=False,
-        help="Build docker images. Default to False.",
-    )
-    return parser
