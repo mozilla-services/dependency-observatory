@@ -1,4 +1,3 @@
-import argparse
 import itertools
 import json
 from typing import Any, Dict, Iterable, Set, Sequence, List, Union, Generator
@@ -44,10 +43,6 @@ def iter_jsonlines(
     "Generator over JSON lines http://jsonlines.org/ files with extension .jsonl"
     for line in f:
         yield json.loads(line)
-
-
-def identity_serializer(_: argparse.Namespace, result: Dict) -> Dict:
-    return result
 
 
 def grouper(iterable: Iterable[Any], n: int, fillvalue: Any = None):
