@@ -123,9 +123,23 @@ NPMSIO_CLIENT = dict(
 
 # shared docker args for multiple tasks
 _docker_args = dict(
-    docker_pull=True,  # pull base docker images before building them
-    docker_build=True,  # build docker images
-    docker_image=[],  # non-default docker images to use for the task
+    # pull base docker images before building them
+    docker_pull=True,
+    # build docker images
+    docker_build=True,
+    # non-default docker images to use for the task
+    docker_image=[],
+)
+
+_aiohttp_args = dict(
+    # User agent to user to query third party APIs
+    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+fpr@mozilla.com)",
+    # aiohttp total timeout in seconds
+    total_timeout=240,
+    # number of simultaneous connections to open
+    max_connections=100,
+    # time to sleep between requests in seconds
+    delay=0.5,
 )
 
 SCAN_NPM_TARBALL_ARGS = {
