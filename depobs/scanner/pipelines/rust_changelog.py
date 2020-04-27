@@ -33,7 +33,6 @@ from depobs.scanner.graph_util import (
     has_changes,
     get_new_removed_and_new_total,
 )
-from depobs.scanner.models.pipeline import add_graphviz_graph_args
 from depobs.scanner.pipelines.util import exc_to_str
 
 log = logging.getLogger(__name__)
@@ -55,7 +54,6 @@ TODO: detect dep version changes
 
 
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = add_graphviz_graph_args(parser)
     parser.add_argument(
         "-m",
         "--manifest-path",
