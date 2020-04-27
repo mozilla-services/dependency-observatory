@@ -7,7 +7,6 @@ from typing import Any, AsyncGenerator, Dict, Generator, List, Optional, Tuple, 
 from depobs.scanner.clients.cratesio import fetch_cratesio_metadata
 from depobs.scanner.clients.npmsio import fetch_npmsio_scores
 from depobs.scanner.clients.npm_registry import fetch_npm_registry_metadata
-from depobs.scanner.models.pipeline import add_aiohttp_args
 from depobs.scanner.models.package_meta_result import Result
 from depobs.scanner.pipelines.util import exc_to_str
 
@@ -18,7 +17,6 @@ __doc__ = """Fetches additional data about a dependency."""
 
 
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = add_aiohttp_args(parser)
     parser.add_argument(
         "--max-retries",
         help="max times to retry a query with jitter and exponential backoff (defaults to 12)"

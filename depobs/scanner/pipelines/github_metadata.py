@@ -35,7 +35,6 @@ from depobs.scanner.models.github import (
     MISSING,
 )
 from depobs.scanner.models.rust import cargo_metadata_to_rust_crates
-from depobs.scanner.models.pipeline import add_aiohttp_args
 from depobs.scanner.pipelines.util import exc_to_str
 
 log = logging.getLogger(__name__)
@@ -84,7 +83,6 @@ async def run_graphql(
 
 
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = add_aiohttp_args(parser)
     parser.add_argument(
         "--github-accept-header",
         nargs="*",
