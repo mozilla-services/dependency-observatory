@@ -1,22 +1,7 @@
-import os
 import argparse
 import sys
 
 from depobs.scanner.graph_util import NODE_ID_FORMATS, NODE_LABEL_FORMATS, GROUP_ATTRS
-
-
-def add_db_arg(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    pipeline_parser.add_argument(
-        "--db-url",
-        type=str,
-        default=os.environ.get(
-            "DB_URL",
-            "postgresql+psycopg2://postgres:postgres@localhost/dependency_observatory",
-        ),
-        help="Postgres DB URL. Defaults to env var DB_URL then "
-        " 'postgresql+psycopg2://postgres:postgres@localhost/dependency_observatory'",
-    )
-    return pipeline_parser
 
 
 def add_aiohttp_args(
