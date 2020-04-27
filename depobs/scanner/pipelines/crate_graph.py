@@ -18,13 +18,6 @@ from depobs.scanner.models.rust import (
     RustPackage,
     cargo_metadata_to_rust_crate_and_packages,
 )
-from depobs.scanner.models.pipeline import (
-    add_infile_and_outfile,
-    add_graphviz_graph_args,
-    NODE_ID_FORMATS,
-    NODE_LABEL_FORMATS,
-    GROUP_ATTRS,
-)
 from depobs.util.serialize_util import extract_fields, get_in
 from depobs.scanner.pipelines.util import exc_to_str
 
@@ -32,12 +25,6 @@ log = logging.getLogger(__name__)
 
 __doc__ = """Parses the output of the cargo metadata pipeline and writes a .dot
 file of the dependencies to outfile"""
-
-
-def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = add_infile_and_outfile(pipeline_parser)
-    parser = add_graphviz_graph_args(parser)
-    return parser
 
 
 def filter_graph_nodes(filters: Sequence[str], g: nx.DiGraph) -> nx.DiGraph:

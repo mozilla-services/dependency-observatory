@@ -12,10 +12,6 @@ from depobs.scanner.docker.images import build_images
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
 from depobs.scanner.models.language import DockerImage, docker_images
-from depobs.scanner.models.pipeline import (
-    add_infile_and_outfile,
-    add_docker_args,
-)
 from depobs.scanner.pipelines.util import exc_to_str
 
 log = logging.getLogger(__name__)
@@ -29,8 +25,6 @@ TODO: find branches
 
 
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = add_infile_and_outfile(pipeline_parser)
-    parser = add_docker_args(parser)
     parser.add_argument(
         "-t",
         "--tags",
