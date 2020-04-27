@@ -35,7 +35,6 @@ from depobs.database.models import (
     NPMSIOScore,
     NPMRegistryEntry,
 )
-from depobs.scanner.db.connect import create_engine, create_session
 from depobs.scanner.pipelines.postprocess import (
     parse_stdout_as_json,
     parse_stdout_as_jsonlines,
@@ -53,45 +52,11 @@ log = logging.getLogger(__name__)
 __doc__ = """Saves JSON lines to a postgres DB"""
 
 
-Base = db.Model
-
-
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.add_argument(
-        "--create-tables",
-        action="store_true",
-        required=False,
-        default=False,
-        help="Creates tables in the DB.",
-    )
-    parser.add_argument(
-        "--create-views",
-        action="store_true",
-        required=False,
-        default=False,
-        help="Creates materialized views in the DB.",
-    )
     parser.add_argument(
         "--input-type", type=str, required=True, help="Input type to save."
     )
     return parser
-
-
-# TODO: move to db/schema.py
-VIEWS: List[str] = [
-    # CREATE MATERIALIZED VIEW IF NOT EXISTS <table_name> AS <query>
-    # CREATE MATERIALIZED VIEW IF NOT EXISTS refs_with_repo AS (
-    # SELECT
-    #   refs.id AS id,
-    #   refs.commit AS commit,
-    #   refs.tag AS tag,
-    #   refs.commit_ts AS commit_ts,
-    #   repos.url AS url
-    # FROM repos
-    # INNER JOIN refs ON repos.id = refs.repo_id
-    # )
-    # """,
-]
 
 
 def get_package_version_link_id_query(
@@ -269,35 +234,23 @@ async def run_pipeline(
     source: Generator[Dict[str, Any], None, None], args: argparse.Namespace
 ) -> AsyncGenerator[None, None]:
     log.info(f"{__name__} pipeline started")
-    engine = create_engine(args.db_url)
-    if args.create_tables:
-        Base.metadata.create_all(engine)
-
-    if args.create_views:
-        # TODO: with contextlib.closing
-        connection = engine.connect()
-        for command in VIEWS:
-            _ = connection.execute(command)
-            log.info(f"ran: {command}")
-        connection.close()
 
     # use input type since it could write to multiple tables
-    with create_session(engine) as session:
-        if args.input_type == "postprocessed_repo_task":
-            for line in source:
-                for task_data in line["tasks"]:
-                    if task_data["name"] == "list_metadata":
-                        insert_package_graph(session, task_data)
-                    elif task_data["name"] == "audit":
-                        insert_package_audit(session, task_data)
-                    else:
-                        log.warning(f"skipping unrecognized task {task_data['name']}")
-        elif args.input_type == "dep_meta_npm_reg":
-            insert_npm_registry_data(session, source)
-        elif args.input_type == "dep_meta_npmsio":
-            insert_npmsio_data(session, source)
-        else:
-            raise NotImplementedError()
+    if args.input_type == "postprocessed_repo_task":
+        for line in source:
+            for task_data in line["tasks"]:
+                if task_data["name"] == "list_metadata":
+                    insert_package_graph(db.session, task_data)
+                elif task_data["name"] == "audit":
+                    insert_package_audit(db.session, task_data)
+                else:
+                    log.warning(f"skipping unrecognized task {task_data['name']}")
+    elif args.input_type == "dep_meta_npm_reg":
+        insert_npm_registry_data(db.session, source)
+    elif args.input_type == "dep_meta_npmsio":
+        insert_npmsio_data(db.session, source)
+    else:
+        raise NotImplementedError()
     # be the right type for the pipeline runner
     await asyncio.sleep(0)
     yield
