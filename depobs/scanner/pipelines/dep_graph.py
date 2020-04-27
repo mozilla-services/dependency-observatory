@@ -15,7 +15,6 @@ import pydot
 from depobs.scanner.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
 from depobs.scanner.models.nodejs import NPMPackage
 from depobs.scanner.models.pipeline import (
-    add_infile_and_outfile,
     add_graphviz_graph_args,
     NODE_ID_FORMATS,
     NODE_LABEL_FORMATS,
@@ -31,7 +30,6 @@ file of the dependencies to outfile"""
 
 
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = add_infile_and_outfile(pipeline_parser)
     parser = add_graphviz_graph_args(parser)
     return parser
 

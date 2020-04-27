@@ -5,36 +5,6 @@ import sys
 from depobs.scanner.graph_util import NODE_ID_FORMATS, NODE_LABEL_FORMATS, GROUP_ATTRS
 
 
-def add_infile_and_outfile(
-    pipeline_parser: argparse.ArgumentParser,
-) -> argparse.ArgumentParser:
-    pipeline_parser.add_argument(
-        "-i",
-        "--infile",
-        type=argparse.FileType("r", encoding="UTF-8"),
-        required=False,
-        default=sys.stdin,
-        help="pipeline input file (use '-' for stdin)",
-    )
-    pipeline_parser.add_argument(
-        "-o",
-        "--outfile",
-        type=argparse.FileType("w", encoding="UTF-8"),
-        required=False,
-        default=sys.stdout,
-        help="pipeline output file (defaults to stdout)",
-    )
-    pipeline_parser.add_argument(
-        "-a",
-        "--append-outfile",
-        type=argparse.FileType("a", encoding="UTF-8"),
-        required=False,
-        default=None,
-        help="Output file to append to instead of overwriting like outfile (defaults to None)",
-    )
-    return pipeline_parser
-
-
 def add_db_arg(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     pipeline_parser.add_argument(
         "--db-url",

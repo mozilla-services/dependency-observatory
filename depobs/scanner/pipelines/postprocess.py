@@ -40,7 +40,6 @@ from depobs.scanner.models.language import (
     ContainerTask,
     package_managers,
 )
-from depobs.scanner.models.pipeline import add_infile_and_outfile
 from depobs.scanner.models.nodejs import NPMPackage, flatten_deps
 from depobs.scanner.pipelines.util import exc_to_str
 
@@ -56,7 +55,6 @@ Does not spin up containers or hit the network.
 
 
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = add_infile_and_outfile(pipeline_parser)
     parser.add_argument(
         "--repo-task",
         type=str,

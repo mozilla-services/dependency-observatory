@@ -19,7 +19,6 @@ from depobs.scanner.models.rust import (
     cargo_metadata_to_rust_crate_and_packages,
 )
 from depobs.scanner.models.pipeline import (
-    add_infile_and_outfile,
     add_graphviz_graph_args,
     NODE_ID_FORMATS,
     NODE_LABEL_FORMATS,
@@ -35,7 +34,6 @@ file of the dependencies to outfile"""
 
 
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = add_infile_and_outfile(pipeline_parser)
     parser = add_graphviz_graph_args(parser)
     return parser
 

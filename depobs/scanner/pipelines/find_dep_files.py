@@ -12,10 +12,7 @@ import depobs.scanner.docker.containers as containers
 from depobs.scanner.docker.images import build_images
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
-from depobs.scanner.models.pipeline import (
-    add_infile_and_outfile,
-    add_docker_args,
-)
+from depobs.scanner.models.pipeline import add_docker_args
 from depobs.scanner.models.language import (
     dependency_file_patterns,
     DependencyFile,
@@ -32,7 +29,6 @@ Given a repo_url, clones the repo, lists git refs for each tag
 
 
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = add_infile_and_outfile(pipeline_parser)
     parser = add_docker_args(parser)
     parser.add_argument(
         "--glob",

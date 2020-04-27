@@ -36,7 +36,7 @@ from depobs.database.models import (
     NPMRegistryEntry,
 )
 from depobs.scanner.db.connect import create_engine, create_session
-from depobs.scanner.models.pipeline import add_infile_and_outfile, add_db_arg
+from depobs.scanner.models.pipeline import add_db_arg
 from depobs.scanner.pipelines.postprocess import (
     parse_stdout_as_json,
     parse_stdout_as_jsonlines,
@@ -58,7 +58,6 @@ Base = db.Model
 
 
 def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser = add_infile_and_outfile(pipeline_parser)
     parser = add_db_arg(parser)
     parser.add_argument(
         "--create-tables",
