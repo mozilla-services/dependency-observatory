@@ -257,7 +257,7 @@ def test_score_package(
     assert scored.json_with_dependencies() == expected_package_report_with_deps_json
 
 
-outer_in_iter_testcases = {
+score_package_and_children_testcases = {
     # NB: digraph node IDs need to match PackageVersion ids
     "one_node_no_edges": (
         [[]],
@@ -343,8 +343,8 @@ outer_in_iter_testcases = {
 
 @pytest.mark.parametrize(
     "advisories, npm_registry_data, npmsio_scores, graph, package_versions, expected_package_reports_with_deps_json",
-    outer_in_iter_testcases.values(),
-    ids=outer_in_iter_testcases.keys(),
+    score_package_and_children_testcases.values(),
+    ids=score_package_and_children_testcases.keys(),
 )
 def test_score_package_and_children(
     mocker,
