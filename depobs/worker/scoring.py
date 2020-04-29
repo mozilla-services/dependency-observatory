@@ -1,17 +1,22 @@
 from datetime import datetime
+from collections import Counter
+from datetime import datetime
+import enum
 import logging
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple, Union
 
 import networkx as nx
 from networkx.algorithms.dag import descendants
 
 from depobs.scanner.graph_traversal import outer_in_iter
 from depobs.database.models import (
+    Advisory,
     PackageReport,
     PackageVersion,
     get_npms_io_score,
     get_npm_registry_data,
-    get_vulnerability_counts,
+    get_package_from_name_and_version,
+    get_advisories_by_package_versions,
 )
 
 log = logging.getLogger(__name__)
@@ -26,60 +31,64 @@ def score_package(
     log.info(
         f"scoring package: {package_name}@{package_version} with direct deps {list((r.package, r.version) for r in direct_dep_reports)}"
     )
-    pr = PackageReport()
-    pr.package = package_name
-    pr.version = package_version
 
-    # NB: raises for a missing score
-    pr.npmsio_score = get_npms_io_score(package_name, package_version).first()
-
-    pr.directVulnsCritical_score = 0
-    pr.directVulnsHigh_score = 0
-    pr.directVulnsMedium_score = 0
-    pr.directVulnsLow_score = 0
-
-    # Direct vulnerability counts
-    for package, version, severity, count in get_vulnerability_counts(
+    package_version_obj: Optional[PackageVersion] = get_package_from_name_and_version(
         package_name, package_version
-    ):
-        severity = severity.lower()
-        log.info(
-            f"scoring package: {package_name}@{package_version} found vulnerable dep: \t{package}\t{version}\t{severity}\t{count}"
+    )
+    if package_version_obj is None:
+        raise Exception(
+            f"could not find PackageVersion to fetch vulnerabilities for {package_name}@{package_version}"
         )
-        if severity == "critical":
-            pr.directVulnsCritical_score = count
-        elif severity == "high":
-            pr.directVulnsHigh_score = count
-        elif severity in ("medium", "moderate"):
-            pr.directVulnsMedium_score = count
-        elif severity == "low":
-            pr.directVulnsLow_score = count
-        else:
-            log.error(
-                f"unexpected severity {severity} for package {package} / version {version}"
-            )
 
-    for published_at, maintainers, contributors in get_npm_registry_data(
-        package_name, package_version
-    ):
-        pr.release_date = published_at
-        if maintainers is not None:
-            pr.authors = len(maintainers)
-        else:
-            pr.authors = 0
-        if contributors is not None:
-            pr.contributors = len(contributors)
-        else:
-            pr.contributors = 0
+    direct_vuln_counts = count_advisories_by_severity(
+        get_advisories_by_package_versions([package_version_obj])
+    )
+    direct_vuln_counts.update(zeroed_severity_counter())
+    indirect_distinct_vuln_counts = zeroed_severity_counter()
+    # indirect_distinct_vuln_counts = count_advisories_by_severity(
+    #     set(get_distinct_advisories_by_package_versions(direct_deps + indirect_deps))
+    # )
+    # indirect_distinct_vuln_counts.update(zeroed_severity_counter())
 
-    pr.immediate_deps = len(direct_dep_reports)
-    pr.all_deps = all_deps_count
+    npm_registry_data: Optional[
+        Tuple[
+            Optional[datetime],
+            Optional[List[Union[Dict, str]]],
+            Optional[List[Union[Dict, str]]],
+        ]
+    ] = get_npm_registry_data(
+        package_name,
+        package_version
+        # refs #227
+    ).one_or_none()  # type: ignore
+    published_at, maintainers, contributors = None, None, None
+    if npm_registry_data is not None:
+        published_at, maintainers, contributors = npm_registry_data
+        maintainers = maintainers if maintainers else []
+        contributors = contributors if contributors else []
 
-    # Indirect counts
-    pr.indirectVulnsCritical_score = 0
-    pr.indirectVulnsHigh_score = 0
-    pr.indirectVulnsMedium_score = 0
-    pr.indirectVulnsLow_score = 0
+    pr = PackageReport(
+        package=package_name,
+        version=package_version,
+        all_deps=all_deps_count,
+        immediate_deps=len(direct_dep_reports),
+        # NB: raises for a missing score
+        # refs #227
+        npmsio_score=get_npms_io_score(package_name, package_version).first(),  # type: ignore
+        authors=len(maintainers) if maintainers is not None else None,
+        contributors=len(contributors) if contributors is not None else None,
+        release_date=published_at,
+        scoring_date=datetime.now(),
+        status="scanned",
+        **{
+            f"directVulns{severity.name.capitalize()}_score": count
+            for (severity, count) in dict(direct_vuln_counts).items()
+        },
+        **{
+            f"indirectVulns{severity.name.capitalize()}_score": count
+            for (severity, count) in dict(indirect_distinct_vuln_counts).items()
+        },
+    )
 
     for report in direct_dep_reports:
         for severity in ("Critical", "High", "Medium", "Low"):
@@ -90,10 +99,8 @@ def score_package(
             setattr(
                 pr, f"indirectVulns{severity}_score", current_count + dep_vuln_count,
             )
-        pr.dependencies.append(report)
 
-    pr.scoring_date = datetime.now()
-    pr.status = "scanned"
+    pr.dependencies.extend(direct_dep_reports)
     return pr
 
 
@@ -124,3 +131,39 @@ def score_package_and_children(
             )
 
     return list(package_reports_by_id.values())
+
+
+class AdvisorySeverity(enum.Enum):
+    CRITICAL = "critical"
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+    # an alias for medium
+    MODERATE = "medium"
+
+
+def zeroed_severity_counter() -> Counter:
+    """
+    Returns a counter with zeroes for each AdvisorySeverity level
+    """
+    counter: Counter = Counter()
+    for severity in AdvisorySeverity:
+        counter[severity] = 0
+    return counter
+
+
+def count_advisories_by_severity(advisories: List[Advisory]) -> Counter:
+    """Given a list of advisories returns a collections.Counter with
+    counts for non-zero severities.
+
+    Normalizes severity names according to the AdvisorySeverity
+    enum. (e.g. treat "moderate" as MEDIUM)
+    """
+    counter = Counter(
+        AdvisorySeverity[advisory.severity.upper()]
+        for advisory in advisories
+        if isinstance(advisory.severity, str)
+        and advisory.severity.upper() in AdvisorySeverity.__members__.keys()
+    )
+    return counter

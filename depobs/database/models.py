@@ -752,6 +752,16 @@ def get_graph_links(graph: PackageGraph) -> List[PackageLink]:
     )
 
 
+def get_package_from_name_and_version(
+    name: str, version: str
+) -> Optional[PackageVersion]:
+    return (
+        db.session.query(PackageVersion)
+        .filter_by(name=name, version=version)
+        .one_or_none()
+    )
+
+
 def get_package_from_id(id: int) -> Optional[PackageVersion]:
     package_version = (
         db.session.query(PackageVersion).filter(PackageVersion.id == id).one_or_none()
@@ -1082,3 +1092,20 @@ def create_tables_and_views(app: flask.app.Flask) -> None:
             ],
         )
         create_views(db.engine)
+
+
+def get_advisories_by_package_versions(
+    package_versions: List[PackageVersion],
+) -> List[Advisory]:
+    """
+    Returns all advisories that directly impact the provided PackageVersion objects.
+    """
+    return (
+        db.session.query(Advisory)
+        .filter(
+            Advisory.vulnerable_package_version_ids.contains(
+                [package_version.id for package_version in package_versions]
+            )
+        )
+        .all()
+    )

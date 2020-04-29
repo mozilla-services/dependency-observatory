@@ -76,8 +76,6 @@ log = get_task_logger(__name__)
 
 app = create_celery_app()
 
-score_package = app.task(score_package)
-
 
 @app.task()
 def add(x, y):
@@ -345,5 +343,4 @@ tasks = [
     check_package_name_in_npmsio,
     scan_npm_package,
     scan_npm_package_then_build_report_tree,
-    score_package,
 ]
