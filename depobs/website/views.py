@@ -1,4 +1,5 @@
 from datetime import datetime
+import logging
 from typing import Dict, Optional
 
 from flask import abort, Blueprint, Response, request, send_from_directory
@@ -11,6 +12,8 @@ from depobs.website.scans import (
     validate_scored_after_ts_query_param,
 )
 from depobs.website.celery_tasks import get_celery_tasks
+
+log = logging.getLogger(__name__)
 
 STANDARD_HEADERS = {"Access-Control-Allow-Origin": "*"}
 
@@ -38,7 +41,7 @@ class PackageReportNotFound(NotFound):
         if self.package_version is not None:
             msg += f"@{self.package_version}"
         if self.scored_after is not None:
-            msg += f"scored after {self.scored_after}"
+            msg += f" scored after {self.scored_after}"
         return msg + " not found."
 
 
@@ -75,10 +78,33 @@ def handle_package_report_not_found(e):
             return package_report.report_json, 500
         return package_report.report_json, 202
 
-    if not get_celery_tasks().check_npm_package_exists(package_name, package_version):
+    npm_registry_entry: Optional[
+        Dict
+    ] = get_celery_tasks().fetch_package_entry_from_registry(
+        package_name, package_version
+    )
+    if npm_registry_entry is None:
         return (
             dict(
-                description=f"{e.description} Unable to find package on npm registry and npms.io."
+                description=f"Unable to find package named {package_name!r} on the npm registry."
+            ),
+            404,
+        )
+
+    package_versions_on_registry: Dict = npm_registry_entry.get("versions", {})
+
+    # if a scan of a specific package version was requested check that it exists
+    if package_version is not None:
+        package_version_exists = package_versions_on_registry.get(
+            package_version, False
+        )
+        log.info(
+            f"package: {package_name}@{package_version!r} on npm registry? {package_version_exists}"
+        )
+        return (
+            dict(
+                description=f"Unable to find version "
+                f"{package_version!r} of package {package_name!r} on the npm registry."
             ),
             404,
         )
@@ -88,10 +114,35 @@ def handle_package_report_not_found(e):
         package_name, package_version
     )
 
-    # NB: use transaction concurrent calls e.g. another query inserts after select
-    package_report = models.insert_package_report_placeholder_or_update_task_id(
-        package_name, package_version, result.id
-    )
+    # TODO: make sure concurrent API calls don't introduce a data race
+    if package_version is not None:
+        package_report = models.insert_package_report_placeholder_or_update_task_id(
+            package_name, package_version, result.id
+        )
+    else:
+        # a version wasn't specified, so scan_npm_package will scan all versions
+        # update or insert placeholders for all the versions referencing the same scan task
+        package_reports = [
+            models.insert_package_report_placeholder_or_update_task_id(
+                package_name, reg_package_version, result.id
+            )
+            for reg_package_version in sorted(package_versions_on_registry.keys())
+        ]
+        log.info(
+            f"inserted placeholder PackageReports for {package_name} at versions {[(pr.id, pr.version) for pr in package_reports]}"
+        )
+
+        if not len(package_reports):
+            return (
+                dict(
+                    description=f"Unable to find any versions "
+                    f"of package {package_name!r} on the npm registry."
+                ),
+                404,
+            )
+        # return the report for the alphabetically highest version number (likely most recently published package)
+        package_report = package_reports[-1]
+
     return package_report.report_json, 202
 
 

@@ -318,9 +318,9 @@ def check_package_name_in_npmsio(package_name: str) -> bool:
 
 
 @app.task()
-def check_package_in_npm_registry(
+def fetch_package_entry_from_registry(
     package_name: str, package_version: Optional[str] = None
-) -> Dict:
+) -> Optional[Dict]:
     npm_registry_entry = asyncio.run(
         fetch_package_data(
             fetch_npm_registry_metadata,
@@ -329,45 +329,20 @@ def check_package_in_npm_registry(
         ),
         debug=False,
     )
-
     package_name_exists = npm_registry_entry is not None
+    log.info(f"package: {package_name} on npm registry? {package_name_exists}")
     if package_name_exists:
         # inserts new entries for new versions (but doesn't update old ones)
         log.info(f"saving npm registry entry for {package_name}")
         models.insert_npm_registry_entry(npm_registry_entry)
-
-    log.info(f"package: {package_name} on npm registry? {package_name_exists}")
-    if package_version is not None:
-        package_version_exists = npm_registry_entry.get("versions", {}).get(
-            package_version, False
-        )
-        log.info(
-            f"package: {package_name}@{package_version!r} on npm registry? {package_version_exists}"
-        )
-        return package_name_exists and package_version_exists
-    return package_name_exists
-
-
-@app.task()
-def check_npm_package_exists(
-    package_name: str, package_version: Optional[str] = None
-) -> bool:
-    """
-    Check that an npm package name has a score on npms.io and is published on
-    the npm registry if a version is provided check that it's in the npm registry
-    """
-    # check npms.io first because it's usually faster (smaller response sizes)
-    return check_package_name_in_npmsio(package_name) and check_package_in_npm_registry(
-        package_name, package_version
-    )
+    return npm_registry_entry
 
 
 # list tasks for the web server to register against its flask app
 tasks = [
     add,
     build_report_tree,
-    check_npm_package_exists,
-    check_package_in_npm_registry,
+    fetch_package_entry_from_registry,
     check_package_name_in_npmsio,
     scan_npm_package,
     scan_npm_package_then_build_report_tree,

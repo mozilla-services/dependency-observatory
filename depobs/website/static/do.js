@@ -7,7 +7,11 @@ function getLinkURL(name, version) {
 }
 
 function getPrefixedURL(prefix, name, version) {
-    return prefix + '?package_name=' + encodeURIComponent(name) + '&package_version=' + encodeURIComponent(version);
+    let url = prefix + '?package_name=' + encodeURIComponent(name);
+    if (version !== null) {
+	url = url  + '&package_version=' + encodeURIComponent(version);
+    }
+    return url;
 }
 
 window.onload = function() {
@@ -39,6 +43,9 @@ function getPackageInfo(pkg, ver) {
                 document.getElementById('scan-started').className = "d-none";
                 document.getElementById('no-package').className = "";
                 document.getElementById('no-scan').className = "";
+                response.json().then(function(jsonError) {
+                    document.getElementById('no-package-error').innerText = jsonError.description;
+                });
             } else {
                 document.getElementById('scan-started').className = "d-none";
                 document.getElementById('no-package').className = "";

@@ -131,8 +131,7 @@ running: celery -A depobs.worker.tasks call depobs.worker.tasks.add --args [2,2]
 [tasks]
   . depobs.worker.tasks.add
   . depobs.worker.tasks.build_report_tree
-  . depobs.worker.tasks.check_npm_package_exists
-  . depobs.worker.tasks.check_package_in_npm_registry
+  . depobs.worker.tasks.fetch_package_entry_from_registry
   . depobs.worker.tasks.check_package_name_in_npmsio
   . depobs.worker.tasks.scan_npm_package
   . depobs.worker.tasks.scan_npm_package_then_build_report_tree
