@@ -348,25 +348,13 @@ def check_package_in_npm_registry(
     return package_name_exists
 
 
-@app.task()
-def check_npm_package_exists(
-    package_name: str, package_version: Optional[str] = None
-) -> bool:
-    """
-    Check that an npm package name has a score on npms.io and is published on
-    the npm registry if a version is provided check that it's in the npm registry
-    """
-    # check npms.io first because it's usually faster (smaller response sizes)
-    return check_package_name_in_npmsio(package_name) and check_package_in_npm_registry(
-        package_name, package_version
-    )
+    return npm_registry_entry
 
 
 # list tasks for the web server to register against its flask app
 tasks = [
     add,
     build_report_tree,
-    check_npm_package_exists,
     check_package_in_npm_registry,
     check_package_name_in_npmsio,
     scan_npm_package,
