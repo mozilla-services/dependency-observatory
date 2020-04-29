@@ -1,7 +1,19 @@
 import argparse
 import logging
-from typing import AbstractSet, Any, Dict, Iterable, List, Tuple, TypeVar, Set, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Tuple,
+    TypeVar,
+    Set,
+    Union,
+    Optional,
+)
 
+import graphviz
 import networkx as nx
 
 from depobs.scanner.models.nodejs import NPMPackage
@@ -149,3 +161,27 @@ def get_graph_stats(g: nx.DiGraph) -> Dict[str, Union[int, bool, List[int], List
     # NB: avg in and out degrees should be equal
 
     return stats
+
+
+def nx_digraph_to_graphviz_digraph(
+    g: nx.DiGraph, dot_graph: Optional[graphviz.Digraph] = None,
+) -> graphviz.Digraph:
+    """
+    Adds nodes and dedges from a networkx DiGraph to a graphviz
+
+    Digraph (Yes, graph in DiGraph is capitalized for nx but not for
+    graphviz). Creating a new graphviz Digraph if necessary.
+    """
+    if dot_graph is None:
+        dot_graph = graphviz.Digraph()
+
+    for node_id, node_data in g.nodes(data=True):
+        dot_graph.node(
+            str(node_id),
+            label=node_data["label"] if node_data and "label" in node_data else None,
+        )
+
+    for src, dest, data in g.edges(data=True):
+        dot_graph.edge(str(src), str(dest))
+
+    return dot_graph
