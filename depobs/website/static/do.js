@@ -39,6 +39,9 @@ function getPackageInfo(pkg, ver) {
                 document.getElementById('scan-started').className = "d-none";
                 document.getElementById('no-package').className = "";
                 document.getElementById('no-scan').className = "";
+                response.json().then(function(jsonError) {
+                    document.getElementById('no-package-error').innerText = jsonError.description;
+                });
             } else {
                 document.getElementById('scan-started').className = "d-none";
                 document.getElementById('no-package').className = "";
