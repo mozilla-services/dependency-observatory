@@ -3,7 +3,6 @@ import logging
 from typing import Dict, Optional
 
 from flask import abort, Blueprint, Response, request, send_from_directory
-import graphviz
 from werkzeug.exceptions import BadRequest, NotFound
 
 from depobs.database import models
@@ -174,19 +173,6 @@ def get_parents_by_name_and_version() -> Dict:
 def get_vulnerabilities_by_name_and_version() -> Dict:
     package_name, package_version, _ = validate_npm_package_version_query_params()
     return models.get_vulnerabilities_report(package_name, package_version)
-
-
-@api.route("/graphs/<int:graph_id>", methods=["GET"])
-def get_graph(graph_id):
-    """
-    Returns an svg rendered graphviz dot graph of the given scan
-
-    graph result for the given graph_id
-    """
-    # TODO: check Accept header for a graphviz dot or image mimetype
-    dot_graph: str = models.get_labelled_graphviz_graph(graph_id)
-    print(dot_graph)  # TODO: debug log
-    return graphviz.Source(dot_graph).pipe(format="svg").decode("utf-8")
 
 
 @api.route("/statistics", methods=["GET"])
