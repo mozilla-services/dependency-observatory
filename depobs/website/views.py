@@ -41,7 +41,7 @@ class PackageReportNotFound(NotFound):
         if self.package_version is not None:
             msg += f"@{self.package_version}"
         if self.scored_after is not None:
-            msg += f"scored after {self.scored_after}"
+            msg += f" scored after {self.scored_after}"
         return msg + " not found."
 
 
