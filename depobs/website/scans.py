@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import logging
 from typing import Tuple
 
 from flask import Blueprint, jsonify, make_response, request
@@ -6,6 +7,8 @@ from werkzeug.exceptions import BadRequest
 
 from depobs.website.celery_tasks import get_celery_tasks
 import depobs.worker.validators as validators
+
+log = logging.getLogger(__name__)
 
 scans_blueprint = api = Blueprint("scans_blueprint", __name__)
 
