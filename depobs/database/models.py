@@ -146,97 +146,6 @@ class PackageReport(TaskIDMixin, db.Model):
         }
 
 
-class PackageLatestReport(db.Model):
-    __tablename__ = "latest_reports"
-
-    id = Column("id", Integer, primary_key=True)
-
-    package = Column(String(200))
-    version = Column(String(200))
-    status = Column(String(200))
-    release_date = Column(DateTime)
-    scoring_date = Column(DateTime)
-    top_score = Column(Integer)
-    npmsio_score = Column(Float)
-    directVulnsCritical_score = Column(Integer)
-    directVulnsHigh_score = Column(Integer)
-    directVulnsMedium_score = Column(Integer)
-    directVulnsLow_score = Column(Integer)
-    indirectVulnsCritical_score = Column(Integer)
-    indirectVulnsHigh_score = Column(Integer)
-    indirectVulnsMedium_score = Column(Integer)
-    indirectVulnsLow_score = Column(Integer)
-    authors = Column(Integer)
-    contributors = Column(Integer)
-    immediate_deps = Column(Integer)
-    all_deps = Column(Integer)
-
-    # this relationship is used for persistence
-    dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
-        "PackageLatestReport",
-        secondary=Dependency.__table__,
-        primaryjoin=id == Dependency.__table__.c.depends_on_id,
-        secondaryjoin=id == Dependency.__table__.c.used_by_id,
-        backref="parents",
-    )
-
-    def json_with_dependencies(self, depth: int = 1) -> Dict[str, Any]:
-        return dict(
-            id=self.id,
-            package=self.package,
-            version=self.version,
-            status=self.status,
-            release_date=self.release_date,
-            scoring_date=self.scoring_date,
-            top_score=self.top_score,
-            npmsio_score=self.npmsio_score,
-            directVulnsCritical_score=self.directVulnsCritical_score,
-            directVulnsHigh_score=self.directVulnsHigh_score,
-            directVulnsMedium_score=self.directVulnsMedium_score,
-            directVulnsLow_score=self.directVulnsLow_score,
-            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
-            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
-            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
-            indirectVulnsLow_score=self.indirectVulnsLow_score,
-            authors=self.authors,
-            contributors=self.contributors,
-            immediate_deps=self.immediate_deps,
-            all_deps=self.all_deps,
-            dependencies=[
-                rep.json_with_dependencies(depth - 1) for rep in self.dependencies
-            ]
-            if depth > 0
-            else [],
-        )
-
-    def json_with_parents(self, depth: int = 1) -> Dict[str, Any]:
-        return dict(
-            id=self.id,
-            package=self.package,
-            version=self.version,
-            status=self.status,
-            release_date=self.release_date,
-            scoring_date=self.scoring_date,
-            top_score=self.top_score,
-            npmsio_score=self.npms_io_score,
-            directVulnsCritical_score=self.directVulnsCritical_score,
-            directVulnsHigh_score=self.directVulnsHigh_score,
-            directVulnsMedium_score=self.directVulnsMedium_score,
-            directVulnsLow_score=self.directVulnsLow_score,
-            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
-            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
-            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
-            indirectVulnsLow_score=self.indirectVulnsLow_score,
-            authors=self.authors,
-            contributors=self.contributors,
-            immediate_deps=self.immediate_deps,
-            all_deps=self.all_deps,
-            parents=[rep.json_with_parents(depth - 1) for rep in self.parents]
-            if depth > 0
-            else [],
-        )
-
-
 class PackageVersion(db.Model):
     __tablename__ = "package_versions"
 
@@ -1145,16 +1054,7 @@ def insert_npm_registry_entry(npm_registry_entry: Dict[str, Any]) -> None:
                 )
 
 
-VIEWS: Dict[str, str] = {
-    "latest_reports": """
-CREATE OR REPLACE VIEW latest_reports AS
-SELECT * From (
-SELECT r.*, row_number() OVER (PARTITION BY package, version ORDER BY scoring_date desc) AS rn
-       FROM reports r
-     ) r2
-WHERE r2.rn = 1
-    """
-}
+VIEWS: Dict[str, str] = {}
 
 
 def create_views(engine: sqlalchemy.engine.Engine) -> None:
