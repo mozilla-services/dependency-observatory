@@ -822,9 +822,7 @@ def get_npm_registry_data(package: str, version: str) -> sqlalchemy.orm.query.Qu
             NPMRegistryEntry.contributors,
         )
         .filter_by(package_name=package, package_version=version)
-        .order_by(
-            NPMRegistryEntry.inserted_at.desc(), NPMRegistryEntry.inserted_at.desc()
-        )
+        .order_by(NPMRegistryEntry.inserted_at.desc())
     )
 
 
