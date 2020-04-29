@@ -86,7 +86,7 @@ def handle_package_report_not_found(e):
     if npm_registry_entry is None:
         return (
             dict(
-                description=f"{e.description} Unable to find package {package_name} on the npm registry."
+                description=f"Unable to find package named {package_name!r} on the npm registry."
             ),
             404,
         )
@@ -103,8 +103,8 @@ def handle_package_report_not_found(e):
         )
         return (
             dict(
-                description=f"{e.description} Unable to find version "
-                f"{package_version} of package {package_name} on the npm registry."
+                description=f"Unable to find version "
+                f"{package_version!r} of package {package_name!r} on the npm registry."
             ),
             404,
         )
@@ -135,8 +135,8 @@ def handle_package_report_not_found(e):
         if not len(package_reports):
             return (
                 dict(
-                    description=f"{e.description} Unable to find any versions "
-                    f"of package {package_name} on the npm registry."
+                    description=f"Unable to find any versions "
+                    f"of package {package_name!r} on the npm registry."
                 ),
                 404,
             )
