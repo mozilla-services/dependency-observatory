@@ -9,7 +9,6 @@ from depobs.scanner.graph_traversal import outer_in_iter
 from depobs.database.models import (
     PackageReport,
     PackageVersion,
-    PackageLatestReport,
     get_npms_io_score,
     get_npm_registry_data,
     get_vulnerability_counts,
@@ -30,10 +29,6 @@ def score_package(
     pr = PackageReport()
     pr.package = package_name
     pr.version = package_version
-
-    plr = PackageLatestReport()
-    plr.package = package_name
-    plr.version = package_version
 
     # NB: raises for a missing score
     pr.npmsio_score = get_npms_io_score(package_name, package_version).first()
