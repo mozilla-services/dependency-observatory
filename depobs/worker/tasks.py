@@ -29,7 +29,6 @@ import depobs.database.models as models
 from depobs.database.models import (
     NPMRegistryEntry,
     PackageReport,
-    PackageLatestReport,
     get_package_report,
     get_npms_io_score,
     get_NPMRegistryEntry,
