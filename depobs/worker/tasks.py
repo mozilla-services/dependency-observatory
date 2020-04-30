@@ -331,7 +331,6 @@ tasks = [
     add,
     build_report_tree,
     fetch_package_entry_from_registry,
-    check_package_name_in_npmsio,
     scan_npm_package,
     scan_npm_package_then_build_report_tree,
 ]
