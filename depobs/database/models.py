@@ -1,13 +1,12 @@
 import os
 from datetime import datetime
+from functools import cached_property
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Iterable
+from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
 
 import flask
 from flask_sqlalchemy import SQLAlchemy
 import networkx as nx
-from networkx.drawing.nx_pydot import to_pydot
-import pydot
 import sqlalchemy
 from sqlalchemy import (
     Boolean,
@@ -42,6 +41,10 @@ log = logging.getLogger(__name__)
 
 
 db: SQLAlchemy = SQLAlchemy()
+
+# define type aliases to make ints distinguishable in type annotations
+PackageLinkID = int
+PackageVersionID = int
 
 
 class utcnow(expression.FunctionElement):
@@ -250,6 +253,65 @@ class PackageGraph(db.Model):
 
     # track when it was inserted
     inserted_at = deferred(Column(DateTime(timezone=False), server_default=utcnow()))
+
+    @cached_property
+    def package_links_by_id(
+        self,
+    ) -> Dict[PackageLinkID, Tuple[PackageVersionID, PackageVersionID]]:
+        return {
+            link.id: (link.parent_package_id, link.child_package_id)
+            for link in db.session.query(PackageLink).filter(
+                PackageLink.id.in_([lid[0] for lid in self.link_ids])
+            )
+        }
+
+    @cached_property
+    def distinct_package_ids(self) -> Set[PackageVersionID]:
+        return set(
+            [
+                package_id
+                for link in self.package_links_by_id.values()
+                for package_id in link
+            ]
+        )
+
+    @cached_property
+    def distinct_package_versions_by_id(self) -> Dict[PackageVersionID, PackageVersion]:
+        return {
+            package_version.id: package_version
+            for package_version in get_packages_by_ids(self.distinct_package_ids)
+        }
+
+    def get_npm_registry_data_by_package_version_id(
+        self,
+    ) -> Dict[PackageVersionID, Optional["NPMRegistryEntry"]]:
+        # TODO: fetch all entries in one request
+        # want latest entry data matching package name and version
+        # e.g. GROUP BY name, version ORDER BY inserted_at or updated_at DESC
+        # not cached since it can change as more entries fetched or updated
+        return {
+            package_version.id: get_npm_registry_data(
+                package_version.name, package_version.version
+            ).one_or_none()
+            for package_version in self.distinct_package_versions_by_id.values()
+        }
+
+    def get_npmsio_scores_by_package_version_id(
+        self,
+    ) -> Dict[PackageVersionID, Optional["NPMSIOScore"]]:
+        # TODO: fetch all scores in one request
+        # not cached since it can change as scores fetched or updated
+        tmp = {
+            package_version.id: get_npms_io_score(
+                package_version.name, package_version.version
+            ).one_or_none()
+            for package_version in self.distinct_package_versions_by_id.values()
+        }
+        return {
+            # TODO: figure out if we cant get one row or None back
+            pv_id: score[0] if isinstance(score, tuple) else None
+            for pv_id, score in tmp.items()
+        }
 
     @declared_attr
     def __table_args__(cls) -> Iterable[Index]:
@@ -672,51 +734,6 @@ def get_graph_by_id(graph_id: int) -> PackageGraph:
     return db.session.query(PackageGraph).filter_by(id=graph_id).one()
 
 
-def get_networkx_graph_and_nodes(
-    graph: PackageGraph,
-) -> Tuple[nx.DiGraph, List[PackageVersion]]:
-    graph_links: List[PackageLink] = get_graph_links(graph)
-    graph_links_by_package_id = [
-        (link.parent_package_id, link.child_package_id) for link in graph_links
-    ]
-    graph_nodes: List[PackageVersion] = get_packages_by_ids(
-        [pid for link in graph_links_by_package_id for pid in link]
-    )
-    return (
-        db_graph_and_links_to_nx_graph(graph, graph_links_by_package_id, graph_nodes),
-        graph_nodes,
-    )
-
-
-def get_labelled_graphviz_graph(graph_id: int) -> str:
-    graph: PackageGraph = get_graph_by_id(graph_id)
-    log.debug(graph.root_package_version_id)
-    if graph.root_package_version_id is not None:
-        root = get_packages_by_ids([graph.root_package_version_id])[0]
-        log.debug(f"root {root.name}@{root.version}")
-    return str(graph_to_dot(get_networkx_graph_and_nodes(graph)[0]))
-
-
-def db_graph_and_links_to_nx_graph(
-    graph: PackageGraph, links: List[Tuple[int, int]], nodes: List[PackageVersion]
-) -> nx.DiGraph:
-    # TODO: de-dup with depobs.scanner.graph_util.npm_packages_to_networkx_digraph
-    g = nx.DiGraph()
-    for node in nodes:
-        g.add_node(node.id, label=f"{node.name}@{node.version}")
-
-    for link in links:
-        g.add_edge(link[0], link[1])
-    return g
-
-
-def graph_to_dot(g: nx.DiGraph) -> pydot.Graph:
-    # TODO: de-dup with depobs.scanner.pipelines.{crate,dep_graph}
-    pdot: pydot.Graph = to_pydot(g)
-    pdot.set("rankdir", "LR")
-    return pdot
-
-
 def get_latest_graph_including_package_as_parent(
     package: PackageVersion,
 ) -> Optional[PackageGraph]:
@@ -742,14 +759,6 @@ def get_latest_graph_including_package_as_parent(
     )
     log.debug(f"graph_query is {graph_query}")
     return graph_query.one_or_none()
-
-
-def get_graph_links(graph: PackageGraph) -> List[PackageLink]:
-    return (
-        db.session.query(PackageLink)
-        .filter(PackageLink.id.in_([lid[0] for lid in graph.link_ids]))
-        .all()
-    )
 
 
 def get_package_from_name_and_version(

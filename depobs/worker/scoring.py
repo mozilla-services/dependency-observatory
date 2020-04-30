@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import networkx as nx
 from networkx.algorithms.dag import descendants
 
-from depobs.scanner.graph_traversal import outer_in_iter
+from depobs.scanner.graph_traversal import outer_in_dag_iter
 from depobs.database.models import (
     Advisory,
     PackageReport,
@@ -115,7 +115,7 @@ def score_package_and_children(
     # fill this up
     package_reports_by_id: Dict[int, PackageReport] = {}
 
-    for package_version_ids in outer_in_iter(g):
+    for package_version_ids in outer_in_dag_iter(g):
         for package_version_id in package_version_ids:
             package = package_versions_by_id[package_version_id]
             package_reports_by_id[package_version_id] = score_package(

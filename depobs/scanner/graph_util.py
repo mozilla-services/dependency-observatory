@@ -1,9 +1,22 @@
 import argparse
 import logging
-from typing import AbstractSet, Any, Dict, Iterable, List, Tuple, TypeVar, Set, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Tuple,
+    TypeVar,
+    Set,
+    Union,
+    Optional,
+)
 
+import graphviz
 import networkx as nx
 
+from depobs.database import models
 from depobs.scanner.models.nodejs import NPMPackage
 from depobs.scanner.models.rust import RustCrate, RustPackageID, RustPackage
 
@@ -149,3 +162,66 @@ def get_graph_stats(g: nx.DiGraph) -> Dict[str, Union[int, bool, List[int], List
     # NB: avg in and out degrees should be equal
 
     return stats
+
+
+def package_graph_to_networkx_graph(db_graph: models.PackageGraph) -> nx.DiGraph:
+    """
+    Converts a DB PackageGraph model into a networkx.DiGraph
+    """
+    g = nx.DiGraph(incoming_graph_data=None, id=db_graph.id)
+
+    for (
+        link_id,
+        (parent_package_id, child_package_id),
+    ) in db_graph.package_links_by_id.items():
+        g.add_edge(parent_package_id, child_package_id, link_id=link_id)
+
+    g.add_nodes_from(db_graph.distinct_package_ids)
+    return g
+
+
+def update_node_attrs(
+    g: nx.DiGraph, **updates_by_package_version_id: Dict[int, Any]
+) -> None:
+    """
+    Updates or replaces node attributes for nodes in a nx.DiGraph.
+
+    Takes a dict of updates
+    using the node id.
+
+    e.g.
+
+    >>> update_node_attrs(nx.DiGraph([(0, 1)]), label={0: 'node 0'}).nodes[0]['label']
+    'node 0'
+    >>> update_node_attrs(nx.DiGraph([(0, 1)]), label={0: 'node 0'}, foo={0: 'bar'}).nodes[0]
+    {'label': 'node 0', 'foo': 'bar'}
+    """
+    for attr_name, node_id_to_value in updates_by_package_version_id.items():
+        for node_id, attr_value in node_id_to_value.items():
+            g.nodes[node_id][attr_name] = attr_value
+
+    return g
+
+
+def nx_digraph_to_graphviz_digraph(
+    g: nx.DiGraph, dot_graph: Optional[graphviz.Digraph] = None,
+) -> graphviz.Digraph:
+    """
+    Adds nodes and dedges from a networkx DiGraph to a graphviz
+
+    Digraph (Yes, graph in DiGraph is capitalized for nx but not for
+    graphviz). Creating a new graphviz Digraph if necessary.
+    """
+    if dot_graph is None:
+        dot_graph = graphviz.Digraph()
+
+    for node_id, node_data in g.nodes(data=True):
+        dot_graph.node(
+            str(node_id),
+            label=node_data["label"] if node_data and "label" in node_data else None,
+        )
+
+    for src, dest, data in g.edges(data=True):
+        dot_graph.edge(str(src), str(dest))
+
+    return dot_graph

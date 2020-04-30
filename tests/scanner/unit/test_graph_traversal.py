@@ -5,7 +5,7 @@ import pytest
 import depobs.scanner.graph_traversal as m
 
 
-outer_in_iter_failing_testcases = {
+outer_in_dag_iter_failing_testcases = {
     "no_nodes_no_edges": m.nx.empty_graph(n=0, create_using=m.nx.DiGraph),
     "self_loop": (m.nx.DiGraph([(0, 0)]), [set([0])],),
     "two_node_loop": m.nx.DiGraph([(0, 1), (1, 0)]),
@@ -19,15 +19,15 @@ outer_in_iter_failing_testcases = {
 
 @pytest.mark.parametrize(
     "bad_graph, expected_exception",
-    [(g, Exception) for g in outer_in_iter_failing_testcases.values()],
-    ids=outer_in_iter_failing_testcases.keys(),
+    [(g, Exception) for g in outer_in_dag_iter_failing_testcases.values()],
+    ids=outer_in_dag_iter_failing_testcases.keys(),
 )
-def test_outer_in_iter_bad_input(bad_graph, expected_exception):
+def test_outer_in_dag_iter_bad_input(bad_graph, expected_exception):
     with pytest.raises(expected_exception):
-        next(m.outer_in_iter(bad_graph))
+        next(m.outer_in_dag_iter(bad_graph))
 
 
-outer_in_iter_testcases = {
+outer_in_dag_iter_testcases = {
     "one_node_no_edges": (m.nx.trivial_graph(create_using=m.nx.DiGraph), [set([0])],),
     "five_node_path_graph": (
         m.nx.path_graph(5, create_using=m.nx.DiGraph),
@@ -42,11 +42,11 @@ outer_in_iter_testcases = {
 
 @pytest.mark.parametrize(
     "graph, expected_nodes",
-    outer_in_iter_testcases.values(),
-    ids=outer_in_iter_testcases.keys(),
+    outer_in_dag_iter_testcases.values(),
+    ids=outer_in_dag_iter_testcases.keys(),
 )
-def test_outer_in_iter(graph, expected_nodes):
-    nodes = list(m.outer_in_iter(graph))
+def test_outer_in_dag_iter(graph, expected_nodes):
+    nodes = list(m.outer_in_dag_iter(graph))
     # visits all nodes
     assert set(graph.nodes()) == set().union(*nodes)
 
@@ -86,7 +86,7 @@ def test_outer_in_graph_iter_bad_input(bad_graph, expected_exception):
 
 
 graph_iter_testcases = {
-    **outer_in_iter_testcases,
+    **outer_in_dag_iter_testcases,
     "two_node_loop": (m.nx.DiGraph([(0, 1), (1, 0)]), [set([0, 1])],),
     "three_node_loop": (m.nx.DiGraph([(0, 1), (1, 2), (2, 0)]), [set([0, 1, 2])],),
     "path_to_three_node_loop": (

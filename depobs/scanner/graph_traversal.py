@@ -1,5 +1,6 @@
 from typing import (
     Generator,
+    Optional,
     Set,
 )
 
@@ -12,10 +13,13 @@ from networkx.algorithms.dag import is_directed_acyclic_graph
 nxGraphNodeID = int
 
 
-def outer_in_graph_iter(g: nx.DiGraph) -> Generator[Set[nxGraphNodeID], None, None]:
+def outer_in_graph_iter(
+    g: nx.DiGraph, c: Optional[nx.DiGraph] = None
+) -> Generator[Set[nxGraphNodeID], None, None]:
     """For a directed graph with unique node IDs with type int, iterates
     from outer / leafmost / least depended upon nodes to inner nodes
-    yielding sets of node IDs.
+    yielding sets of node IDs. Optionally, takes a precomputed condensed
+    DAG of g.
 
     Properties:
 
@@ -34,16 +38,17 @@ def outer_in_graph_iter(g: nx.DiGraph) -> Generator[Set[nxGraphNodeID], None, No
     # > of original nodes in G that form the SCC that the node in C represents.
     #
     # https://networkx.github.io/documentation/stable/reference/algorithms/generated/networkx.algorithms.components.condensation.html#networkx.algorithms.components.condensation
-    c = condensation(g)
+    if not c:
+        c = condensation(g)
     assert is_directed_acyclic_graph(c)
-    for scc_ids in outer_in_iter(c):
+    for scc_ids in outer_in_dag_iter(c):
         # translate scc node ids back into G node ids
         g_node_ids: Set[nxGraphNodeID] = set()
         g_node_ids.update(*[c.nodes[scc_id]["members"] for scc_id in scc_ids])
         yield g_node_ids
 
 
-def outer_in_iter(g: nx.DiGraph) -> Generator[Set[nxGraphNodeID], None, None]:
+def outer_in_dag_iter(g: nx.DiGraph) -> Generator[Set[nxGraphNodeID], None, None]:
     """
     For a DAG with unique node IDs with type int, iterates from outer
     / leafmost / least depended upon nodes to inner nodes yielding sets
