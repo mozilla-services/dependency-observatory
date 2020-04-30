@@ -282,6 +282,37 @@ class PackageGraph(db.Model):
             for package_version in get_packages_by_ids(self.distinct_package_ids)
         }
 
+    def get_npm_registry_data_by_package_version_id(
+        self,
+    ) -> Dict[PackageVersionID, Optional["NPMRegistryEntry"]]:
+        # TODO: fetch all entries in one request
+        # want latest entry data matching package name and version
+        # e.g. GROUP BY name, version ORDER BY inserted_at or updated_at DESC
+        # not cached since it can change as more entries fetched or updated
+        return {
+            package_version.id: get_npm_registry_data(
+                package_version.name, package_version.version
+            ).one_or_none()
+            for package_version in self.distinct_package_versions_by_id.values()
+        }
+
+    def get_npmsio_scores_by_package_version_id(
+        self,
+    ) -> Dict[PackageVersionID, Optional["NPMSIOScore"]]:
+        # TODO: fetch all scores in one request
+        # not cached since it can change as scores fetched or updated
+        tmp = {
+            package_version.id: get_npms_io_score(
+                package_version.name, package_version.version
+            ).one_or_none()
+            for package_version in self.distinct_package_versions_by_id.values()
+        }
+        return {
+            # TODO: figure out if we cant get one row or None back
+            pv_id: score[0] if isinstance(score, tuple) else None
+            for pv_id, score in tmp.items()
+        }
+
     @declared_attr
     def __table_args__(cls) -> Iterable[Index]:
         return (
