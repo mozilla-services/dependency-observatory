@@ -929,11 +929,10 @@ def store_package_reports(prs: List[PackageReport]) -> None:
     db.session.commit()
 
 
-def insert_npmsio_score(npmsio_score: Dict[str, Any]) -> None:
-    source = (s for s in [npmsio_score])
-    for line in source:
+def insert_npmsio_scores(npmsio_scores: Iterable[Dict[str, Any]]) -> None:
+    for score in npmsio_scores:
         fields = extract_nested_fields(
-            line,
+            score,
             {
                 "package_name": ["collected", "metadata", "name"],
                 "package_version": ["collected", "metadata", "version"],
