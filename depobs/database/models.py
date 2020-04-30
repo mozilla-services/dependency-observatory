@@ -805,6 +805,24 @@ def get_npms_io_score(package: str, version: str) -> sqlalchemy.orm.query.Query:
     )
 
 
+def get_package_names_with_missing_npms_io_scores() -> sqlalchemy.orm.query.Query:
+    """
+    Returns PackageVersion names not in npmsio_scores.
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app(dict(INIT_DB=False)).app_context():
+    ...     str(get_package_names_with_missing_npms_io_scores())
+    ...
+    'SELECT DISTINCT package_versions.name AS anon_1 \\nFROM package_versions LEFT OUTER JOIN npmsio_scores ON package_versions.name = npmsio_scores.package_name \\nWHERE npmsio_scores.id IS NULL ORDER BY package_versions.name ASC'
+    """
+    return (
+        db.session.query(sqlalchemy.distinct(PackageVersion.name))
+        .outerjoin(NPMSIOScore, PackageVersion.name == NPMSIOScore.package_name)
+        .filter(NPMSIOScore.id == None)
+        .order_by(PackageVersion.name.asc())
+    )
+
+
 def get_npm_registry_entries_to_scan(
     package_name: str, package_version: Optional[str] = None
 ) -> sqlalchemy.orm.query.Query:
