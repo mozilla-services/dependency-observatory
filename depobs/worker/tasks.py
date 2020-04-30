@@ -12,6 +12,7 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Iterable,
     List,
     Optional,
     Tuple,
@@ -288,21 +289,27 @@ async def fetch_package_data(
 
 
 @app.task()
-def check_package_name_in_npmsio(package_name: str) -> bool:
-    npmsio_score = asyncio.run(
+def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> None:
+    package_names = list(package_names)
+    log.info(f"fetching npmsio scores for {len(package_names)} package names")
+    log.debug(f"fetching npmsio scores for package names: {list(package_names)}")
+    npmsio_scores: List[Dict] = asyncio.run(
         fetch_package_data(
             fetch_npmsio_scores,
             argparse.Namespace(**current_app.config["NPMSIO_CLIENT"]),
-            [package_name],
+            package_names,
         ),
         debug=False,
     )
-    log.info(f"package: {package_name} on npms.io? {npmsio_score is not None}")
-    if npmsio_score is not None:
-        log.info(f"saving npms.io score for {package_name}")
-        # inserts a unique entry for new analyzed_at fields
-        models.insert_npmsio_score(npmsio_score)
-    return npmsio_score is not None
+    if len(npmsio_scores) != len(package_names):
+        log.info(
+            f"only fetched {len(npmsio_scores)} scores for {len(package_names)} package names"
+        )
+    else:
+        log.info(
+            f"fetched {len(npmsio_scores)} scores for {len(package_names)} package names"
+        )
+    models.insert_npmsio_scores(score for score in npmsio_scores if score is not None)
 
 
 @app.task()
