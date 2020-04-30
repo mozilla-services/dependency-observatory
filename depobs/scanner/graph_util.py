@@ -180,6 +180,29 @@ def package_graph_to_networkx_graph(db_graph: models.PackageGraph) -> nx.DiGraph
     return g
 
 
+def update_node_attrs(
+    g: nx.DiGraph, **updates_by_package_version_id: Dict[int, Any]
+) -> None:
+    """
+    Updates or replaces node attributes for nodes in a nx.DiGraph.
+
+    Takes a dict of updates
+    using the node id.
+
+    e.g.
+
+    >>> update_node_attrs(nx.DiGraph([(0, 1)]), label={0: 'node 0'}).nodes[0]['label']
+    'node 0'
+    >>> update_node_attrs(nx.DiGraph([(0, 1)]), label={0: 'node 0'}, foo={0: 'bar'}).nodes[0]
+    {'label': 'node 0', 'foo': 'bar'}
+    """
+    for attr_name, node_id_to_value in updates_by_package_version_id.items():
+        for node_id, attr_value in node_id_to_value.items():
+            g.nodes[node_id][attr_name] = attr_value
+
+    return g
+
+
 def nx_digraph_to_graphviz_digraph(
     g: nx.DiGraph, dot_graph: Optional[graphviz.Digraph] = None,
 ) -> graphviz.Digraph:
