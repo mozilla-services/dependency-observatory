@@ -1,7 +1,8 @@
 import os
 from datetime import datetime
+from functools import cached_property
 import logging
-from typing import Any, Dict, List, Optional, Tuple, Iterable
+from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
 
 import flask
 from flask_sqlalchemy import SQLAlchemy
@@ -40,6 +41,10 @@ log = logging.getLogger(__name__)
 
 
 db: SQLAlchemy = SQLAlchemy()
+
+# define type aliases to make ints distinguishable in type annotations
+PackageLinkID = int
+PackageVersionID = int
 
 
 class utcnow(expression.FunctionElement):
@@ -248,6 +253,34 @@ class PackageGraph(db.Model):
 
     # track when it was inserted
     inserted_at = deferred(Column(DateTime(timezone=False), server_default=utcnow()))
+
+    @cached_property
+    def package_links_by_id(
+        self,
+    ) -> Dict[PackageLinkID, Tuple[PackageVersionID, PackageVersionID]]:
+        return {
+            link.id: (link.parent_package_id, link.child_package_id)
+            for link in db.session.query(PackageLink).filter(
+                PackageLink.id.in_([lid[0] for lid in self.link_ids])
+            )
+        }
+
+    @cached_property
+    def distinct_package_ids(self) -> Set[PackageVersionID]:
+        return set(
+            [
+                package_id
+                for link in self.package_links_by_id.values()
+                for package_id in link
+            ]
+        )
+
+    @cached_property
+    def distinct_package_versions_by_id(self) -> Dict[PackageVersionID, PackageVersion]:
+        return {
+            package_version.id: package_version
+            for package_version in get_packages_by_ids(self.distinct_package_ids)
+        }
 
     @declared_attr
     def __table_args__(cls) -> Iterable[Index]:
