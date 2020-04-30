@@ -225,6 +225,11 @@ def scan_npm_package(
                 else:
                     log.warning(f"skipping unrecognized task {task_name}")
 
+                fetch_and_save_npmsio_scores(
+                    row[0]
+                    for row in models.get_package_names_with_missing_npms_io_scores()
+                    if row is not None
+                )
         elif source_url and git_head:
             # TODO: port scanner find_dep_files and run_repo_tasks pipelines as used in analyze_package.sh
             raise NotImplementedError(
