@@ -16,6 +16,7 @@ from typing import (
 import graphviz
 import networkx as nx
 
+from depobs.database import models
 from depobs.scanner.models.nodejs import NPMPackage
 from depobs.scanner.models.rust import RustCrate, RustPackageID, RustPackage
 
@@ -161,6 +162,22 @@ def get_graph_stats(g: nx.DiGraph) -> Dict[str, Union[int, bool, List[int], List
     # NB: avg in and out degrees should be equal
 
     return stats
+
+
+def package_graph_to_networkx_graph(db_graph: models.PackageGraph) -> nx.DiGraph:
+    """
+    Converts a DB PackageGraph model into a networkx.DiGraph
+    """
+    g = nx.DiGraph(incoming_graph_data=None, id=db_graph.id)
+
+    for (
+        link_id,
+        (parent_package_id, child_package_id),
+    ) in db_graph.package_links_by_id.items():
+        g.add_edge(parent_package_id, child_package_id, link_id=link_id)
+
+    g.add_nodes_from(db_graph.distinct_package_ids)
+    return g
 
 
 def nx_digraph_to_graphviz_digraph(
