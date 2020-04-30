@@ -805,6 +805,25 @@ def get_npms_io_score(package: str, version: str) -> sqlalchemy.orm.query.Query:
     )
 
 
+def get_npm_registry_entries_to_scan(
+    package_name: str, package_version: Optional[str] = None
+) -> sqlalchemy.orm.query.Query:
+    query = (
+        db.session.query(
+            NPMRegistryEntry.package_version,
+            NPMRegistryEntry.source_url,
+            NPMRegistryEntry.git_head,
+            NPMRegistryEntry.tarball,
+        )
+        .filter_by(package_name=package_name)
+        .order_by(NPMRegistryEntry.published_at.desc())
+    )
+    # filter for indicated version (if any)
+    if package_version is not None:
+        query = query.filter_by(package_version=package_version)
+    return query
+
+
 def get_NPMRegistryEntry(package: str, version: str) -> sqlalchemy.orm.query.Query:
     return (
         db.session.query(NPMRegistryEntry)

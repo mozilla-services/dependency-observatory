@@ -183,27 +183,18 @@ def scan_npm_package(
         if package_version_validation_error is not None:
             raise package_version_validation_error
 
-    # assumes an NPM registry entry
     # fetch npm registry entry from DB
-    query = (
-        models.db.session.query(
-            NPMRegistryEntry.package_version,
-            NPMRegistryEntry.source_url,
-            NPMRegistryEntry.git_head,
-            NPMRegistryEntry.tarball,
-        ).filter_by(package_name=package_name)
-        # .order_by(NPMRegistryEntry.published_at.desc)
-    )
-
-    # filter for indicated version (if any)
-    if package_version:
-        query = query.filter_by(package_version=package_version)
-
-    # we need a source_url and git_head or a tarball url to install
-    for (package_version, source_url, git_head, tarball_url) in query.all():
+    for (
+        package_version,
+        source_url,
+        git_head,
+        tarball_url,
+    ) in models.get_npm_registry_entries_to_scan(package_name, package_version):
         log.info(
             f"scanning {package_name}@{package_version} with {source_url}#{git_head} or {tarball_url}"
         )
+
+        # we need a source_url and git_head or a tarball url to install
         if tarball_url:
             # start an npm container, install the tarball, run list and audit
             # assert tarball_url == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{package_version}.tgz
