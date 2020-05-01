@@ -117,7 +117,7 @@ NPM_CLIENT = dict(
 
 NPMSIO_CLIENT = dict(
     user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
-    total_timeout=10,
+    total_timeout=30,
     max_connections=1,
     package_batch_size=1,
     dry_run=False,
