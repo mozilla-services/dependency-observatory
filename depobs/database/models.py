@@ -860,6 +860,15 @@ def get_maintainers_contributors(
     ).filter_by(package_name=package, package_version=version)
 
 
+def get_package_name_in_npm_registry_data(package_name: str) -> Optional[int]:
+    return (
+        db.session.query(NPMRegistryEntry.id)
+        .filter_by(package_name=package_name)
+        .limit(1)
+        .one_or_none()
+    )
+
+
 def get_npm_registry_data(package: str, version: str) -> sqlalchemy.orm.query.Query:
     return (
         db.session.query(
