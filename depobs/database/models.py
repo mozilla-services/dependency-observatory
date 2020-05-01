@@ -805,6 +805,43 @@ def get_npms_io_score(package: str, version: str) -> sqlalchemy.orm.query.Query:
     )
 
 
+def get_package_names_with_missing_npms_io_scores() -> sqlalchemy.orm.query.Query:
+    """
+    Returns PackageVersion names not in npmsio_scores.
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app(dict(INIT_DB=False)).app_context():
+    ...     str(get_package_names_with_missing_npms_io_scores())
+    ...
+    'SELECT DISTINCT package_versions.name AS anon_1 \\nFROM package_versions LEFT OUTER JOIN npmsio_scores ON package_versions.name = npmsio_scores.package_name \\nWHERE npmsio_scores.id IS NULL ORDER BY package_versions.name ASC'
+    """
+    return (
+        db.session.query(sqlalchemy.distinct(PackageVersion.name))
+        .outerjoin(NPMSIOScore, PackageVersion.name == NPMSIOScore.package_name)
+        .filter(NPMSIOScore.id == None)
+        .order_by(PackageVersion.name.asc())
+    )
+
+
+def get_npm_registry_entries_to_scan(
+    package_name: str, package_version: Optional[str] = None
+) -> sqlalchemy.orm.query.Query:
+    query = (
+        db.session.query(
+            NPMRegistryEntry.package_version,
+            NPMRegistryEntry.source_url,
+            NPMRegistryEntry.git_head,
+            NPMRegistryEntry.tarball,
+        )
+        .filter_by(package_name=package_name)
+        .order_by(NPMRegistryEntry.published_at.desc())
+    )
+    # filter for indicated version (if any)
+    if package_version is not None:
+        query = query.filter_by(package_version=package_version)
+    return query
+
+
 def get_NPMRegistryEntry(package: str, version: str) -> sqlalchemy.orm.query.Query:
     return (
         db.session.query(NPMRegistryEntry)
@@ -910,11 +947,10 @@ def store_package_reports(prs: List[PackageReport]) -> None:
     db.session.commit()
 
 
-def insert_npmsio_score(npmsio_score: Dict[str, Any]) -> None:
-    source = (s for s in [npmsio_score])
-    for line in source:
+def insert_npmsio_scores(npmsio_scores: Iterable[Dict[str, Any]]) -> None:
+    for score in npmsio_scores:
         fields = extract_nested_fields(
-            line,
+            score,
             {
                 "package_name": ["collected", "metadata", "name"],
                 "package_version": ["collected", "metadata", "version"],

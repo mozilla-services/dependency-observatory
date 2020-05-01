@@ -103,25 +103,33 @@ CELERYD_TASK_TIME_LIMIT = 3600
 
 # depobs.scanner config
 
-
-NPM_CLIENT = dict(
+_aiohttp_args = dict(
+    # User agent to user to query third party APIs
     user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
-    total_timeout=30,
-    max_connections=1,
-    max_retries=1,
-    package_batch_size=1,
-    dry_run=False,
+    # aiohttp total timeout in seconds
+    total_timeout=240,
+    # number of simultaneous connections to open
+    max_connections=10,
+    # time to sleep between requests in seconds
+    delay=0.5,
+)
+
+
+NPM_CLIENT = {
+    **_aiohttp_args,
+    "max_retries": 1,
+    "package_batch_size": 1,
+    "dry_run": False,
     # an npm registry access token for fetch_npm_registry_metadata. Defaults NPM_PAT env var. Should be read-only.
-    npm_auth_token=os.environ.get("NPM_PAT", None),
-)
+    "npm_auth_token": os.environ.get("NPM_PAT", None),
+}
 
-NPMSIO_CLIENT = dict(
-    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
-    total_timeout=10,
-    max_connections=1,
-    package_batch_size=1,
-    dry_run=False,
-)
+NPMSIO_CLIENT = {
+    **_aiohttp_args,
+    "max_connections": 1,
+    "package_batch_size": 50,
+    "dry_run": False,
+}
 
 # shared docker args for multiple tasks
 _docker_args = dict(
@@ -131,17 +139,6 @@ _docker_args = dict(
     docker_build=True,
     # non-default docker images to use for the task
     docker_image=[],
-)
-
-_aiohttp_args = dict(
-    # User agent to user to query third party APIs
-    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+fpr@mozilla.com)",
-    # aiohttp total timeout in seconds
-    total_timeout=240,
-    # number of simultaneous connections to open
-    max_connections=100,
-    # time to sleep between requests in seconds
-    delay=0.5,
 )
 
 SCAN_NPM_TARBALL_ARGS = {

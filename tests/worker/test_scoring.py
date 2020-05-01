@@ -264,7 +264,7 @@ score_package_and_children_testcases = {
         [None],
         [0.0],
         m.nx.trivial_graph(create_using=m.nx.DiGraph),
-        [m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.0")],
+        {0: m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.0")},
         [
             m.PackageReport(
                 package="test-solo-pkg",
@@ -289,11 +289,11 @@ score_package_and_children_testcases = {
         [None, None, None],
         [0.25, 0.9, 0.34],
         m.nx.path_graph(3, create_using=m.nx.DiGraph),
-        [
-            m.PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
-            m.PackageVersion(id=1, name="test-child-pkg", version="0.0.3"),
-            m.PackageVersion(id=2, name="test-grandchild-pkg", version="2.1.0"),
-        ],
+        {
+            0: m.PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
+            1: m.PackageVersion(id=1, name="test-child-pkg", version="0.0.3"),
+            2: m.PackageVersion(id=2, name="test-grandchild-pkg", version="2.1.0"),
+        },
         [
             {
                 **_default_report_json,
@@ -356,7 +356,7 @@ def test_score_package_and_children(
     npmsio_scores: List[Optional[int]],
     # args
     graph: m.nx.DiGraph,
-    package_versions: List[m.PackageVersion],
+    package_versions: Dict[int, m.PackageVersion],
     expected_package_reports_with_deps_json: List[Dict[str, Any]],
 ):
     dt_mock = mocker.patch("depobs.worker.scoring.datetime")

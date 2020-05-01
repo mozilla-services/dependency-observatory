@@ -53,7 +53,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./:/app
     user: "root"
-    command: celery -A depobs.worker.tasks worker --loglevel=info
+    command: celery --purge --task-events -c 1 -A depobs.worker.tasks worker --loglevel=info
 
   # should run then exit on compose up
   # run it again to load more data from ./scanner/fixtures/postprocessed_repo_tasks.jsonl

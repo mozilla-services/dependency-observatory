@@ -12,6 +12,7 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Iterable,
     List,
     Optional,
     Tuple,
@@ -40,8 +41,8 @@ from depobs.database.models import (
     get_most_recently_inserted_package_from_name_and_version,
     get_latest_graph_including_package_as_parent,
     get_placeholder_entry,
-    get_networkx_graph_and_nodes,
 )
+
 from depobs.worker.scoring import score_package, score_package_and_children
 import depobs.worker.validators as validators
 
@@ -53,6 +54,7 @@ from depobs.database.models import (
     PackageVersion,
     PackageGraph,
 )
+import depobs.scanner.graph_util as graph_util
 from depobs.scanner.pipelines.postprocess import postprocess_task
 from depobs.scanner.pipelines.run_repo_tasks import (
     iter_task_envs,
@@ -183,27 +185,18 @@ def scan_npm_package(
         if package_version_validation_error is not None:
             raise package_version_validation_error
 
-    # assumes an NPM registry entry
     # fetch npm registry entry from DB
-    query = (
-        models.db.session.query(
-            NPMRegistryEntry.package_version,
-            NPMRegistryEntry.source_url,
-            NPMRegistryEntry.git_head,
-            NPMRegistryEntry.tarball,
-        ).filter_by(package_name=package_name)
-        # .order_by(NPMRegistryEntry.published_at.desc)
-    )
-
-    # filter for indicated version (if any)
-    if package_version:
-        query = query.filter_by(package_version=package_version)
-
-    # we need a source_url and git_head or a tarball url to install
-    for (package_version, source_url, git_head, tarball_url) in query.all():
+    for (
+        package_version,
+        source_url,
+        git_head,
+        tarball_url,
+    ) in models.get_npm_registry_entries_to_scan(package_name, package_version):
         log.info(
             f"scanning {package_name}@{package_version} with {source_url}#{git_head} or {tarball_url}"
         )
+
+        # we need a source_url and git_head or a tarball url to install
         if tarball_url:
             # start an npm container, install the tarball, run list and audit
             # assert tarball_url == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{package_version}.tgz
@@ -233,6 +226,11 @@ def scan_npm_package(
                 else:
                     log.warning(f"skipping unrecognized task {task_name}")
 
+                fetch_and_save_npmsio_scores(
+                    row[0]
+                    for row in models.get_package_names_with_missing_npms_io_scores()
+                    if row is not None
+                )
         elif source_url and git_head:
             # TODO: port scanner find_dep_files and run_repo_tasks pipelines as used in analyze_package.sh
             raise NotImplementedError(
@@ -260,18 +258,30 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
             f"PackageVersion not found for {package_name} {package_version}."
         )
 
-    graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(
+    db_graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(
         package
     )
-    if graph is None:
+    if db_graph is None:
         log.info(f"{package.name} {package.version} has no children scoring directly")
         store_package_report(score_package(package.name, package.version, []))
     else:
-        g, nodes = get_networkx_graph_and_nodes(graph)
-        log.info(
-            f"{package.name} {package.version} scoring from graph id={graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes)"
+        g: nx.DiGraph = graph_util.package_graph_to_networkx_graph(db_graph)
+        graph_util.update_node_attrs(
+            g,
+            package_version=db_graph.distinct_package_versions_by_id,
+            label={
+                pv.id: f"{pv.name}@{pv.version}"
+                for pv in db_graph.distinct_package_versions_by_id.values()
+            },
+            npmsio_score=db_graph.get_npmsio_scores_by_package_version_id(),
+            registry_entry=db_graph.get_npm_registry_data_by_package_version_id(),
         )
-        store_package_reports(score_package_and_children(g, nodes))
+        log.info(
+            f"{package.name} {package.version} scoring from graph id={db_graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes)"
+        )
+        store_package_reports(
+            score_package_and_children(g, db_graph.distinct_package_versions_by_id)
+        )
 
 
 @app.task()
@@ -287,38 +297,45 @@ async def fetch_package_data(
     fetcher: Callable[[argparse.Namespace, List[str], int], Dict],
     args: argparse.Namespace,
     package_names: List[str],
-) -> Dict:
+) -> List[Dict]:
+    package_results = []
     async for package_result in fetcher(args, package_names, len(package_names)):
         if isinstance(package_result, Exception):
             raise package_result
+        package_results.append(package_result)
 
-        # TODO: return multiple results
-        return package_result
+    return package_results
 
 
 @app.task()
-def check_package_name_in_npmsio(package_name: str) -> bool:
-    npmsio_score = asyncio.run(
+def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> None:
+    package_names = list(package_names)
+    log.info(f"fetching npmsio scores for {len(package_names)} package names")
+    log.debug(f"fetching npmsio scores for package names: {list(package_names)}")
+    npmsio_scores: List[Dict] = asyncio.run(
         fetch_package_data(
             fetch_npmsio_scores,
             argparse.Namespace(**current_app.config["NPMSIO_CLIENT"]),
-            [package_name],
+            package_names,
         ),
         debug=False,
     )
-    log.info(f"package: {package_name} on npms.io? {npmsio_score is not None}")
-    if npmsio_score is not None:
-        log.info(f"saving npms.io score for {package_name}")
-        # inserts a unique entry for new analyzed_at fields
-        models.insert_npmsio_score(npmsio_score)
-    return npmsio_score is not None
+    if len(npmsio_scores) != len(package_names):
+        log.info(
+            f"only fetched {len(npmsio_scores)} scores for {len(package_names)} package names"
+        )
+    else:
+        log.info(
+            f"fetched {len(npmsio_scores)} scores for {len(package_names)} package names"
+        )
+    models.insert_npmsio_scores(score for score in npmsio_scores if score is not None)
 
 
 @app.task()
 def fetch_package_entry_from_registry(
     package_name: str, package_version: Optional[str] = None
 ) -> Optional[Dict]:
-    npm_registry_entry = asyncio.run(
+    npm_registry_entries = asyncio.run(
         fetch_package_data(
             fetch_npm_registry_metadata,
             argparse.Namespace(**current_app.config["NPM_CLIENT"]),
@@ -326,13 +343,15 @@ def fetch_package_entry_from_registry(
         ),
         debug=False,
     )
-    package_name_exists = npm_registry_entry is not None
+    package_name_exists = (
+        npm_registry_entries is not None and npm_registry_entries[0] is not None
+    )
     log.info(f"package: {package_name} on npm registry? {package_name_exists}")
     if package_name_exists:
         # inserts new entries for new versions (but doesn't update old ones)
         log.info(f"saving npm registry entry for {package_name}")
-        models.insert_npm_registry_entry(npm_registry_entry)
-    return npm_registry_entry
+        models.insert_npm_registry_entry(npm_registry_entries[0])
+    return npm_registry_entries[0]
 
 
 # list tasks for the web server to register against its flask app
@@ -340,7 +359,6 @@ tasks = [
     add,
     build_report_tree,
     fetch_package_entry_from_registry,
-    check_package_name_in_npmsio,
     scan_npm_package,
     scan_npm_package_then_build_report_tree,
 ]
