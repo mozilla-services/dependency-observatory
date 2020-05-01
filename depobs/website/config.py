@@ -64,6 +64,15 @@ SQLALCHEMY_TRACK_MODIFICATIONS = bool(
 # try to create tables and views for depobs
 INIT_DB = bool(os.environ.get("INIT_DB", False) == "1")
 
+# Task names the web/flask app can register and run
+WEB_TASK_NAMES = [
+    "add",
+    "build_report_tree",
+    "fetch_and_save_registry_entries",
+    "scan_npm_package",
+    "scan_npm_package_then_build_report_tree",
+]
+
 # Celery config
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", None)
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND", None)
