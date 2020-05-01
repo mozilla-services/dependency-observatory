@@ -43,7 +43,7 @@ from depobs.database.models import (
     get_placeholder_entry,
 )
 
-from depobs.worker.scoring import score_package, score_package_and_children
+import depobs.worker.scoring as scoring
 import depobs.worker.validators as validators
 
 # import exc_to_str to resolve import cycle for the following depobs.scanner.clients
@@ -269,7 +269,7 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
     )
     if db_graph is None:
         log.info(f"{package.name} {package.version} has no children scoring directly")
-        store_package_report(score_package(package.name, package.version, []))
+        store_package_report(scoring.score_package(package.name, package.version, []))
     else:
         g: nx.DiGraph = graph_util.package_graph_to_networkx_graph(db_graph)
         graph_util.update_node_attrs(
@@ -286,7 +286,9 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
             f"{package.name} {package.version} scoring from graph id={db_graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes)"
         )
         store_package_reports(
-            score_package_and_children(g, db_graph.distinct_package_versions_by_id)
+            scoring.score_package_and_children(
+                g, db_graph.distinct_package_versions_by_id
+            )
         )
 
 
