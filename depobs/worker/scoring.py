@@ -1,133 +1,24 @@
 from datetime import datetime
-from collections import Counter
+from collections import ChainMap, Counter
 from datetime import datetime
 import enum
 import logging
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Type, Tuple, Union, Iterable
 
 import networkx as nx
-from networkx.algorithms.dag import descendants
 
-from depobs.scanner.graph_traversal import outer_in_dag_iter
 from depobs.database.models import (
     Advisory,
+    PackageVersionID,
+    PackageGraph,
     PackageReport,
     PackageVersion,
-    get_npms_io_score,
-    get_npm_registry_data,
-    get_package_from_name_and_version,
-    get_advisories_by_package_versions,
 )
+from depobs.scanner.graph_traversal import node_dep_ids_iter
+import depobs.scanner.graph_util as graph_util
+
 
 log = logging.getLogger(__name__)
-
-
-def score_package(
-    package_name: str,
-    package_version: str,
-    direct_dep_reports: List[PackageReport],
-    all_deps_count: int = 0,
-) -> PackageReport:
-    log.info(
-        f"scoring package: {package_name}@{package_version} with direct deps {list((r.package, r.version) for r in direct_dep_reports)}"
-    )
-
-    package_version_obj: Optional[PackageVersion] = get_package_from_name_and_version(
-        package_name, package_version
-    )
-    if package_version_obj is None:
-        raise Exception(
-            f"could not find PackageVersion to fetch vulnerabilities for {package_name}@{package_version}"
-        )
-
-    direct_vuln_counts = count_advisories_by_severity(
-        get_advisories_by_package_versions([package_version_obj])
-    )
-    direct_vuln_counts.update(zeroed_severity_counter())
-    indirect_distinct_vuln_counts = zeroed_severity_counter()
-    # indirect_distinct_vuln_counts = count_advisories_by_severity(
-    #     set(get_distinct_advisories_by_package_versions(direct_deps + indirect_deps))
-    # )
-    # indirect_distinct_vuln_counts.update(zeroed_severity_counter())
-
-    npm_registry_data: Optional[
-        Tuple[
-            Optional[datetime],
-            Optional[List[Union[Dict, str]]],
-            Optional[List[Union[Dict, str]]],
-        ]
-    ] = get_npm_registry_data(
-        package_name,
-        package_version
-        # refs #227
-    ).one_or_none()  # type: ignore
-    published_at, maintainers, contributors = None, None, None
-    if npm_registry_data is not None:
-        published_at, maintainers, contributors = npm_registry_data
-        maintainers = maintainers if maintainers else []
-        contributors = contributors if contributors else []
-
-    pr = PackageReport(
-        package=package_name,
-        version=package_version,
-        all_deps=all_deps_count,
-        immediate_deps=len(direct_dep_reports),
-        # NB: raises for a missing score
-        # refs #227
-        npmsio_score=get_npms_io_score(package_name, package_version).first(),  # type: ignore
-        authors=len(maintainers) if maintainers is not None else None,
-        contributors=len(contributors) if contributors is not None else None,
-        release_date=published_at,
-        scoring_date=datetime.now(),
-        status="scanned",
-        **{
-            f"directVulns{severity.name.capitalize()}_score": count
-            for (severity, count) in dict(direct_vuln_counts).items()
-        },
-        **{
-            f"indirectVulns{severity.name.capitalize()}_score": count
-            for (severity, count) in dict(indirect_distinct_vuln_counts).items()
-        },
-    )
-
-    for report in direct_dep_reports:
-        for severity in ("Critical", "High", "Medium", "Low"):
-            current_count = getattr(pr, f"indirectVulns{severity}_score", 0)
-            dep_vuln_count = (
-                getattr(report, f"directVulns{severity}_score", 0) or 0
-            ) + (getattr(report, f"indirectVulns{severity}_score", 0) or 0)
-            setattr(
-                pr, f"indirectVulns{severity}_score", current_count + dep_vuln_count,
-            )
-
-    pr.dependencies.extend(direct_dep_reports)
-    return pr
-
-
-def score_package_and_children(
-    g: nx.DiGraph, package_versions_by_id: Dict[int, PackageVersion]
-) -> List[PackageReport]:
-    assert len(package_versions_by_id.values()) >= len(g.nodes)
-
-    # fill this up
-    package_reports_by_id: Dict[int, PackageReport] = {}
-
-    for package_version_ids in outer_in_dag_iter(g):
-        for package_version_id in package_version_ids:
-            package = package_versions_by_id[package_version_id]
-            package_reports_by_id[package_version_id] = score_package(
-                package.name,
-                package.version,
-                direct_dep_reports=[
-                    package_reports_by_id[direct_dep_package_version_id]
-                    for direct_dep_package_version_id in g.successors(
-                        package_version_id
-                    )
-                ],
-                all_deps_count=len(descendants(g, package_version_id)),
-            )
-
-    return list(package_reports_by_id.values())
 
 
 class AdvisorySeverity(enum.Enum):
@@ -164,3 +55,326 @@ def count_advisories_by_severity(advisories: List[Advisory]) -> Counter:
         and advisory.severity.upper() in AdvisorySeverity.__members__.keys()
     )
     return counter
+
+
+class ScoreComponent:
+    # a name to save the loaded data in the nx.DiGraph node attr
+    graph_node_attr_name: Optional[str] = None
+
+    # the PackageReport fields mapped to types get_package_report_updates returns
+    package_report_fields: Dict[str, Any] = dict()
+
+    # aggregates over nodes in graph mapped to types (e.g. score, total LOC, total vulns, unique
+    # vulnerabilities w/ counts by severity, etc.)
+    # get_node_aggregates
+    aggregate_fields: Dict[str, Any] = dict()
+
+    @staticmethod
+    def data_by_package_version_id(
+        db_graph: PackageGraph,
+    ) -> Dict[PackageVersionID, Any]:
+        """
+        Returns a dict-like map from PackageVersion ID (also DiGraph
+        node ID) to data for scoring this component.
+        """
+        raise NotImplementedError()
+
+    @staticmethod
+    def get_package_report_updates(
+        component: Type["ScoreComponent"],
+        g: nx.DiGraph,
+        node_id: int,
+        direct_dep_ids: Set[int],
+        indirect_dep_ids: Set[int],
+    ) -> Dict[str, Any]:
+        """Computes fields from node with data, direct_deps, indirect_deps"""
+        raise NotImplementedError()
+
+    def get_node_aggregates(self, node: Dict) -> Dict[str, Any]:
+        """
+        TODO: Given a node returns values for aggregation? Computes
+        fields from the node package report from data, direct_deps,
+        indirect_deps, and additional data
+        """
+        raise NotImplementedError()
+
+
+class PackageVersionScoreComponent(ScoreComponent):
+    graph_node_attr_name = "package_version"
+
+    package_report_fields = {
+        "package": str,
+        "version": str,
+    }
+
+    @staticmethod
+    def data_by_package_version_id(
+        db_graph: PackageGraph,
+    ) -> Dict[PackageVersionID, Any]:
+        return db_graph.distinct_package_versions_by_id
+
+    @staticmethod
+    def get_package_report_updates(
+        component: Type["ScoreComponent"],
+        g: nx.DiGraph,
+        node_id: int,
+        direct_dep_ids: Set[int],
+        indirect_dep_ids: Set[int],
+    ) -> Dict[str, str]:
+        node_data = g.nodes[node_id].get(component.graph_node_attr_name, None)
+        name = getattr(node_data, "name", None) if node_data else None
+        version = getattr(node_data, "version", None) if node_data else None
+        return dict(package=name, version=version,)
+
+
+class NPMSIOScoreComponent(ScoreComponent):
+    graph_node_attr_name = "npmsio_score"
+
+    package_report_fields = {
+        "npmsio_score": Union[None, float, int],
+    }
+
+    @staticmethod
+    def data_by_package_version_id(
+        db_graph: PackageGraph,
+    ) -> Dict[PackageVersionID, Any]:
+        return db_graph.get_npmsio_scores_by_package_version_id()
+
+    @staticmethod
+    def get_package_report_updates(
+        component: Type["ScoreComponent"],
+        g: nx.DiGraph,
+        node_id: int,
+        direct_dep_ids: Set[int],
+        indirect_dep_ids: Set[int],
+    ) -> Dict[str, Union[None, float, int]]:
+        return dict(npmsio_score=g.nodes[node_id][component.graph_node_attr_name])
+
+
+class NPMRegistryScoreComponent(ScoreComponent):
+    graph_node_attr_name = "registry_entry"
+
+    package_report_fields = {
+        "release_date": Optional[datetime],
+        "authors": Optional[int],
+        "contributors": Optional[int],
+    }
+
+    @staticmethod
+    def data_by_package_version_id(
+        db_graph: PackageGraph,
+    ) -> Dict[PackageVersionID, Any]:
+        return db_graph.get_npm_registry_data_by_package_version_id()
+
+    @staticmethod
+    def get_package_report_updates(
+        component: Type["ScoreComponent"],
+        g: nx.DiGraph,
+        node_id: int,
+        direct_dep_ids: Set[int],
+        indirect_dep_ids: Set[int],
+    ) -> Dict[str, Union[None, int, datetime]]:
+        node_data = g.nodes[node_id].get(component.graph_node_attr_name, None)
+        published_at, maintainers, contributors = None, None, None
+        if node_data:
+            published_at, maintainers, contributors = node_data
+
+        return dict(
+            authors=(len(maintainers) if maintainers is not None else maintainers),
+            contributors=(
+                len(contributors) if contributors is not None else contributors
+            ),
+            release_date=published_at,
+        )
+
+
+class AdvisoryScoreComponent(ScoreComponent):
+    graph_node_attr_name = "advisories"
+
+    package_report_fields = {
+        # directVulns{Critical,High,Medium,Low}_score are the number of
+        # advisories of each severity directly affecting the package version
+        **{
+            f"directVulns{severity.name.capitalize()}_score": Optional[int]
+            for severity in dict(zeroed_severity_counter()).keys()
+        },
+        # indirectVulns{Critical,High,Medium,Low}_score are the number of
+        # advisories of each severity affecting direct and transitive
+        # dependencies of the package version
+        **{
+            f"indirectVulns{severity.name.capitalize()}_score": Optional[int]
+            for severity in dict(zeroed_severity_counter()).keys()
+        },
+    }
+
+    @staticmethod
+    def data_by_package_version_id(
+        db_graph: PackageGraph,
+    ) -> Dict[PackageVersionID, Any]:
+        return db_graph.get_advisories_by_package_version_id()
+
+    @staticmethod
+    def get_package_report_updates(
+        component: Type["ScoreComponent"],
+        g: nx.DiGraph,
+        node_id: int,
+        direct_dep_ids: Set[int],
+        indirect_dep_ids: Set[int],
+    ) -> Dict[str, int]:
+        result = {key: 0 for key in component.package_report_fields}
+
+        node_advisories = g.nodes[node_id].get(component.graph_node_attr_name, []) or []
+        direct_vuln_counts = count_advisories_by_severity(node_advisories)
+        result.update(
+            {
+                f"directVulns{severity.name.capitalize()}_score": count
+                for (severity, count) in dict(direct_vuln_counts).items()
+            }
+        )
+
+        # TODO: de-dup by Advisory ID
+        dep_advisory_lists: List[List[Advisory]] = [
+            g.nodes[node_id].get(component.graph_node_attr_name, []) or []
+            for node_id in (direct_dep_ids | indirect_dep_ids)
+        ]
+        dep_advisories = [
+            advisory
+            for dep_advisory_list in dep_advisory_lists
+            for advisory in dep_advisory_list
+        ]
+        indirect_vuln_counts = count_advisories_by_severity(dep_advisories)
+        result.update(
+            {
+                f"indirectVulns{severity.name.capitalize()}_score": count
+                for (severity, count) in dict(indirect_vuln_counts).items()
+            }
+        )
+        return result
+
+
+class DependencyCountScoreComponent(ScoreComponent):
+    graph_node_attr_name = None
+
+    package_report_fields = {
+        # number of unique reachable package-versions i.e. those reachable in the set and parents of the cycle
+        "all_deps": int,
+        # number of out edges / package constraints from .dependencies in a package.json file
+        "immediate_deps": int,
+    }
+
+    @staticmethod
+    def data_by_package_version_id(_: PackageGraph) -> Dict[PackageVersionID, Any]:
+        return dict()
+
+    @staticmethod
+    def get_package_report_updates(
+        component: Type["ScoreComponent"],
+        g: nx.DiGraph,
+        node_id: int,
+        direct_dep_ids: Set[int],
+        indirect_dep_ids: Set[int],
+    ) -> Dict[str, int]:
+        return dict(
+            immediate_deps=len(direct_dep_ids),
+            all_deps=len(direct_dep_ids | indirect_dep_ids),
+        )
+
+
+all_score_components = [
+    PackageVersionScoreComponent,
+    NPMSIOScoreComponent,
+    NPMRegistryScoreComponent,
+    AdvisoryScoreComponent,
+    DependencyCountScoreComponent,
+]
+
+
+def score_package(
+    g: nx.DiGraph,
+    node_id: int,
+    direct_dep_ids: Set[int],
+    indirect_dep_ids: Set[int],
+    score_components: Iterable[Type[ScoreComponent]],
+) -> PackageReport:
+    """Scores a package node on a PackageGraph using the provided components"""
+    # get package report fields for each component
+    report_kwargs = dict(scoring_date=datetime.now(), status="scanned",)
+    for component in score_components:
+        updates = component.get_package_report_updates(
+            component,
+            g=g,
+            node_id=node_id,
+            direct_dep_ids=direct_dep_ids,
+            indirect_dep_ids=indirect_dep_ids,
+        )
+
+        report_kwargs.update(updates)
+    return PackageReport(**report_kwargs)
+
+
+def add_scoring_component_data_to_node_attrs(
+    db_graph: PackageGraph,
+    g: nx.DiGraph,
+    score_components: Iterable[Type[ScoreComponent]],
+) -> nx.DiGraph:
+    """Adds node attribute data for the provided scoring components to the networkx package DiGraph in-place"""
+    graph_util.update_node_attrs(
+        g,
+        **{
+            **{
+                component.graph_node_attr_name: component.data_by_package_version_id(
+                    db_graph
+                )
+                for component in score_components
+                if component.graph_node_attr_name is not None
+                and component.graph_node_attr_name != ""
+            },
+            "label": {
+                pv.id: f"{pv.name}@{pv.version}"
+                for pv in db_graph.distinct_package_versions_by_id.values()
+            },
+        },
+    )
+    return g
+
+
+def score_package_graph(
+    db_graph: PackageGraph,
+    score_components: Optional[Iterable[Type[ScoreComponent]]] = None,
+) -> List[PackageReport]:
+    """
+    Scores a database PackageGraph model with the provided components.
+    """
+    # default to using all components if none are provided
+    graph_score_components: Iterable[Type[ScoreComponent]] = []
+    if score_components is None:
+        graph_score_components = all_score_components
+    else:
+        graph_score_components = score_components
+    assert graph_score_components is not None
+
+    g: nx.DiGraph = add_scoring_component_data_to_node_attrs(
+        db_graph,
+        graph_util.package_graph_to_networkx_graph(db_graph),
+        graph_score_components,
+    )
+    log.info(
+        f"scoring graph id={db_graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes) with components {score_components}"
+    )
+    direct_dep_ids_by_package_version_id: Dict[
+        PackageVersionID, Set[PackageVersionID]
+    ] = dict()
+    reports_by_package_version_id: Dict[PackageVersionID, PackageReport] = dict()
+    for node_id, direct_dep_ids, indirect_dep_ids in node_dep_ids_iter(g):
+        direct_dep_ids_by_package_version_id[node_id] = direct_dep_ids
+        reports_by_package_version_id[node_id] = score_package(
+            g, node_id, direct_dep_ids, indirect_dep_ids, graph_score_components
+        )
+
+    # update report .dependencies relationship
+    for node_id, direct_dep_ids in direct_dep_ids_by_package_version_id.items():
+        reports_by_package_version_id[node_id].dependencies.extend(
+            reports_by_package_version_id[dep_node_id] for dep_node_id in direct_dep_ids
+        )
+
+    return list(reports_by_package_version_id.values())
