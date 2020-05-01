@@ -14,7 +14,13 @@ def get_celery_tasks(filter_prefix: str = "depobs.worker.tasks."):
     if not hasattr(current_app, "tasks"):
         import depobs.worker.tasks
 
-        celery_app = create_celery_app(current_app, tasks=depobs.worker.tasks.tasks)
+        celery_app = create_celery_app(
+            current_app,
+            tasks=[
+                getattr(depobs.worker.tasks, task_name)
+                for task_name in current_app.config["WEB_TASK_NAMES"]
+            ],
+        )
         request_tasks = {
             task_name.replace(filter_prefix, ""): task
             for task_name, task in celery_app.tasks.items()

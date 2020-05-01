@@ -366,13 +366,3 @@ def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
         if registry_entry is not None
     )
     return npm_registry_entries
-
-
-# list tasks for the web server to register against its flask app
-tasks = [
-    add,
-    build_report_tree,
-    fetch_and_save_registry_entries,
-    scan_npm_package,
-    scan_npm_package_then_build_report_tree,
-]
