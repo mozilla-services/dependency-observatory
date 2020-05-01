@@ -333,33 +333,40 @@ def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
 
 
 @app.task()
-def fetch_package_entry_from_registry(
-    package_name: str, package_version: Optional[str] = None
-) -> Optional[Dict]:
+def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
+    package_names = list(package_names)
+    log.info(f"fetching registry entries for {len(package_names)} package names")
+    log.debug(f"fetching registry entries for package names: {list(package_names)}")
     npm_registry_entries = asyncio.run(
         fetch_package_data(
             fetch_npm_registry_metadata,
             argparse.Namespace(**current_app.config["NPM_CLIENT"]),
-            [package_name],
+            package_names,
         ),
         debug=False,
     )
-    package_name_exists = (
-        npm_registry_entries is not None and npm_registry_entries[0] is not None
+    if len(npm_registry_entries) != len(package_names):
+        log.info(
+            f"only fetched {len(npm_registry_entries)} registry entries for {len(package_names)} package names"
+        )
+    else:
+        log.info(
+            f"fetched {len(npm_registry_entries)} registry entries for {len(package_names)} package names"
+        )
+    # inserts new entries for new versions (but doesn't update old ones)
+    models.insert_npm_registry_entries(
+        registry_entry
+        for registry_entry in npm_registry_entries
+        if registry_entry is not None
     )
-    log.info(f"package: {package_name} on npm registry? {package_name_exists}")
-    if package_name_exists:
-        # inserts new entries for new versions (but doesn't update old ones)
-        log.info(f"saving npm registry entry for {package_name}")
-        models.insert_npm_registry_entry(npm_registry_entries[0])
-    return npm_registry_entries[0]
+    return npm_registry_entries
 
 
 # list tasks for the web server to register against its flask app
 tasks = [
     add,
     build_report_tree,
-    fetch_package_entry_from_registry,
+    fetch_and_save_registry_entries,
     scan_npm_package,
     scan_npm_package_then_build_report_tree,
 ]
