@@ -100,13 +100,14 @@ def handle_package_report_not_found(e):
         log.info(
             f"package: {package_name}@{package_version!r} on npm registry? {package_version_exists}"
         )
-        return (
-            dict(
-                description=f"Unable to find version "
-                f"{package_version!r} of package {package_name!r} on the npm registry."
-            ),
-            404,
-        )
+        if not package_version_exists:
+            return (
+                dict(
+                    description=f"Unable to find version "
+                    f"{package_version!r} of package {package_name!r} on the npm registry."
+                ),
+                404,
+            )
 
     # start a task to scan the package
     result: celery.result.AsyncResult = get_celery_tasks().scan_npm_package_then_build_report_tree.delay(
