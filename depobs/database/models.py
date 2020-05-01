@@ -869,6 +869,26 @@ def get_package_name_in_npm_registry_data(package_name: str) -> Optional[int]:
     )
 
 
+def get_package_names_with_missing_npm_entries() -> sqlalchemy.orm.query.Query:
+    """
+    Returns PackageVersion names not in npmsio_scores.
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app(dict(INIT_DB=False)).app_context():
+    ...     str(get_package_names_with_missing_npm_entries())
+    ...
+    'SELECT DISTINCT package_versions.name AS anon_1 \\nFROM package_versions LEFT OUTER JOIN npm_registry_entries ON package_versions.name = npm_registry_entries.package_name \\nWHERE npm_registry_entries.id IS NULL ORDER BY package_versions.name ASC'
+    """
+    return (
+        db.session.query(sqlalchemy.distinct(PackageVersion.name))
+        .outerjoin(
+            NPMRegistryEntry, PackageVersion.name == NPMRegistryEntry.package_name
+        )
+        .filter(NPMRegistryEntry.id == None)
+        .order_by(PackageVersion.name.asc())
+    )
+
+
 def get_npm_registry_data(package: str, version: str) -> sqlalchemy.orm.query.Query:
     return (
         db.session.query(
