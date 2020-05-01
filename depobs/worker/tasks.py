@@ -226,9 +226,15 @@ def scan_npm_package(
                 else:
                     log.warning(f"skipping unrecognized task {task_name}")
 
+                # TODO: use asyncio.gather to run these concurrently
                 fetch_and_save_npmsio_scores(
                     row[0]
                     for row in models.get_package_names_with_missing_npms_io_scores()
+                    if row is not None
+                )
+                fetch_and_save_registry_entries(
+                    row[0]
+                    for row in models.get_package_names_with_missing_npm_entries()
                     if row is not None
                 )
         elif source_url and git_head:
