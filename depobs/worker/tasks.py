@@ -308,7 +308,7 @@ async def fetch_package_data(
 
 
 @app.task()
-def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> None:
+def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
     package_names = list(package_names)
     log.info(f"fetching npmsio scores for {len(package_names)} package names")
     log.debug(f"fetching npmsio scores for package names: {list(package_names)}")
@@ -329,6 +329,7 @@ def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> None:
             f"fetched {len(npmsio_scores)} scores for {len(package_names)} package names"
         )
     models.insert_npmsio_scores(score for score in npmsio_scores if score is not None)
+    return npmsio_scores
 
 
 @app.task()
