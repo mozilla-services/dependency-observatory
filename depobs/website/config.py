@@ -118,7 +118,7 @@ _aiohttp_args = dict(
 NPM_CLIENT = {
     **_aiohttp_args,
     "max_retries": 1,
-    "package_batch_size": 1,
+    "package_batch_size": 10,
     "dry_run": False,
     # an npm registry access token for fetch_npm_registry_metadata. Defaults NPM_PAT env var. Should be read-only.
     "npm_auth_token": os.environ.get("NPM_PAT", None),
