@@ -1018,11 +1018,10 @@ def insert_npmsio_scores(npmsio_scores: Iterable[Dict[str, Any]]) -> None:
             )
 
 
-def insert_npm_registry_entry(npm_registry_entry: Dict[str, Any]) -> None:
-    source = (s for s in [npm_registry_entry])
-    for line in source:
+def insert_npm_registry_entries(npm_registry_entries: Iterable[Dict[str, Any]]) -> None:
+    for entry in npm_registry_entries:
         # save version specific data
-        for version, version_data in line["versions"].items():
+        for version, version_data in entry["versions"].items():
             fields = extract_nested_fields(
                 version_data,
                 {
@@ -1077,8 +1076,8 @@ def insert_npm_registry_entry(npm_registry_entry: Dict[str, Any]) -> None:
             # published_at .time[<version>] e.g. '2014-05-23T21:21:04.170Z' (not from
             # the version info object)
             # where time: an object mapping versions to the time published, along with created and modified timestamps
-            fields["published_at"] = get_in(line, ["time", version])
-            fields["package_modified_at"] = get_in(line, ["time", "modified"])
+            fields["published_at"] = get_in(entry, ["time", version])
+            fields["package_modified_at"] = get_in(entry, ["time", "modified"])
 
             fields[
                 "source_url"
