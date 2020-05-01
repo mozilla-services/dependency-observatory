@@ -297,13 +297,14 @@ async def fetch_package_data(
     fetcher: Callable[[argparse.Namespace, List[str], int], Dict],
     args: argparse.Namespace,
     package_names: List[str],
-) -> Dict:
+) -> List[Dict]:
+    package_results = []
     async for package_result in fetcher(args, package_names, len(package_names)):
         if isinstance(package_result, Exception):
             raise package_result
+        package_results.append(package_result)
 
-        # TODO: return multiple results
-        return package_result
+    return package_results
 
 
 @app.task()
@@ -334,7 +335,7 @@ def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> None:
 def fetch_package_entry_from_registry(
     package_name: str, package_version: Optional[str] = None
 ) -> Optional[Dict]:
-    npm_registry_entry = asyncio.run(
+    npm_registry_entries = asyncio.run(
         fetch_package_data(
             fetch_npm_registry_metadata,
             argparse.Namespace(**current_app.config["NPM_CLIENT"]),
@@ -342,13 +343,15 @@ def fetch_package_entry_from_registry(
         ),
         debug=False,
     )
-    package_name_exists = npm_registry_entry is not None
+    package_name_exists = (
+        npm_registry_entries is not None and npm_registry_entries[0] is not None
+    )
     log.info(f"package: {package_name} on npm registry? {package_name_exists}")
     if package_name_exists:
         # inserts new entries for new versions (but doesn't update old ones)
         log.info(f"saving npm registry entry for {package_name}")
-        models.insert_npm_registry_entry(npm_registry_entry)
-    return npm_registry_entry
+        models.insert_npm_registry_entry(npm_registry_entries[0])
+    return npm_registry_entries[0]
 
 
 # list tasks for the web server to register against its flask app
