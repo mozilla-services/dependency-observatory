@@ -61,6 +61,42 @@ def get_most_recently_scored_package_report_or_raise(
     return package_report
 
 
+def check_package_name_registered(package_name: str) -> bool:
+    """
+    Returns a bool representing whether the package name was found on
+    the npm registry or the debobs DB.
+
+    Hits the npm registry and saves registry entries for each version
+    found when the package name isn't found in the debobs DB
+    """
+    # try npm_registry_entries in our db first since npm registry entries can be big and slow to fetch
+    if models.get_package_name_in_npm_registry_data(package_name):
+        log.info(f"package registry entry for {package_name} found in depobs db")
+        return True
+
+    npm_registry_entries: List[
+        Optional[Dict]
+    ] = get_celery_tasks().fetch_and_save_registry_entries([package_name])
+    if (
+        npm_registry_entries is None
+        or len(npm_registry_entries) < 1
+        or npm_registry_entries[0] is not None
+    ):
+        log.info(f"package registry entry for {package_name} not found")
+        return False
+    log.info(f"package registry entry for {package_name} found on npm")
+    return True
+
+
+def check_package_version_registered(package_name: str, package_version: str) -> bool:
+    """
+    Returns bool representing whether the package version was found in the debobs DB
+    """
+    return bool(
+        models.get_npm_registry_data(package_name, package_version).one_or_none()
+    )
+
+
 @api.errorhandler(BadRequest)
 def handle_bad_request(e):
     return dict(description=e.description), 400
@@ -77,37 +113,26 @@ def handle_package_report_not_found(e):
             return package_report.report_json, 500
         return package_report.report_json, 202
 
-    npm_registry_entry: Optional[
-        Dict
-    ] = get_celery_tasks().fetch_package_entry_from_registry(
-        package_name, package_version
-    )
-    if npm_registry_entry is None:
+    if not check_package_name_registered(package_name):
         return (
             dict(
                 description=f"Unable to find package named {package_name!r} on the npm registry."
             ),
             404,
         )
-
-    package_versions_on_registry: Dict = npm_registry_entry.get("versions", {})
-
-    # if a scan of a specific package version was requested check that it exists
-    if package_version is not None:
-        package_version_exists = package_versions_on_registry.get(
-            package_version, False
-        )
+    if package_version and not check_package_version_registered(
+        package_name, package_version
+    ):
         log.info(
-            f"package: {package_name}@{package_version!r} on npm registry? {package_version_exists}"
+            f"package version: {package_name}@{package_version!r} not found in depobs db"
         )
-        if not package_version_exists:
-            return (
-                dict(
-                    description=f"Unable to find version "
-                    f"{package_version!r} of package {package_name!r} on the npm registry."
-                ),
-                404,
-            )
+        return (
+            dict(
+                description=f"Unable to find version "
+                f"{package_version!r} of package {package_name!r} on the npm registry."
+            ),
+            404,
+        )
 
     # start a task to scan the package
     result: celery.result.AsyncResult = get_celery_tasks().scan_npm_package_then_build_report_tree.delay(

@@ -860,6 +860,35 @@ def get_maintainers_contributors(
     ).filter_by(package_name=package, package_version=version)
 
 
+def get_package_name_in_npm_registry_data(package_name: str) -> Optional[int]:
+    return (
+        db.session.query(NPMRegistryEntry.id)
+        .filter_by(package_name=package_name)
+        .limit(1)
+        .one_or_none()
+    )
+
+
+def get_package_names_with_missing_npm_entries() -> sqlalchemy.orm.query.Query:
+    """
+    Returns PackageVersion names not in npmsio_scores.
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app(dict(INIT_DB=False)).app_context():
+    ...     str(get_package_names_with_missing_npm_entries())
+    ...
+    'SELECT DISTINCT package_versions.name AS anon_1 \\nFROM package_versions LEFT OUTER JOIN npm_registry_entries ON package_versions.name = npm_registry_entries.package_name \\nWHERE npm_registry_entries.id IS NULL ORDER BY package_versions.name ASC'
+    """
+    return (
+        db.session.query(sqlalchemy.distinct(PackageVersion.name))
+        .outerjoin(
+            NPMRegistryEntry, PackageVersion.name == NPMRegistryEntry.package_name
+        )
+        .filter(NPMRegistryEntry.id == None)
+        .order_by(PackageVersion.name.asc())
+    )
+
+
 def get_npm_registry_data(package: str, version: str) -> sqlalchemy.orm.query.Query:
     return (
         db.session.query(
@@ -1018,11 +1047,10 @@ def insert_npmsio_scores(npmsio_scores: Iterable[Dict[str, Any]]) -> None:
             )
 
 
-def insert_npm_registry_entry(npm_registry_entry: Dict[str, Any]) -> None:
-    source = (s for s in [npm_registry_entry])
-    for line in source:
+def insert_npm_registry_entries(npm_registry_entries: Iterable[Dict[str, Any]]) -> None:
+    for entry in npm_registry_entries:
         # save version specific data
-        for version, version_data in line["versions"].items():
+        for version, version_data in entry["versions"].items():
             fields = extract_nested_fields(
                 version_data,
                 {
@@ -1077,8 +1105,8 @@ def insert_npm_registry_entry(npm_registry_entry: Dict[str, Any]) -> None:
             # published_at .time[<version>] e.g. '2014-05-23T21:21:04.170Z' (not from
             # the version info object)
             # where time: an object mapping versions to the time published, along with created and modified timestamps
-            fields["published_at"] = get_in(line, ["time", version])
-            fields["package_modified_at"] = get_in(line, ["time", "modified"])
+            fields["published_at"] = get_in(entry, ["time", version])
+            fields["package_modified_at"] = get_in(entry, ["time", "modified"])
 
             fields[
                 "source_url"
