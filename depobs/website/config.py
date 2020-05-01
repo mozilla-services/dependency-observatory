@@ -25,6 +25,10 @@ LOGGING = {
         "depobs.database.models": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.views": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.scans": {"handlers": ["console"], "level": "INFO"},
+        "depobs.website.score_details.blueprint": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
         "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
         "depobs.worker.scoring": {"handlers": ["console"], "level": "INFO",},
         "depobs.scanner.clients.cratesio": {"handlers": ["console"], "level": "INFO"},

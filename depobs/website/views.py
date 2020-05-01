@@ -2,7 +2,7 @@ from datetime import datetime
 import logging
 from typing import Dict, Optional
 
-from flask import abort, Blueprint, Response, request, send_from_directory
+from flask import abort, Blueprint, Response, redirect, request, send_from_directory
 from werkzeug.exceptions import BadRequest, NotFound
 
 from depobs.database import models
@@ -230,6 +230,12 @@ def get_parents_by_name_and_version() -> Dict:
 def get_vulnerabilities_by_name_and_version() -> Dict:
     package_name, package_version, _ = validate_npm_package_version_query_params()
     return models.get_vulnerabilities_report(package_name, package_version)
+
+
+@api.route("/graphs/<int:graph_id>", methods=["GET"])
+def get_graph(graph_id):
+    # TODO: use url_for("depobs.website.debug" ...) ?
+    return redirect(f"/debug/graphs/{graph_id}")
 
 
 @api.route("/statistics", methods=["GET"])
