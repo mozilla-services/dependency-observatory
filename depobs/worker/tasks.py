@@ -41,8 +41,8 @@ from depobs.database.models import (
     get_most_recently_inserted_package_from_name_and_version,
     get_latest_graph_including_package_as_parent,
     get_placeholder_entry,
-    get_networkx_graph_and_nodes,
 )
+
 from depobs.worker.scoring import score_package, score_package_and_children
 import depobs.worker.validators as validators
 
@@ -54,6 +54,7 @@ from depobs.database.models import (
     PackageVersion,
     PackageGraph,
 )
+import depobs.scanner.graph_util as graph_util
 from depobs.scanner.pipelines.postprocess import postprocess_task
 from depobs.scanner.pipelines.run_repo_tasks import (
     iter_task_envs,
@@ -257,18 +258,30 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
             f"PackageVersion not found for {package_name} {package_version}."
         )
 
-    graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(
+    db_graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(
         package
     )
-    if graph is None:
+    if db_graph is None:
         log.info(f"{package.name} {package.version} has no children scoring directly")
         store_package_report(score_package(package.name, package.version, []))
     else:
-        g, nodes = get_networkx_graph_and_nodes(graph)
-        log.info(
-            f"{package.name} {package.version} scoring from graph id={graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes)"
+        g: nx.DiGraph = graph_util.package_graph_to_networkx_graph(db_graph)
+        graph_util.update_node_attrs(
+            g,
+            package_version=db_graph.distinct_package_versions_by_id,
+            label={
+                pv.id: f"{pv.name}@{pv.version}"
+                for pv in db_graph.distinct_package_versions_by_id.values()
+            },
+            npmsio_score=db_graph.get_npmsio_scores_by_package_version_id(),
+            registry_entry=db_graph.get_npm_registry_data_by_package_version_id(),
         )
-        store_package_reports(score_package_and_children(g, nodes))
+        log.info(
+            f"{package.name} {package.version} scoring from graph id={db_graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes)"
+        )
+        store_package_reports(
+            score_package_and_children(g, db_graph.distinct_package_versions_by_id)
+        )
 
 
 @app.task()
