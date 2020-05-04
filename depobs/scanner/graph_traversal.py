@@ -44,10 +44,7 @@ def outer_in_graph_iter(
         c = condensation(g)
     assert is_directed_acyclic_graph(c)
     for scc_ids in outer_in_dag_iter(c):
-        # translate scc node ids back into G node ids
-        g_node_ids: Set[nxGraphNodeID] = set()
-        g_node_ids.update(*[c.nodes[scc_id]["members"] for scc_id in scc_ids])
-        yield g_node_ids
+        yield scc_ids_to_graph_node_ids(c, scc_ids)
 
 
 def outer_in_dag_iter(g: nx.DiGraph) -> Generator[Set[nxGraphNodeID], None, None]:
@@ -84,6 +81,13 @@ def outer_in_dag_iter(g: nx.DiGraph) -> Generator[Set[nxGraphNodeID], None, None
             break
         yield new_only_points_to_visited
         visited.update(only_points_to_visited)
+
+
+def scc_ids_to_graph_node_ids(c: nx.DiGraph, scc_ids: Iterable[int]):
+    # translate scc node ids back into G node ids
+    g_node_ids: Set[nxGraphNodeID] = set()
+    g_node_ids.update(*[c.nodes[scc_id]["members"] for scc_id in scc_ids])
+    return g_node_ids
 
 
 def node_dep_ids_iter(
