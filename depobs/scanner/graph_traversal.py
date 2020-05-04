@@ -1,13 +1,15 @@
 from typing import (
     Generator,
+    Iterable,
     Optional,
     Set,
+    Tuple,
 )
 
 import networkx as nx
 from networkx.algorithms.components import condensation
-from networkx.algorithms.dag import is_directed_acyclic_graph
-
+from networkx.algorithms.dag import descendants, is_directed_acyclic_graph
+from networkx.algorithms.shortest_paths.generic import has_path
 
 # type alias to not confuse ints as nxGraphNodeIDs with other ints
 nxGraphNodeID = int
@@ -82,3 +84,44 @@ def outer_in_dag_iter(g: nx.DiGraph) -> Generator[Set[nxGraphNodeID], None, None
             break
         yield new_only_points_to_visited
         visited.update(only_points_to_visited)
+
+
+def node_dep_ids_iter(
+    g: nx.DiGraph, c: Optional[nx.DiGraph] = None
+) -> Generator[nxGraphNodeID, Set[nxGraphNodeID], Set[nxGraphNodeID]]:
+    """For a directed graph with unique node IDs with type int and
+    optional precomputed condensed DAG of g, iterates over sets of
+    strongly connected components from outer / leafmost / least depended
+    upon nodes to inner nodes.
+
+    For each set of strongly connected components, yield each node by
+    decreasing ID with its sets of immediate or direct dependencies
+    (path length one) and transitive or indirect dependencies (path
+    length greater than one).
+
+    Properties:
+
+    * yields each node ID once
+    * successive node IDs only depend on/point to previously visited
+    nodes or other nodes within their set?
+
+    >>>
+
+    """
+    # TODO: rewrite indirect_dep_ids as <visited / descendants from the condensed graph> + <nodes in gray zone / to score area>
+
+    visited: Set[int] = set()
+    for node_ids in outer_in_graph_iter(g, c):
+        for node_id in sorted(node_ids, reverse=True):
+            direct_dep_ids: Set[int] = set(g.successors(node_id))
+            indirect_dep_ids: Set[int] = set(
+                [
+                    dest_id
+                    for dest_id in (visited | node_ids)
+                    if has_path(g, node_id, dest_id)
+                ]
+            ) - direct_dep_ids - set([node_id])
+
+            yield node_id, direct_dep_ids, indirect_dep_ids
+
+        visited.update(node_ids)
