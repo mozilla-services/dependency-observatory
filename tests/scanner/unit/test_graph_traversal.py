@@ -112,7 +112,10 @@ graph_iter_testcases = {
     ids=graph_iter_testcases.keys(),
 )
 def test_outer_in_graph_iter(graph: m.nx.DiGraph, expected_nodes):
-    nodes = list(m.outer_in_graph_iter(graph))
+    output = list(m.outer_in_graph_iter(graph))
+    nodes = [result[0] for result in output]
+    # TODO: test indirect nodes
+
     # visits all nodes
     assert set(graph.nodes()) == set().union(*nodes)
 
