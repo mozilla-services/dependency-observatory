@@ -66,9 +66,9 @@ jobs:
           command: |
             coverage report
             coverage html
-            mv /tmp/htmlcov/ .
+            mv /tmp/htmlcov/ unit-test-htmlcov
       - store_artifacts:
-          path: htmlcov
+          path: unit-test-htmlcov
 
   build-images:
     docker:
@@ -90,6 +90,55 @@ jobs:
           key: v1-{{ .Branch }}-{{ epoch }}
           paths:
             - /tmp/docker.tgz
+
+  test-images:
+    docker:
+      - image: circleci/python:buster
+    environment:
+      CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
+      CELERY_RESULT_BACKEND=db+postgresql://postgres:postgres@db/dependency_observatory
+      SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
+    steps:
+      - checkout
+      - setup_remote_docker
+      - restore_cache:
+          key: v1-{{.Branch}}
+      - run:
+          name: Restore Docker image cache
+          command: gunzip -c /tmp/docker.tgz | docker load
+      - run:
+          name: start test DB
+          command: docker-compose up -d db
+      - run:
+          name: start test api and worker (w/o volume mounts)
+          command: |
+            docker run -d --rm --name dep-obs-api -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" -e "INIT_DB=1" -e "HOST=0.0.0.0" -e "PORT=8000" -e "FLASK_ENV=production" -e "FLASK_APP=/app/depobs/website/do.py" -p 8000:8000 mozilla/dependency-observatory
+            docker run -d -u 0 --rm -v /var/run/docker.sock:/var/run/docker.sock --net=host --name dep-obs-worker -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" mozilla/dependency-observatory /bin/bash -c "celery -A depobs.worker.tasks worker --loglevel=debug"
+      - run:
+          name: write a version.json in depobs/
+          command: |
+            CI=1 ./util/write_version_json.sh > depobs/version.json
+      - run:
+          name: install python deps
+          command: |
+            pip config --user set global.progress_bar off
+            pip install --user -r depobs/requirements.txt
+      - run:
+          name: run unit tests with coverage using DB and celery app
+          command: |
+            # TODO: pytest marks for E2E tests
+            CI=1 ./util/run_tests_with_coverage.sh
+      - run:
+          name: stop test DB
+          command: docker-compose stop db
+      - run:
+          name: generate coverage reports
+          command: |
+            coverage report
+            coverage html
+            mv /tmp/htmlcov/ test-images-htmlcov
+      - store_artifacts:
+          path: test-images-htmlcov
 
   deploy:
     docker:
@@ -141,11 +190,19 @@ workflows:
             tags:
               only: /.*/
 
+      - test-images:
+          requires:
+            - build-images
+          filters:
+            tags:
+              only: /.*/
+
       - deploy:
           requires:
             - check-format
             - check-types
             - unit-test
+            - test-images
             - build-images
           filters:
             tags:
