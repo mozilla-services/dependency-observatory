@@ -359,7 +359,7 @@ def score_package_graph(
         graph_score_components,
     )
     log.info(
-        f"scoring graph id={db_graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes) with components {score_components}"
+        f"scoring graph id={db_graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes) with components {graph_score_components}"
     )
     direct_dep_ids_by_package_version_id: Dict[
         PackageVersionID, Set[PackageVersionID]
