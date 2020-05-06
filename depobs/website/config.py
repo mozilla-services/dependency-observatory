@@ -116,7 +116,7 @@ _aiohttp_args = dict(
     # User agent to user to query third party APIs
     user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
     # aiohttp total timeout in seconds
-    total_timeout=240,
+    total_timeout=300,
     # number of simultaneous connections to open
     max_connections=10,
     # time to sleep between requests in seconds
