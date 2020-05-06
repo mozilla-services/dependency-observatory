@@ -1000,6 +1000,26 @@ def store_package_reports(prs: List[PackageReport]) -> None:
     db.session.commit()
 
 
+def upsert_package_report(report: PackageReport) -> None:
+    """
+    Updates the most recently scored PackageReport with matching
+    package name, version, and task_id. Inserts a new package report
+    when one isn't found.
+    """
+    existing_report: Optional[PackageReport] = db.session.query(
+        PackageReport
+    ).filter_by(
+        package=report.package, version=report.version, task_id=report.task_id
+    ).order_by(
+        PackageReport.scoring_date.desc()
+    ).first()
+    if existing_report:
+        existing_report.update(report)
+        db.session.commit()
+    else:
+        store_package_report(report)
+
+
 def insert_npmsio_scores(npmsio_scores: Iterable[Dict[str, Any]]) -> None:
     for score in npmsio_scores:
         fields = extract_nested_fields(
