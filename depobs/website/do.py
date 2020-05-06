@@ -33,6 +33,7 @@ def create_app(test_config=None):
     import depobs.database.models as models
     from depobs.website.scans import scans_blueprint
     from depobs.website.views import views_blueprint
+    from depobs.website.score_details.blueprint import score_details_blueprint
 
     # create and configure the app
     app = Flask(__name__)  # do
@@ -52,6 +53,7 @@ def create_app(test_config=None):
     dockerflow.init_app(app)
     app.register_blueprint(scans_blueprint)
     app.register_blueprint(views_blueprint)
+    app.register_blueprint(score_details_blueprint)
 
     return app
 
