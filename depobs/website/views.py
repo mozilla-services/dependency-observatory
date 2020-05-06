@@ -64,7 +64,7 @@ def get_most_recently_scored_package_report_or_raise(
 def check_package_name_registered(package_name: str) -> bool:
     """
     Returns a bool representing whether the package name was found on
-    the npm registry or the debobs DB.
+    the npm registry or in the debobs DB.
 
     Hits the npm registry and saves registry entries for each version
     found when the package name isn't found in the debobs DB
@@ -90,11 +90,42 @@ def check_package_name_registered(package_name: str) -> bool:
 
 def check_package_version_registered(package_name: str, package_version: str) -> bool:
     """
-    Returns bool representing whether the package version was found in the debobs DB
+    Returns bool representing whether the package version was found
+    on the npm registry or in the debobs DB.
+
+    Hits the npm registry and saves registry entries for each version
+    found when the package version isn't found in the debobs DB.
     """
-    return bool(
-        models.get_npm_registry_data(package_name, package_version).one_or_none()
+    if models.get_npm_registry_data(package_name, package_version).one_or_none():
+        log.info(
+            f"package registry entry for {package_name}@{package_version} found in depobs db"
+        )
+        return True
+
+    # TODO: don't call if we already hit it for the name check
+    # TODO: if the NPM API supports it, only fetch changes from our registry entry version
+    npm_registry_entries: List[
+        Optional[Dict]
+    ] = get_celery_tasks().fetch_and_save_registry_entries([package_name])
+    if (
+        npm_registry_entries is None
+        or len(npm_registry_entries) < 1
+        or npm_registry_entries[0] is not None
+    ):
+        log.info(f"failed to find new versions in registry for {package_name}")
+        return False
+
+    npm_registry_entry = npm_registry_entries[0]
+    if npm_registry_entry.get("versions", package_version, None):
+        log.info(
+            f"package registry entry for {package_name}@{package_version} found on npm"
+        )
+        return True
+
+    log.info(
+        f"package registry entry for {package_name}@{package_version} not found on npm"
     )
+    return False
 
 
 @api.errorhandler(BadRequest)
