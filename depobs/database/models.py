@@ -305,7 +305,7 @@ class PackageGraph(db.Model):
         return {
             package_version.id: get_npm_registry_data(
                 package_version.name, package_version.version
-            ).one_or_none()
+            ).first()
             for package_version in self.distinct_package_versions_by_id.values()
         }
 
@@ -317,7 +317,7 @@ class PackageGraph(db.Model):
         tmp = {
             package_version.id: get_npms_io_score(
                 package_version.name, package_version.version
-            ).one_or_none()
+            ).first()
             for package_version in self.distinct_package_versions_by_id.values()
         }
         return {
