@@ -43,7 +43,7 @@ from depobs.database.models import (
     get_placeholder_entry,
 )
 
-from depobs.worker.scoring import score_package, score_package_and_children
+import depobs.worker.scoring as scoring
 import depobs.worker.validators as validators
 
 # import exc_to_str to resolve import cycle for the following depobs.scanner.clients
@@ -54,7 +54,6 @@ from depobs.database.models import (
     PackageVersion,
     PackageGraph,
 )
-import depobs.scanner.graph_util as graph_util
 from depobs.scanner.pipelines.postprocess import postprocess_task
 from depobs.scanner.pipelines.run_repo_tasks import (
     iter_task_envs,
@@ -268,26 +267,11 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
         package
     )
     if db_graph is None:
-        log.info(f"{package.name} {package.version} has no children scoring directly")
-        store_package_report(score_package(package.name, package.version, []))
-    else:
-        g: nx.DiGraph = graph_util.package_graph_to_networkx_graph(db_graph)
-        graph_util.update_node_attrs(
-            g,
-            package_version=db_graph.distinct_package_versions_by_id,
-            label={
-                pv.id: f"{pv.name}@{pv.version}"
-                for pv in db_graph.distinct_package_versions_by_id.values()
-            },
-            npmsio_score=db_graph.get_npmsio_scores_by_package_version_id(),
-            registry_entry=db_graph.get_npm_registry_data_by_package_version_id(),
-        )
-        log.info(
-            f"{package.name} {package.version} scoring from graph id={db_graph.id} ({len(g.edges)} edges, {len(g.nodes)} nodes)"
-        )
-        store_package_reports(
-            score_package_and_children(g, db_graph.distinct_package_versions_by_id)
-        )
+        log.info(f"{package.name} {package.version} has no children")
+        db_graph: PackageGraph = PackageGraph(id=None, link_ids=[])
+        db_graph.distinct_package_ids = set([package.id])
+
+    store_package_reports(scoring.score_package_graph(db_graph))
 
 
 @app.task()

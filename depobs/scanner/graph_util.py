@@ -174,8 +174,11 @@ def package_graph_to_networkx_graph(db_graph: models.PackageGraph) -> nx.DiGraph
         link_id,
         (parent_package_id, child_package_id),
     ) in db_graph.package_links_by_id.items():
-        g.add_edge(parent_package_id, child_package_id, link_id=link_id)
+        if parent_package_id == child_package_id:
+            log.warning(f"skipping self loop for package version ID {child_package_id}")
+            continue
 
+        g.add_edge(parent_package_id, child_package_id, link_id=link_id)
     g.add_nodes_from(db_graph.distinct_package_ids)
     return g
 

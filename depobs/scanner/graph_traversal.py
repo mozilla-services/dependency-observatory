@@ -1,13 +1,15 @@
 from typing import (
     Generator,
+    Iterable,
     Optional,
     Set,
+    Tuple,
 )
 
 import networkx as nx
 from networkx.algorithms.components import condensation
-from networkx.algorithms.dag import is_directed_acyclic_graph
-
+from networkx.algorithms.dag import descendants, is_directed_acyclic_graph
+from networkx.algorithms.shortest_paths.generic import has_path
 
 # type alias to not confuse ints as nxGraphNodeIDs with other ints
 nxGraphNodeID = int
@@ -15,7 +17,7 @@ nxGraphNodeID = int
 
 def outer_in_graph_iter(
     g: nx.DiGraph, c: Optional[nx.DiGraph] = None
-) -> Generator[Set[nxGraphNodeID], None, None]:
+) -> Generator[Tuple[Set[nxGraphNodeID], Set[nxGraphNodeID]], None, None]:
     """For a directed graph with unique node IDs with type int, iterates
     from outer / leafmost / least depended upon nodes to inner nodes
     yielding sets of node IDs. Optionally, takes a precomputed condensed
@@ -42,10 +44,11 @@ def outer_in_graph_iter(
         c = condensation(g)
     assert is_directed_acyclic_graph(c)
     for scc_ids in outer_in_dag_iter(c):
-        # translate scc node ids back into G node ids
-        g_node_ids: Set[nxGraphNodeID] = set()
-        g_node_ids.update(*[c.nodes[scc_id]["members"] for scc_id in scc_ids])
-        yield g_node_ids
+        descendant_scc_ids: Set[int] = set()
+        descendant_scc_ids.update(*[descendants(c, scc_id) for scc_id in scc_ids])
+        yield scc_ids_to_graph_node_ids(c, scc_ids), scc_ids_to_graph_node_ids(
+            c, descendant_scc_ids
+        )
 
 
 def outer_in_dag_iter(g: nx.DiGraph) -> Generator[Set[nxGraphNodeID], None, None]:
@@ -82,3 +85,53 @@ def outer_in_dag_iter(g: nx.DiGraph) -> Generator[Set[nxGraphNodeID], None, None
             break
         yield new_only_points_to_visited
         visited.update(only_points_to_visited)
+
+
+def scc_ids_to_graph_node_ids(
+    c: nx.DiGraph, scc_ids: Iterable[int]
+) -> Set[nxGraphNodeID]:
+    # translate scc node ids back into G node ids
+    g_node_ids: Set[nxGraphNodeID] = set()
+    g_node_ids.update(*[c.nodes[scc_id]["members"] for scc_id in scc_ids])
+    return g_node_ids
+
+
+def node_dep_ids_iter(
+    g: nx.DiGraph, c: Optional[nx.DiGraph] = None
+) -> Generator[
+    Tuple[nxGraphNodeID, Set[nxGraphNodeID], Set[nxGraphNodeID]], None, None
+]:
+    """For a directed graph with unique node IDs with type int and
+    optional precomputed condensed DAG of g, iterates over sets of
+    strongly connected components from outer / leafmost / least depended
+    upon nodes to inner nodes.
+
+    For each set of strongly connected components, yield each node by
+    decreasing ID with its sets of immediate or direct dependencies
+    (path length one) and transitive or indirect dependencies (path
+    length greater than one).
+
+    Properties:
+
+    * yields each node ID once
+    * successive node IDs only depend on/point to previously visited
+    nodes or other nodes within their set?
+    """
+    if not c:
+        c = condensation(g)
+
+    for node_ids, indirect_node_ids in outer_in_graph_iter(g, c):
+        for node_id in sorted(node_ids, reverse=True):
+            direct_dep_ids: Set[int] = set(g.successors(node_id))
+            indirect_dep_ids: Set[int] = (
+                set(
+                    [
+                        dest_id
+                        for dest_id in node_ids
+                        if has_path(g, node_id, dest_id)  # i.e. have a scc in common
+                    ]
+                )
+                | indirect_node_ids
+            ) - direct_dep_ids - set([node_id])
+
+            yield node_id, direct_dep_ids, indirect_dep_ids
