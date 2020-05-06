@@ -995,11 +995,6 @@ def store_package_report(pr: PackageReport) -> None:
     db.session.commit()
 
 
-def store_package_reports(prs: List[PackageReport]) -> None:
-    db.session.add_all(prs)
-    db.session.commit()
-
-
 def upsert_package_report(report: PackageReport) -> None:
     """
     Updates the most recently scored PackageReport with matching
