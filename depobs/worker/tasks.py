@@ -98,8 +98,8 @@ async def scan_tarball_url(
     the run_repo_task result object (from running the repo tasks
     commands in a container).
     """
-    task_envs: Tuple[
-        Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]
+    task_envs: List[
+        Tuple[Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]]
     ] = list(iter_task_envs(args))
     if args.docker_build:
         await build_images_for_envs(args, task_envs)
