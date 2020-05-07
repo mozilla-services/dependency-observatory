@@ -83,7 +83,7 @@ app = create_celery_app()
 
 
 @app.task()
-def add(x, y):
+def add(x: int, y: int) -> int:
     return x + y
 
 
