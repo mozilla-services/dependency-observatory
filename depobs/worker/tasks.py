@@ -9,6 +9,7 @@ import sys
 from typing import (
     AbstractSet,
     Any,
+    AsyncGenerator,
     Callable,
     Dict,
     Generator,
@@ -56,6 +57,7 @@ from depobs.database.models import (
     PackageVersion,
     PackageGraph,
 )
+from depobs.scanner.models.package_meta_result import Result
 from depobs.scanner.pipelines.postprocess import postprocess_task
 from depobs.scanner.pipelines.run_repo_tasks import (
     iter_task_envs,
@@ -286,7 +288,10 @@ def scan_npm_package_then_build_report_tree(
 
 
 async def fetch_package_data(
-    fetcher: Callable[[Type[AIOHTTPClientConfig], List[str], int], Dict],
+    fetcher: Callable[
+        [Type[AIOHTTPClientConfig], List[str], Optional[int]],
+        AsyncGenerator[Result[Dict[str, Dict]], None],
+    ],
     config: Type[AIOHTTPClientConfig],
     package_names: List[str],
 ) -> List[Dict]:
