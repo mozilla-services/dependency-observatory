@@ -131,7 +131,7 @@ async def scan_tarball_url(
             log.info(
                 f"for {lang.name} {pm.name} would run in {image.local.repo_name_tag}"
                 f" {list(version_commands.values())} concurrently then"
-                f" {[t.command for t in tasks]} "
+                f" {[t.command for t in container_tasks]} "
             )
             continue
 
