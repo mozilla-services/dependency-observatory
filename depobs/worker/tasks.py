@@ -16,6 +16,7 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Type,
     Union,
 )
 import logging
@@ -48,6 +49,7 @@ import depobs.worker.validators as validators
 
 # import exc_to_str to resolve import cycle for the following depobs.scanner.clients
 from depobs.scanner.pipelines.util import exc_to_str as _
+from depobs.scanner.clients.aiohttp_client_config import AIOHTTPClientConfig
 from depobs.scanner.clients.npmsio import fetch_npmsio_scores
 from depobs.scanner.clients.npm_registry import fetch_npm_registry_metadata
 from depobs.database.models import (
@@ -284,12 +286,12 @@ def scan_npm_package_then_build_report_tree(
 
 
 async def fetch_package_data(
-    fetcher: Callable[[argparse.Namespace, List[str], int], Dict],
-    args: argparse.Namespace,
+    fetcher: Callable[[Type[AIOHTTPClientConfig], List[str], int], Dict],
+    config: Type[AIOHTTPClientConfig],
     package_names: List[str],
 ) -> List[Dict]:
     package_results = []
-    async for package_result in fetcher(args, package_names, len(package_names)):
+    async for package_result in fetcher(config, package_names, len(package_names)):
         if isinstance(package_result, Exception):
             raise package_result
         package_results.append(package_result)
