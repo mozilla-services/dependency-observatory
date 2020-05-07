@@ -330,7 +330,7 @@ def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
     npm_registry_entries = asyncio.run(
         fetch_package_data(
             fetch_npm_registry_metadata,
-            argparse.Namespace(**current_app.config["NPM_CLIENT"]),
+            current_app.config["NPM_CLIENT"],
             package_names,
         ),
         debug=False,
