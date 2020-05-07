@@ -67,11 +67,6 @@ class RunRepoTasksConfig(TypedDict):
     # Run 'git clean -fdx' for each ref to clear package manager caches. Slower but better isolation.
     git_clean: bool # TODO: default to false
 
-    # Cache and results for the same repo, and dep file directory and SHA2
-    # sums for multiple git refs (NB: ignores changes to non-dep files e.g. to
-    # node.js install hook scripts).
-    use_cache: bool
-
     # Only run against matching directory. e.g. './' for root directory or
     # './packages/fxa-js-client/' for a subdirectory
     dir: str
@@ -324,9 +319,6 @@ async def run_pipeline(
     if config["docker_build"]:
         await build_images_for_envs(config, task_envs)
 
-    # cache of results by lang name, package manager name,
-    # image.local.repo_name_tag, org/repo, dep files dir path, dep file sha256s
-    cache: Dict[Tuple[str, str, str, str, pathlib.Path, str], List[Dict]] = {}
     for (
         (org_repo_key, ref_value_key, dep_file_parent_key),
         file_rows,
@@ -359,23 +351,6 @@ async def run_pipeline(
                 )
                 continue
 
-            # TODO: use caching decorator
-            cache_key = (
-                lang.name,
-                pm.name,
-                image.local.repo_name_tag,
-                org_repo_key,
-                dep_file_parent_key,
-                "-".join(file_hashes),
-            )
-            if config["use_cache"] and cache_key in cache:
-                log.debug(f"using cached result for {cache_key}")
-                for cached_result in cache[cache_key]:
-                    cached_result["data_source"] = "in_memory_cache"
-                    yield cached_result
-                continue
-
-            cache[cache_key] = []
             try:
                 async for result in run_in_repo_at_ref(
                     config,
@@ -387,8 +362,6 @@ async def run_pipeline(
                     dep_files,
                     image,
                 ):
-                    cache[cache_key].append(result)
                     yield result
-                log.debug(f"saved cached result for {cache_key}")
             except Exception as e:
                 log.error(f"error running tasks {tasks!r}:\n{exc_to_str()}")
