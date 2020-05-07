@@ -117,22 +117,26 @@ CELERYD_TASK_TIME_LIMIT = 3600
 # depobs.scanner config
 
 _aiohttp_args = dict(
-    # User agent to use to query third party APIs
-    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
-    # aiohttp total timeout in seconds
-    total_timeout=300,
-    # number of simultaneous connections to open
-    max_connections=10,
     # time to sleep between requests in seconds
     delay=0.5,
+    # don't hit the third part API just print intended actions
+    dry_run=False,
+    # number of simultaneous connections to open
+    max_connections=10,
+    # number of times to retry requests
+    max_retries=1,
+    # number of packages to fetch in once request (for APIs that support it)
+    package_batch_size=1,
+    # aiohttp total timeout in seconds
+    total_timeout=300,
+    # user agent to use to query third party APIs
+    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
 )
 
 
 NPM_CLIENT = {
     **_aiohttp_args,
-    "max_retries": 1,
     "package_batch_size": 10,
-    "dry_run": False,
     # an npm registry access token for fetch_npm_registry_metadata. Defaults NPM_PAT env var. Should be read-only.
     "npm_auth_token": os.environ.get("NPM_PAT", None),
 }
@@ -141,7 +145,6 @@ NPMSIO_CLIENT = {
     **_aiohttp_args,
     "max_connections": 1,
     "package_batch_size": 50,
-    "dry_run": False,
 }
 
 # shared docker args for multiple tasks
