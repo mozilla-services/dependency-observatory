@@ -174,7 +174,7 @@ async def scan_tarball_url(
 @app.task(bind=True)
 def scan_npm_package(
     self: celery.Task, package_name: str, package_version: Optional[str] = None
-) -> None:
+) -> Tuple[str, Optional[str]]:
     package_name_validation_error = validators.get_npm_package_name_validation_error(
         package_name
     )
