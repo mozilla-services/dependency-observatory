@@ -64,9 +64,6 @@ class RunRepoTasksConfig(TypedDict):
     # Print commands we would run and their context, but don't run them.
     dry_run: bool
 
-    # Run 'git clean -fdx' for each ref to clear package manager caches. Slower but better isolation.
-    git_clean: bool # TODO: default to false
-
     # Only run against matching directory. e.g. './' for root directory or
     # './packages/fxa-js-client/' for a subdirectory
     dir: str
@@ -153,10 +150,7 @@ async def run_in_repo_at_ref(
     ) as c:
         await c.run("mkdir -p /repos", wait=True, check=True)
         await containers.ensure_repo(
-            c,
-            org_repo.github_clone_url,
-            git_clean=config["git_clean"],
-            working_dir="/repos/",
+            c, org_repo.github_clone_url, working_dir="/repos/",
         )
         await containers.ensure_ref(c, git_ref, working_dir="/repos/repo")
         branch, commit, tag, *version_results = await asyncio.gather(
