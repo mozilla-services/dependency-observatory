@@ -304,9 +304,7 @@ def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
     log.debug(f"fetching npmsio scores for package names: {list(package_names)}")
     npmsio_scores: List[Dict] = asyncio.run(
         fetch_package_data(
-            fetch_npmsio_scores,
-            argparse.Namespace(**current_app.config["NPMSIO_CLIENT"]),
-            package_names,
+            fetch_npmsio_scores, current_app.config["NPMSIO_CLIENT"], package_names,
         ),
         debug=False,
     )
