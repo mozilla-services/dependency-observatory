@@ -1,4 +1,3 @@
-import argparse
 import logging
 from typing import (
     AbstractSet,
@@ -66,10 +65,10 @@ def npm_packages_to_networkx_digraph(packages: Iterable[NPMPackage]) -> nx.DiGra
 
 
 def rust_crates_and_packages_to_networkx_digraph(
-    args: argparse.Namespace,
+    args: Any,  # TODO: define TypedDict for graphing display options
     crates_and_packages: Tuple[Dict[str, RustCrate], Dict[str, RustPackage]],
 ) -> nx.DiGraph:
-    log.debug("graphing with args: {}".format(args))
+    log.debug(f"graphing with args: {args}")
     crates, packages = crates_and_packages
 
     node_id_format = NODE_ID_FORMATS[args.node_key]
