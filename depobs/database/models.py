@@ -311,7 +311,7 @@ class PackageGraph(db.Model):
 
     def get_npmsio_scores_by_package_version_id(
         self,
-    ) -> Dict[PackageVersionID, Optional["NPMSIOScore"]]:
+    ) -> Dict[PackageVersionID, Optional[float]]:
         # TODO: fetch all scores in one request
         # not cached since it can change as scores fetched or updated
         tmp = {
