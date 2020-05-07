@@ -64,10 +64,6 @@ class RunRepoTasksConfig(TypedDict):
     # Print commands we would run and their context, but don't run them.
     dry_run: bool
 
-    # Only run against matching directory. e.g. './' for root directory or
-    # './packages/fxa-js-client/' for a subdirectory
-    dir: str
-
     # Languages to run commands for. Defaults to all of them.
     # choices=language_names
     languages: List[str]
@@ -324,17 +320,6 @@ async def run_pipeline(
         org_repo, git_ref = file_rows[0][0:2]
 
         log.debug(f"in {dep_file_parent_key!r} with files {files}")
-        if config["dir"] is not None:
-            if pathlib.PurePath(config["dir"]) != dep_file_parent_key:
-                log.debug(
-                    f"Skipping non-matching folder {dep_file_parent_key} for glob {config['dir']}"
-                )
-                continue
-            else:
-                log.debug(
-                    f"matching folder {dep_file_parent_key!r} for glob {config['dir']!r}"
-                )
-
         for lang, pm, image, version_commands, tasks in task_envs:
             if config["dry_run"]:
                 log.info(
