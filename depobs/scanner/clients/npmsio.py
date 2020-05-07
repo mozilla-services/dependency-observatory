@@ -46,7 +46,9 @@ async def async_query(
 
 
 async def fetch_npmsio_scores(
-    config: NPMSIOClientConfig, package_names: Iterable[str], total_packages: int = None
+    config: NPMSIOClientConfig,
+    package_names: Iterable[str],
+    total_packages: Optional[int] = None,
 ) -> AsyncGenerator[Result[Dict[str, Dict]], None]:
     """
     Fetches npms.io score and analysis for one or more node package names

@@ -79,7 +79,7 @@ def is_not_found_exception(err: Exception) -> bool:
 async def fetch_npm_registry_metadata(
     config: NPMRegistryClientConfig,
     package_names: Iterable[str],
-    total_packages: int = None,
+    total_packages: Optional[int] = None,
 ) -> AsyncGenerator[Dict[str, Dict], None]:
     """
     Fetches npm registry metadata for one or more node package names
