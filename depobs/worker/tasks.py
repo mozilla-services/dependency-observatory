@@ -272,7 +272,7 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
     )
     if db_graph is None:
         log.info(f"{package.name} {package.version} has no children")
-        db_graph: PackageGraph = PackageGraph(id=None, link_ids=[])
+        db_graph = PackageGraph(id=None, link_ids=[])
         db_graph.distinct_package_ids = set([package.id])
 
     store_package_reports(scoring.score_package_graph(db_graph))
