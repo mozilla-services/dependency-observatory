@@ -1,4 +1,3 @@
-import argparse
 import asyncio
 from collections import ChainMap
 import datetime
@@ -9,6 +8,7 @@ import sys
 from typing import (
     AbstractSet,
     Any,
+    AsyncGenerator,
     Callable,
     Dict,
     Generator,
@@ -16,7 +16,7 @@ from typing import (
     List,
     Optional,
     Tuple,
-    Union,
+    TypeVar,
 )
 import logging
 
@@ -48,14 +48,19 @@ import depobs.worker.validators as validators
 
 # import exc_to_str to resolve import cycle for the following depobs.scanner.clients
 from depobs.scanner.pipelines.util import exc_to_str as _
-from depobs.scanner.clients.npmsio import fetch_npmsio_scores
-from depobs.scanner.clients.npm_registry import fetch_npm_registry_metadata
+from depobs.scanner.clients.npmsio import fetch_npmsio_scores, NPMSIOClientConfig
+from depobs.scanner.clients.npm_registry import (
+    fetch_npm_registry_metadata,
+    NPMRegistryClientConfig,
+)
 from depobs.database.models import (
     PackageVersion,
     PackageGraph,
 )
+from depobs.scanner.models.package_meta_result import Result
 from depobs.scanner.pipelines.postprocess import postprocess_task
 from depobs.scanner.pipelines.run_repo_tasks import (
+    RunRepoTasksConfig,
     iter_task_envs,
     build_images_for_envs,
     run_task as run_repo_task,  # try to avoid confusing with celery tasks
@@ -79,28 +84,28 @@ app = create_celery_app()
 
 
 @app.task()
-def add(x, y):
+def add(x: int, y: int) -> int:
     return x + y
 
 
 async def scan_tarball_url(
-    args: argparse.Namespace,
+    config: RunRepoTasksConfig,
     tarball_url: str,
     package_name: Optional[str] = None,
     package_version: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Takes run_repo_tasks pipeline args and a tarball url and returns
+    Takes run_repo_tasks pipeline config and a tarball url and returns
     the run_repo_task result object (from running the repo tasks
     commands in a container).
     """
-    task_envs: Tuple[
-        Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]
-    ] = list(iter_task_envs(args))
-    if args.docker_build:
-        await build_images_for_envs(args, task_envs)
+    task_envs: List[
+        Tuple[Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]]
+    ] = list(iter_task_envs(config))
+    if config["docker_build"]:
+        await build_images_for_envs(config, task_envs)
 
-    assert len(task_envs) == 1
+    assert len(task_envs) == 1, "scan_tarball_url: No task envs found to run tasks"
     for lang, pm, image, version_commands, container_tasks in task_envs:
         # TODO: add as new command in depobs.scanner.models.language?
         # write a package.json file to so npm audit doesn't error out
@@ -123,11 +128,11 @@ async def scan_tarball_url(
             if t.name == "install" and t.command == "npm install --save=true":
                 t.command = f"npm install --save=true {tarball_url}"
 
-        if args.dry_run:
+        if config["dry_run"]:
             log.info(
                 f"for {lang.name} {pm.name} would run in {image.local.repo_name_tag}"
                 f" {list(version_commands.values())} concurrently then"
-                f" {[t.command for t in tasks]} "
+                f" {[t.command for t in container_tasks]} "
             )
             continue
 
@@ -165,12 +170,14 @@ async def scan_tarball_url(
                 task_results=[tr for tr in task_results if isinstance(tr, dict)],
             )
             return result
+    # dry run
+    return dict(task_results=[])
 
 
 @app.task(bind=True)
 def scan_npm_package(
     self: celery.Task, package_name: str, package_version: Optional[str] = None
-) -> None:
+) -> Tuple[str, Optional[str]]:
     package_name_validation_error = validators.get_npm_package_name_validation_error(
         package_name
     )
@@ -199,9 +206,9 @@ def scan_npm_package(
         if tarball_url:
             # start an npm container, install the tarball, run list and audit
             # assert tarball_url == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{package_version}.tgz
-            container_task_results = asyncio.run(
+            container_task_results: Dict[str, Any] = asyncio.run(
                 scan_tarball_url(
-                    argparse.Namespace(**current_app.config["SCAN_NPM_TARBALL_ARGS"]),
+                    current_app.config["SCAN_NPM_TARBALL_ARGS"],
                     tarball_url,
                     package_name,
                     package_version,
@@ -268,7 +275,7 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
     )
     if db_graph is None:
         log.info(f"{package.name} {package.version} has no children")
-        db_graph: PackageGraph = PackageGraph(id=None, link_ids=[])
+        db_graph = PackageGraph(id=None, link_ids=[])
         db_graph.distinct_package_ids = set([package.id])
 
     store_package_reports(scoring.score_package_graph(db_graph))
@@ -283,13 +290,23 @@ def scan_npm_package_then_build_report_tree(
     )
 
 
+# fetch_package_data should take fetcher and config params with matching config
+# types i.e. do not not let fetcher take an NPMSIOClientConfig with config
+# NPMRegistryClientConfig
+ClientConfig = TypeVar("ClientConfig", NPMSIOClientConfig, NPMRegistryClientConfig)
+
+
 async def fetch_package_data(
-    fetcher: Callable[[argparse.Namespace, List[str], int], Dict],
-    args: argparse.Namespace,
+    fetcher: Callable[
+        [ClientConfig, Iterable[str], Optional[int]],
+        AsyncGenerator[Result[Dict[str, Dict]], None],
+    ],
+    config: ClientConfig,
     package_names: List[str],
 ) -> List[Dict]:
     package_results = []
-    async for package_result in fetcher(args, package_names, len(package_names)):
+    # TODO: figure this type error out later
+    async for package_result in fetcher(config, package_names, len(package_names)):  # type: ignore
         if isinstance(package_result, Exception):
             raise package_result
         package_results.append(package_result)
@@ -304,9 +321,7 @@ def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
     log.debug(f"fetching npmsio scores for package names: {list(package_names)}")
     npmsio_scores: List[Dict] = asyncio.run(
         fetch_package_data(
-            fetch_npmsio_scores,
-            argparse.Namespace(**current_app.config["NPMSIO_CLIENT"]),
-            package_names,
+            fetch_npmsio_scores, current_app.config["NPMSIO_CLIENT"], package_names,
         ),
         debug=False,
     )
@@ -330,7 +345,7 @@ def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
     npm_registry_entries = asyncio.run(
         fetch_package_data(
             fetch_npm_registry_metadata,
-            argparse.Namespace(**current_app.config["NPM_CLIENT"]),
+            current_app.config["NPM_CLIENT"],
             package_names,
         ),
         debug=False,

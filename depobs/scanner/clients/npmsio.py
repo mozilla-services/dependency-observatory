@@ -1,25 +1,31 @@
-import argparse
 import asyncio
 import logging
 from typing import Any, AsyncGenerator, Dict, Iterable, Optional
 
 import aiohttp
 
+from depobs.scanner.clients.aiohttp_client_config import AIOHTTPClientConfig
 from depobs.util.serialize_util import grouper
 from depobs.scanner.models.package_meta_result import Result
 
 log = logging.getLogger(__name__)
 
 
-def aiohttp_session(args: argparse.Namespace) -> aiohttp.ClientSession:
+class NPMSIOClientConfig(
+    AIOHTTPClientConfig, total=False
+):  # don't require keys defined below
+    pass
+
+
+def aiohttp_session(config: NPMSIOClientConfig) -> aiohttp.ClientSession:
     return aiohttp.ClientSession(
         headers={
             "Accept": "application/json",
             "Content-Type": "application/json",
-            "User-Agent": args.user_agent,
+            "User-Agent": config["user_agent"],
         },
-        timeout=aiohttp.ClientTimeout(total=args.total_timeout),
-        connector=aiohttp.TCPConnector(limit=args.max_connections),
+        timeout=aiohttp.ClientTimeout(total=config["total_timeout"]),
+        connector=aiohttp.TCPConnector(limit=config["max_connections"]),
         raise_for_status=True,
     )
 
@@ -40,14 +46,16 @@ async def async_query(
 
 
 async def fetch_npmsio_scores(
-    args: argparse.Namespace, package_names: Iterable[str], total_packages: int = None
+    config: NPMSIOClientConfig,
+    package_names: Iterable[str],
+    total_packages: Optional[int] = None,
 ) -> AsyncGenerator[Result[Dict[str, Dict]], None]:
     """
     Fetches npms.io score and analysis for one or more node package names
 
     Uses: https://api-docs.npms.io/#api-Package-GetMultiPackageInfo
     """
-    async with aiohttp_session(args) as s:
+    async with aiohttp_session(config) as s:
         group_results = await asyncio.gather(
             *[
                 async_query(
@@ -57,9 +65,9 @@ async def fetch_npmsio_scores(
                         for package_name in group
                         if package_name is not None
                     ],
-                    args.dry_run,
+                    config["dry_run"],
                 )
-                for group in grouper(package_names, args.package_batch_size)
+                for group in grouper(package_names, config["package_batch_size"])
                 if group is not None
             ]
         )
