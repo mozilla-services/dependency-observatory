@@ -117,7 +117,7 @@ CELERYD_TASK_TIME_LIMIT = 3600
 # depobs.scanner config
 
 _aiohttp_args = dict(
-    # User agent to user to query third party APIs
+    # User agent to use to query third party APIs
     user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
     # aiohttp total timeout in seconds
     total_timeout=300,
