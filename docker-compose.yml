@@ -16,7 +16,7 @@ services:
     container_name: dependency-observatory-api
     image: mozilla/dependency-observatory
     volumes:
-      - ./:/app
+      - ./:/app:z
     environment:
       - CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
       - CELERY_RESULT_BACKEND=db+postgresql://postgres:postgres@db/dependency_observatory
