@@ -17,8 +17,7 @@ from typing import (
     List,
     Optional,
     Tuple,
-    Type,
-    Union,
+    TypeVar,
 )
 import logging
 
@@ -50,9 +49,11 @@ import depobs.worker.validators as validators
 
 # import exc_to_str to resolve import cycle for the following depobs.scanner.clients
 from depobs.scanner.pipelines.util import exc_to_str as _
-from depobs.scanner.clients.aiohttp_client_config import AIOHTTPClientConfig
-from depobs.scanner.clients.npmsio import fetch_npmsio_scores
-from depobs.scanner.clients.npm_registry import fetch_npm_registry_metadata
+from depobs.scanner.clients.npmsio import fetch_npmsio_scores, NPMSIOClientConfig
+from depobs.scanner.clients.npm_registry import (
+    fetch_npm_registry_metadata,
+    NPMRegistryClientConfig,
+)
 from depobs.database.models import (
     PackageVersion,
     PackageGraph,
@@ -289,12 +290,18 @@ def scan_npm_package_then_build_report_tree(
     )
 
 
+# fetch_package_data should take fetcher and config params with matching config
+# types i.e. do not not let fetcher take an NPMSIOClientConfig with config
+# NPMRegistryClientConfig
+ClientConfig = TypeVar("ClientConfig", NPMSIOClientConfig, NPMRegistryClientConfig)
+
+
 async def fetch_package_data(
     fetcher: Callable[
-        [Type[AIOHTTPClientConfig], List[str], Optional[int]],
+        [ClientConfig, Iterable[str], Optional[int]],
         AsyncGenerator[Result[Dict[str, Dict]], None],
     ],
-    config: Type[AIOHTTPClientConfig],
+    config: ClientConfig,
     package_names: List[str],
 ) -> List[Dict]:
     package_results = []
