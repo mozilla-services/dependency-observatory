@@ -1,4 +1,3 @@
-import argparse
 import asyncio
 from collections import ChainMap
 import datetime
@@ -61,6 +60,7 @@ from depobs.database.models import (
 from depobs.scanner.models.package_meta_result import Result
 from depobs.scanner.pipelines.postprocess import postprocess_task
 from depobs.scanner.pipelines.run_repo_tasks import (
+    RunRepoTasksConfig,
     iter_task_envs,
     build_images_for_envs,
     run_task as run_repo_task,  # try to avoid confusing with celery tasks
@@ -89,21 +89,21 @@ def add(x: int, y: int) -> int:
 
 
 async def scan_tarball_url(
-    args: argparse.Namespace,
+    config: RunRepoTasksConfig,
     tarball_url: str,
     package_name: Optional[str] = None,
     package_version: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Takes run_repo_tasks pipeline args and a tarball url and returns
+    Takes run_repo_tasks pipeline config and a tarball url and returns
     the run_repo_task result object (from running the repo tasks
     commands in a container).
     """
     task_envs: List[
         Tuple[Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]]
-    ] = list(iter_task_envs(args))
-    if args.docker_build:
-        await build_images_for_envs(args, task_envs)
+    ] = list(iter_task_envs(config))
+    if config["docker_build"]:
+        await build_images_for_envs(config, task_envs)
 
     assert len(task_envs) == 1, "scan_tarball_url: No task envs found to run tasks"
     for lang, pm, image, version_commands, container_tasks in task_envs:
@@ -128,7 +128,7 @@ async def scan_tarball_url(
             if t.name == "install" and t.command == "npm install --save=true":
                 t.command = f"npm install --save=true {tarball_url}"
 
-        if args.dry_run:
+        if config["dry_run"]:
             log.info(
                 f"for {lang.name} {pm.name} would run in {image.local.repo_name_tag}"
                 f" {list(version_commands.values())} concurrently then"
@@ -208,7 +208,7 @@ def scan_npm_package(
             # assert tarball_url == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{package_version}.tgz
             container_task_results: Dict[str, Any] = asyncio.run(
                 scan_tarball_url(
-                    argparse.Namespace(**current_app.config["SCAN_NPM_TARBALL_ARGS"]),
+                    current_app.config["SCAN_NPM_TARBALL_ARGS"],
                     tarball_url,
                     package_name,
                     package_version,
