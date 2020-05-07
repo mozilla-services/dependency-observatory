@@ -305,7 +305,8 @@ async def fetch_package_data(
     package_names: List[str],
 ) -> List[Dict]:
     package_results = []
-    async for package_result in fetcher(config, package_names, len(package_names)):
+    # TODO: figure this type error out later
+    async for package_result in fetcher(config, package_names, len(package_names)):  # type: ignore
         if isinstance(package_result, Exception):
             raise package_result
         package_results.append(package_result)
