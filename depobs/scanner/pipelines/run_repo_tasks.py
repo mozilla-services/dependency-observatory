@@ -1,38 +1,22 @@
 import aiodocker
 import asyncio
 from collections import ChainMap
-from dataclasses import asdict
-import functools
 import itertools
-import json
 import logging
-import pathlib
 from random import randrange
-import sys
-import time
 from typing import (
     AbstractSet,
     Any,
-    AnyStr,
-    AsyncGenerator,
     Dict,
     Generator,
     Iterable,
     List,
-    Mapping,
-    Optional,
     Tuple,
     TypedDict,
     Union,
 )
 
-from depobs.util.serialize_util import (
-    get_in,
-    extract_fields,
-)
 import depobs.scanner.docker.containers as containers
-from depobs.scanner.models.org_repo import OrgRepo
-from depobs.scanner.models.git_ref import GitRef
 from depobs.scanner.docker.images import build_images
 from depobs.scanner.models.language import (
     ContainerTask,
@@ -47,7 +31,6 @@ from depobs.scanner.models.language import (
     package_manager_names,
     package_managers,
 )
-from depobs.scanner.pipelines.util import exc_to_str
 
 log = logging.getLogger(__name__)
 
@@ -128,114 +111,6 @@ async def run_task(
     }
 
 
-async def run_in_repo_at_ref(
-    config: RunRepoTasksConfig,
-    item: Tuple[OrgRepo, GitRef, pathlib.Path],
-    tasks: List[ContainerTask],
-    version_commands: Mapping[str, str],
-    dry_run: bool,
-    cwd_files: AbstractSet[str],
-    file_rows: List[DependencyFile],
-    image: DockerImage,
-) -> AsyncGenerator[Dict[str, Any], None]:
-    (org_repo, git_ref, path) = item
-
-    container_name = f"dep-obs-nodejs-metadata-{org_repo.org}-{org_repo.repo}-{hex(randrange(1 << 32))[2:]}"
-    async with containers.run(
-        image.local.repo_name_tag, name=container_name, cmd="/bin/bash",
-    ) as c:
-        await c.run("mkdir -p /repos", wait=True, check=True)
-        await containers.ensure_repo(
-            c, org_repo.github_clone_url, working_dir="/repos/",
-        )
-        await containers.ensure_ref(c, git_ref, working_dir="/repos/repo")
-        branch, commit, tag, *version_results = await asyncio.gather(
-            *(
-                [
-                    containers.get_branch(c, working_dir="/repos/repo"),
-                    containers.get_commit(c, working_dir="/repos/repo"),
-                    containers.get_tag(c, working_dir="/repos/repo"),
-                ]
-                + [
-                    containers.run_container_cmd_no_args_return_first_line_or_none(
-                        command, c, working_dir="/repos/repo"
-                    )
-                    for command in version_commands.values()
-                ]
-            )
-        )
-        versions = {
-            command_name: version_results[i]
-            for (i, (command_name, command)) in enumerate(version_commands.items())
-        }
-
-        if dry_run:
-            for task in tasks:
-                log.info(
-                    f"{container_name} in {pathlib.Path('/repos/repo') / path} for task {task.name} skipping running {task.command} for dry run"
-                )
-        else:
-            task_results = [
-                await run_task(
-                    c, task, str(pathlib.Path("/repos/repo") / path), container_name
-                )
-                for task in tasks
-            ]
-            for tr in task_results:
-                if isinstance(tr, Exception):
-                    log.error(f"error running task: {tr}")
-
-            result: Dict[str, Any] = dict(
-                org=org_repo.org,
-                repo=org_repo.repo,
-                ref=git_ref.to_dict(),
-                repo_url=org_repo.github_clone_url,
-                versions=versions,
-                branch=branch,
-                commit=commit,
-                tag=tag,
-                dependency_files=[fr.to_dict() for fr in file_rows],
-                task_results=[tr for tr in task_results if isinstance(tr, dict)],
-            )
-            yield result
-
-
-DepFileRow = Tuple[OrgRepo, GitRef, DependencyFile]
-
-
-def group_by_org_repo_ref_path(
-    source: Generator[Dict[str, Any], None, None]
-) -> Generator[Tuple[Tuple[str, str, pathlib.Path], List[DepFileRow]], None, None]:
-    # read all input rows into memory
-    rows: List[DepFileRow] = [
-        (
-            OrgRepo(item["org"], item["repo"]),
-            GitRef.from_dict(item["ref"]),
-            DependencyFile.from_dict(item["dependency_file"]),
-        )
-        for item in source
-    ]
-
-    # sort in-place by org repo then ref value (sorted is stable)
-    sorted(rows, key=lambda row: row[0].org_repo)
-    sorted(rows, key=lambda row: row[1].value)
-
-    # group by org repo then ref value
-    for org_repo_ref_key, group_iter in itertools.groupby(
-        rows, key=lambda row: (row[0].org_repo, row[1].value)
-    ):
-        org_repo_key, ref_value_key = org_repo_ref_key
-        org_repo_ref_rows = list(group_iter)
-
-        # sort and group by path parent e.g. /foo/bar for /foo/bar/package.json
-        sorted(org_repo_ref_rows, key=lambda row: row[2].path.parent)
-        for dep_file_parent_key, inner_group_iter in itertools.groupby(
-            org_repo_ref_rows, key=lambda row: row[2].path.parent
-        ):
-            file_rows = list(inner_group_iter)
-            yield (org_repo_key, ref_value_key, dep_file_parent_key), file_rows
-
-
 def iter_task_envs(
     config: RunRepoTasksConfig,
 ) -> Generator[
@@ -299,48 +174,3 @@ async def build_images_for_envs(
     )
     built_image_tags: Iterable[str] = await build_images(config["docker_pull"], images)
     log.info(f"successfully built and tagged images {built_image_tags}")
-
-
-async def run_pipeline(
-    source: Generator[Dict[str, Any], None, None], config: RunRepoTasksConfig
-) -> AsyncGenerator[Dict, None]:
-    log.info(f"{__name__} pipeline started with config {config}")
-    task_envs = list(iter_task_envs(config))
-    if config["docker_build"]:
-        await build_images_for_envs(config, task_envs)
-
-    for (
-        (org_repo_key, ref_value_key, dep_file_parent_key),
-        file_rows,
-    ) in group_by_org_repo_ref_path(source):
-        files = {fr[2].path.parts[-1] for fr in file_rows}
-        file_hashes = sorted([fr[2].sha256 for fr in file_rows])
-        dep_files = [fr[2] for fr in file_rows]
-
-        org_repo, git_ref = file_rows[0][0:2]
-
-        log.debug(f"in {dep_file_parent_key!r} with files {files}")
-        for lang, pm, image, version_commands, tasks in task_envs:
-            if config["dry_run"]:
-                log.info(
-                    f"for {lang.name} {pm.name} would run in {image.local.repo_name_tag}"
-                    f" {org_repo_key} {git_ref.kind.name} {git_ref.value} {dep_file_parent_key}"
-                    f" {list(version_commands.values())} concurrently then"
-                    f" {[t.command for t in tasks]} "
-                )
-                continue
-
-            try:
-                async for result in run_in_repo_at_ref(
-                    config,
-                    (org_repo, git_ref, dep_file_parent_key),
-                    tasks,
-                    version_commands,
-                    config["dry_run"],
-                    files,
-                    dep_files,
-                    image,
-                ):
-                    yield result
-            except Exception as e:
-                log.error(f"error running tasks {tasks!r}:\n{exc_to_str()}")
