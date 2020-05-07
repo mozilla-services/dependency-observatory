@@ -20,11 +20,11 @@ from typing import (
     Generator,
     Iterable,
     List,
+    Mapping,
     Optional,
     Tuple,
     Union,
 )
-import typing
 
 from depobs.util.serialize_util import (
     get_in,
@@ -177,7 +177,7 @@ async def run_in_repo_at_ref(
     args: argparse.Namespace,
     item: Tuple[OrgRepo, GitRef, pathlib.Path],
     tasks: List[ContainerTask],
-    version_commands: typing.Mapping[str, str],
+    version_commands: Mapping[str, str],
     dry_run: bool,
     cwd_files: AbstractSet[str],
     file_rows: List[DependencyFile],
