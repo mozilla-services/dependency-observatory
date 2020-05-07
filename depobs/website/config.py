@@ -155,14 +155,15 @@ _docker_args = dict(
     docker_build=True,
     # non-default docker images to use for the task
     docker_image=[],
+    # Print commands we would run and their context, but don't run them
+    dry_run=False,
 )
 
 SCAN_NPM_TARBALL_ARGS = {
     **_docker_args,
     **dict(
-        dry_run=False,
-        language=["nodejs"],
-        package_manager=["npm"],
-        repo_task=["install", "list_metadata", "audit"],
+        languages=["nodejs"],
+        package_managers=["npm"],
+        repo_tasks=["install", "list_metadata", "audit"],
     ),
 }

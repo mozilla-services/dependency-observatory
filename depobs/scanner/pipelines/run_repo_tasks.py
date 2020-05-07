@@ -78,19 +78,19 @@ class RunRepoTasksConfig(TypedDict):
 
     # Languages to run commands for. Defaults to all of them.
     # choices=language_names
-    language: List[str]
+    languages: List[str]
 
     # Package managers to run commands for. Defaults to all of them.
     # choices=package_manager_names,
-    package_manager: List[str]
+    package_managers: List[str]
 
     # Docker images to run commands in. Defaults to all of them.
     # choices=docker_image_names,
-    docker_image: List[str]
+    docker_images: List[str]
 
     # Run install, list_metadata, or audit tasks in the order
     # provided. Defaults to none of them
-    repo_task: List[str]
+    repo_tasks: List[str]
 
 
 async def run_task(
@@ -258,18 +258,18 @@ def iter_task_envs(
     None,
     None,
 ]:
-    enabled_languages = config["language"] or language_names
-    if not config["language"]:
+    enabled_languages = config["languages"] or language_names
+    if not config["languages"]:
         log.debug(f"languages not specified using all of {enabled_languages}")
 
-    enabled_package_managers = config["package_manager"] or package_manager_names
-    if not config["package_manager"]:
+    enabled_package_managers = config["package_managers"] or package_manager_names
+    if not config["package_managers"]:
         log.debug(
             f"package managers not specified using all of {enabled_package_managers}"
         )
 
-    enabled_image_names = config["docker_image"] or docker_image_names
-    if not config["docker_image"]:
+    enabled_image_names = config["docker_images"] or docker_image_names
+    if not config["docker_images"]:
         log.debug(
             f"docker image names not specified using all of {enabled_image_names}"
         )
@@ -292,7 +292,7 @@ def iter_task_envs(
             *[pm.version_commands for pm in language.package_managers.values()],
         )
         tasks: List[ContainerTask] = [
-            package_manager.tasks[task_name] for task_name in config["repo_task"]
+            package_manager.tasks[task_name] for task_name in config["repo_tasks"]
         ]
         yield language, package_manager, image, version_commands, tasks
 
