@@ -6,6 +6,7 @@ from typing import Any, AsyncGenerator, Dict, Iterable, Optional, TypedDict
 import logging
 
 from depobs.scanner.clients.aiohttp_client_config import AIOHTTPClientConfig
+from depobs.scanner.models.package_meta_result import Result
 from depobs.scanner.pipelines.util import exc_to_str
 from depobs.util.serialize_util import grouper
 
@@ -80,7 +81,7 @@ async def fetch_npm_registry_metadata(
     config: NPMRegistryClientConfig,
     package_names: Iterable[str],
     total_packages: Optional[int] = None,
-) -> AsyncGenerator[Dict[str, Dict], None]:
+) -> AsyncGenerator[Result[Dict[str, Dict]], None]:
     """
     Fetches npm registry metadata for one or more node package names
     """
@@ -113,3 +114,4 @@ async def fetch_npm_registry_metadata(
                 log.error(
                     f"error fetching group {i} for package names {group}: {err}:\n{exc_to_str()}"
                 )
+                yield err
