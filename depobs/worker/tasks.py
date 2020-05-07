@@ -104,7 +104,7 @@ async def scan_tarball_url(
     if args.docker_build:
         await build_images_for_envs(args, task_envs)
 
-    assert len(task_envs) == 1
+    assert len(task_envs) == 1, "scan_tarball_url: No task envs found to run tasks"
     for lang, pm, image, version_commands, container_tasks in task_envs:
         # TODO: add as new command in depobs.scanner.models.language?
         # write a package.json file to so npm audit doesn't error out
@@ -169,6 +169,8 @@ async def scan_tarball_url(
                 task_results=[tr for tr in task_results if isinstance(tr, dict)],
             )
             return result
+    # dry run
+    return dict(task_results=[])
 
 
 @app.task(bind=True)
@@ -203,7 +205,7 @@ def scan_npm_package(
         if tarball_url:
             # start an npm container, install the tarball, run list and audit
             # assert tarball_url == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{package_version}.tgz
-            container_task_results = asyncio.run(
+            container_task_results: Dict[str, Any] = asyncio.run(
                 scan_tarball_url(
                     argparse.Namespace(**current_app.config["SCAN_NPM_TARBALL_ARGS"]),
                     tarball_url,
