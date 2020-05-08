@@ -42,13 +42,17 @@ class PackageReportNotFound(NotFound):
         self.package_version = package_version
         self.scored_after = scored_after
 
-    @property
-    def description(self) -> str:
-        msg = f"PackageReport {self.package_name}"
-        if self.package_version is not None:
-            msg += f"@{self.package_version}"
-        if self.scored_after is not None:
-            msg += f" scored after {self.scored_after}"
+    @staticmethod
+    def format_description(
+        package_name: str,
+        package_version: Optional[str] = None,
+        scored_after: Optional[datetime] = None,
+    ):
+        msg = f"PackageReport {package_name}"
+        if package_version is not None:
+            msg += f"@{package_version}"
+        if scored_after is not None:
+            msg += f" scored after {scored_after}"
         return msg + " not found."
 
 
@@ -60,11 +64,17 @@ def get_most_recently_scored_package_report_or_raise(
         package_name, package_version, scored_after
     )
     if package_report is None:
-        raise PackageReportNotFound(
+        not_found = PackageReportNotFound(
             package_name=package_name,
             package_version=package_version,
             scored_after=scored_after,
         )
+        not_found.description = PackageReportNotFound.format_description(
+            package_name=package_name,
+            package_version=package_version,
+            scored_after=scored_after,
+        )
+        raise not_found
 
     return package_report
 
@@ -124,7 +134,7 @@ def check_package_version_registered(package_name: str, package_version: str) ->
         return False
 
     npm_registry_entry = npm_registry_entries[0]
-    if npm_registry_entry.get("versions", package_version, None):
+    if npm_registry_entry and npm_registry_entry.get("versions", package_version, None):
         log.info(
             f"package registry entry for {package_name}@{package_version} found on npm"
         )
