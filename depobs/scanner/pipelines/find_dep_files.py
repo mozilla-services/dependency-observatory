@@ -27,7 +27,7 @@ Given a repo_url, clones the repo, lists git refs for each tag
 """
 
 
-def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+def parse_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--glob",
         type=str,

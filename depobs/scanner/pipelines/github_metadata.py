@@ -82,7 +82,7 @@ async def run_graphql(
         # elif err.response.status_code in {403, 503}:
 
 
-def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+def parse_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--github-accept-header",
         nargs="*",
