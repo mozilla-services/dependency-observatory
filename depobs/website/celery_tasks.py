@@ -28,6 +28,7 @@ def get_celery_tasks(filter_prefix: str = "depobs.worker.tasks."):
         }
         # convert request_tasks dict to namedtuple so it behaves like the
         # module
-        Tasks = namedtuple("celery_tasks", request_tasks.keys(),)
-        current_app.tasks = Tasks(**request_tasks)
+        # type ignores below ref: https://github.com/python/mypy/issues/848
+        Tasks = namedtuple("celery_tasks", request_tasks.keys())  # type: ignore
+        current_app.tasks = Tasks(**request_tasks)  # type: ignore
     return current_app.tasks

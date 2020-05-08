@@ -136,16 +136,16 @@ _aiohttp_args = dict(
 
 NPM_CLIENT = {
     **_aiohttp_args,
-    "package_batch_size": 10,
-    # an npm registry access token for fetch_npm_registry_metadata. Defaults NPM_PAT env var. Should be read-only.
-    "npm_auth_token": os.environ.get("NPM_PAT", None),
+    # use second dict call to workaround update typerror with line above
+    # refs: https://github.com/python/mypy/issues/1430
+    **dict(
+        package_batch_size=10,
+        # an npm registry access token for fetch_npm_registry_metadata. Defaults NPM_PAT env var. Should be read-only.
+        npm_auth_token=os.environ.get("NPM_PAT", None),
+    ),
 }
 
-NPMSIO_CLIENT = {
-    **_aiohttp_args,
-    "max_connections": 1,
-    "package_batch_size": 50,
-}
+NPMSIO_CLIENT = {**_aiohttp_args, **dict(max_connections=1, package_batch_size=50,)}
 
 # shared docker args for multiple tasks
 _docker_args = dict(
