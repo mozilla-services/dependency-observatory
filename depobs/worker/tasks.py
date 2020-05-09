@@ -224,9 +224,9 @@ def scan_npm_package(
                 task_data = serialized_container_task_result
                 task_name = task_data["name"]
                 if task_name == "list_metadata":
-                    insert_package_graph(models.db.session, task_data)
+                    insert_package_graph(task_data)
                 elif task_name == "audit":
-                    insert_package_audit(models.db.session, task_data)
+                    insert_package_audit(task_data)
                 else:
                     log.warning(f"skipping unrecognized task {task_name}")
 

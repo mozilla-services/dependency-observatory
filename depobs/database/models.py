@@ -1207,8 +1207,8 @@ def get_advisories_by_package_versions(
     )
 
 
-def add_new_package_version(session: sqlalchemy.orm.Session, pkg: Dict) -> None:
-    get_package_version_id_query(session, pkg).one_or_none() or session.add(
+def add_new_package_version(pkg: Dict) -> None:
+    get_package_version_id_query(pkg).one_or_none() or db.session.add(
         PackageVersion(
             name=pkg.get("name", None),
             version=pkg.get("version", None),
@@ -1220,63 +1220,59 @@ def add_new_package_version(session: sqlalchemy.orm.Session, pkg: Dict) -> None:
     )
 
 
-def get_package_version_id_query(
-    session: sqlalchemy.orm.Session, pkg: Dict
-) -> sqlalchemy.orm.query.Query:
-    return session.query(PackageVersion.id).filter_by(
+def get_package_version_id_query(pkg: Dict) -> sqlalchemy.orm.query.Query:
+    return db.session.query(PackageVersion.id).filter_by(
         name=pkg["name"], version=pkg["version"], language="node"
     )
 
 
 def get_package_version_link_id_query(
-    session: sqlalchemy.orm.Session, link: Tuple[int, int]
+    link: Tuple[int, int]
 ) -> sqlalchemy.orm.query.Query:
     parent_package_id, child_package_id = link
-    return session.query(PackageLink.id).filter_by(
+    return db.session.query(PackageLink.id).filter_by(
         parent_package_id=parent_package_id, child_package_id=child_package_id
     )
 
 
-def get_node_advisory_id_query(
-    session: sqlalchemy.orm.Session, advisory: Dict
-) -> sqlalchemy.orm.query.Query:
-    return session.query(Advisory.id).filter_by(language="node", url=advisory["url"])
+def get_node_advisory_id_query(advisory: Dict) -> sqlalchemy.orm.query.Query:
+    return db.session.query(Advisory.id).filter_by(language="node", url=advisory["url"])
 
 
-def insert_package_graph(session: sqlalchemy.orm.Session, task_data: Dict) -> None:
+def insert_package_graph(task_data: Dict) -> None:
     link_ids = []
     for task_dep in task_data.get("dependencies", []):
-        add_new_package_version(session, task_dep)
-        session.commit()
-        parent_package_id = get_package_version_id_query(session, task_dep).first()
+        add_new_package_version(task_dep)
+        db.session.commit()
+        parent_package_id = get_package_version_id_query(task_dep).first()
 
         for dep in task_dep.get("dependencies", []):
             # is fully qualified semver for npm (or file: or github: url), semver for yarn
             name, version = dep.rsplit("@", 1)
             child_package_id = get_package_version_id_query(
-                session, dict(name=name, version=version)
+                dict(name=name, version=version)
             ).first()
 
             link_id = get_package_version_link_id_query(
-                session, (parent_package_id, child_package_id)
+                (parent_package_id, child_package_id)
             ).one_or_none()
             if not link_id:
-                session.add(
+                db.session.add(
                     PackageLink(
                         child_package_id=child_package_id,
                         parent_package_id=parent_package_id,
                     )
                 )
-                session.commit()
+                db.session.commit()
                 link_id = get_package_version_link_id_query(
-                    session, (parent_package_id, child_package_id)
+                    (parent_package_id, child_package_id)
                 ).first()
             link_ids.append(link_id)
 
-    session.add(
+    db.session.add(
         PackageGraph(
             root_package_version_id=get_package_version_id_query(
-                session, task_data["root"]
+                task_data["root"]
             ).first()
             if task_data["root"]
             else None,
@@ -1285,10 +1281,10 @@ def insert_package_graph(session: sqlalchemy.orm.Session, task_data: Dict) -> No
             package_manager_version=None,
         )
     )
-    session.commit()
+    db.session.commit()
 
 
-def insert_package_audit(session: sqlalchemy.orm.Session, task_data: Dict) -> None:
+def insert_package_audit(task_data: Dict) -> None:
     is_yarn_cmd = bool("yarn" in task_data["command"])
     # NB: yarn has .advisory and .resolution
 
@@ -1323,10 +1319,10 @@ def insert_package_audit(session: sqlalchemy.orm.Session, task_data: Dict) -> No
         advisory_fields["language"] = "node"
         advisory_fields["vulnerable_package_version_ids"] = []
 
-        get_node_advisory_id_query(
-            session, advisory_fields
-        ).one_or_none() or session.add(Advisory(**advisory_fields))
-        session.commit()
+        get_node_advisory_id_query(advisory_fields).one_or_none() or db.session.add(
+            Advisory(**advisory_fields)
+        )
+        db.session.commit()
 
         # TODO: update other advisory fields too
         impacted_versions = set(
@@ -1335,13 +1331,13 @@ def insert_package_audit(session: sqlalchemy.orm.Session, task_data: Dict) -> No
             if finding.get("version", None)
         )
         db_advisory = (
-            session.query(Advisory.id, Advisory.vulnerable_package_version_ids)
+            db.session.query(Advisory.id, Advisory.vulnerable_package_version_ids)
             .filter_by(language="node", url=advisory["url"])
             .first()
         )
         impacted_version_package_ids = list(
             vid
-            for result in session.query(PackageVersion.id)
+            for result in db.session.query(PackageVersion.id)
             .filter(
                 PackageVersion.name == advisory_fields["package_name"],
                 PackageVersion.version.in_(impacted_versions),
@@ -1357,14 +1353,14 @@ def insert_package_audit(session: sqlalchemy.orm.Session, task_data: Dict) -> No
             )
 
         if db_advisory.vulnerable_package_version_ids is None:
-            session.query(Advisory.id).filter_by(id=db_advisory.id).update(
+            db.session.query(Advisory.id).filter_by(id=db_advisory.id).update(
                 dict(vulnerable_package_version_ids=list())
             )
 
         # TODO: lock the row?
         vpvids = set(
             list(
-                session.query(Advisory)
+                db.session.query(Advisory)
                 .filter_by(id=db_advisory.id)
                 .first()
                 .vulnerable_package_version_ids
@@ -1372,7 +1368,7 @@ def insert_package_audit(session: sqlalchemy.orm.Session, task_data: Dict) -> No
         )
         vpvids.update(set(impacted_version_package_ids))
 
-        session.query(Advisory.id).filter_by(id=db_advisory.id).update(
+        db.session.query(Advisory.id).filter_by(id=db_advisory.id).update(
             dict(vulnerable_package_version_ids=sorted(vpvids))
         )
-        session.commit()
+        db.session.commit()
