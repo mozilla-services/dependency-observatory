@@ -6,7 +6,6 @@ import backoff
 from collections import ChainMap
 from contextlib import contextmanager
 import logging
-import time
 from typing import (
     AbstractSet,
     Any,
@@ -34,7 +33,6 @@ from depobs.scanner.models.github import (
     get_next_requests,
     MISSING,
 )
-from depobs.scanner.models.rust import cargo_metadata_to_rust_crates
 from depobs.scanner.pipelines.util import exc_to_str
 
 log = logging.getLogger(__name__)
