@@ -16,8 +16,8 @@ from typing import (
     Union,
 )
 
-import depobs.scanner.docker.containers as containers
-from depobs.scanner.docker.images import build_images
+import depobs.docker.containers as containers
+from depobs.docker.images import build_images
 from depobs.scanner.models.language import (
     ContainerTask,
     DependencyFile,

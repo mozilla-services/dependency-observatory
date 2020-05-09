@@ -28,6 +28,9 @@ LOGGING = {
         "depobs.clients.npm_registry": {"handlers": ["console"], "level": "INFO",},
         "depobs.database.models": {"handlers": ["console"], "level": "INFO"},
         "depobs.database.serializers": {"handlers": ["console"], "level": "INFO"},
+        "depobs.docker.images": {"handlers": ["console"], "level": "INFO"},
+        "depobs.docker.containers": {"handlers": ["console"], "level": "INFO"},
+        "depobs.docker.log_reader": {"handlers": ["console"], "level": "WARN"},
         "depobs.website.views": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.scans": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.score_details.blueprint": {
@@ -36,9 +39,6 @@ LOGGING = {
         },
         "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
         "depobs.worker.scoring": {"handlers": ["console"], "level": "INFO",},
-        "depobs.scanner.docker.images": {"handlers": ["console"], "level": "INFO"},
-        "depobs.scanner.docker.containers": {"handlers": ["console"], "level": "INFO"},
-        "depobs.scanner.docker.log_reader": {"handlers": ["console"], "level": "WARN"},
         "depobs.scanner.repo_tasks": {"handlers": ["console"], "level": "INFO",},
     },
 }

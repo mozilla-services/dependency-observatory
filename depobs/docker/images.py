@@ -2,7 +2,7 @@ import asyncio
 import logging
 from typing import Iterable
 
-import depobs.scanner.docker.containers as containers
+import depobs.docker.containers as containers
 from depobs.scanner.models.docker_image import DockerImage
 from depobs.util.traceback_util import exc_to_str
 

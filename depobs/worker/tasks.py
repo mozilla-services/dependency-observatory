@@ -59,6 +59,7 @@ from depobs.database.models import (
     insert_package_audit,
     insert_package_graph,
 )
+import depobs.docker.containers as containers
 from depobs.scanner.models.package_meta_result import Result
 from depobs.worker.serializers import serialize_repo_task
 from depobs.scanner.repo_tasks import (
@@ -67,7 +68,6 @@ from depobs.scanner.repo_tasks import (
     build_images_for_envs,
     run_repo_task,
 )
-import depobs.scanner.docker.containers as containers
 from depobs.scanner.models.language import (
     ContainerTask,
     DockerImage,

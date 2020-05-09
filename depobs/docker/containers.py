@@ -25,8 +25,8 @@ from typing import (
 )
 import aiodocker
 
-from depobs.scanner.docker.client import aiodocker_client
-import depobs.scanner.docker.log_reader as docker_log_reader
+from depobs.docker.client import aiodocker_client
+import depobs.docker.log_reader as docker_log_reader
 from depobs.scanner.models.git_ref import GitRef, GitRefKind
 from depobs.util.traceback_util import exc_to_str
 
