@@ -61,11 +61,11 @@ from depobs.database.models import (
 )
 from depobs.scanner.models.package_meta_result import Result
 from depobs.worker.serializers import serialize_repo_task
-from depobs.scanner.pipelines.run_repo_tasks import (
+from depobs.scanner.repo_tasks import (
     RunRepoTasksConfig,
     iter_task_envs,
     build_images_for_envs,
-    run_task as run_repo_task,  # try to avoid confusing with celery tasks
+    run_repo_task,
 )
 import depobs.scanner.docker.containers as containers
 from depobs.scanner.models.language import (

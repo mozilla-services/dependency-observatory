@@ -64,7 +64,7 @@ class RunRepoTasksConfig(TypedDict):
     repo_tasks: List[str]
 
 
-async def run_task(
+async def run_repo_task(
     c: aiodocker.containers.DockerContainer,
     task: ContainerTask,
     working_dir: str,
