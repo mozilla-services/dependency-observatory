@@ -34,8 +34,8 @@ from depobs.scanner.models.github import (
     get_next_requests,
     MISSING,
 )
-from depobs.scanner.pipelines.util import exc_to_str
 from depobs.scanner.quiz_util import raw_result_to_dict
+from depobs.util.traceback_util import exc_to_str
 
 log = logging.getLogger(__name__)
 

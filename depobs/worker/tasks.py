@@ -47,7 +47,7 @@ import depobs.worker.scoring as scoring
 import depobs.worker.validators as validators
 
 # import exc_to_str to resolve import cycle for the following depobs.scanner.clients
-from depobs.scanner.pipelines.util import exc_to_str as _
+from depobs.util.traceback_util import exc_to_str as _
 from depobs.scanner.clients.npmsio import fetch_npmsio_scores, NPMSIOClientConfig
 from depobs.scanner.clients.npm_registry import (
     fetch_npm_registry_metadata,
