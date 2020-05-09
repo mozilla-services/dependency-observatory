@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import argparse
-import json
-import pathlib
-import pickle
-from typing import Callable, Any
-
 import pytest
 
 import depobs.util.serialize_util as m

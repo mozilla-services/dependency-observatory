@@ -1,4 +1,3 @@
-import argparse
 import asyncio
 import logging
 from typing import Iterable
