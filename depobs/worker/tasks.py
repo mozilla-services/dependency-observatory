@@ -44,6 +44,7 @@ from depobs.database.models import (
 )
 
 import depobs.worker.scoring as scoring
+import depobs.worker.serializers as serializers
 import depobs.worker.validators as validators
 
 # import exc_to_str to resolve import cycle for the following depobs.clients
@@ -358,8 +359,10 @@ def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
         )
     # inserts new entries for new versions (but doesn't update old ones)
     models.insert_npm_registry_entries(
-        registry_entry
-        for registry_entry in npm_registry_entries
-        if registry_entry is not None
+        serializers.serialize_npm_registry_entries(
+            registry_entry
+            for registry_entry in npm_registry_entries
+            if registry_entry is not None
+        )
     )
     return npm_registry_entries

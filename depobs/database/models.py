@@ -34,7 +34,7 @@ from sqlalchemy import func
 
 from depobs.database.mixins import TaskIDMixin
 
-from depobs.util.serialize_util import extract_nested_fields, get_in
+from depobs.util.serialize_util import extract_nested_fields
 
 log = logging.getLogger(__name__)
 
@@ -1070,92 +1070,29 @@ def insert_npmsio_scores(npmsio_scores: Iterable[Dict[str, Any]]) -> None:
             )
 
 
-def insert_npm_registry_entries(npm_registry_entries: Iterable[Dict[str, Any]]) -> None:
-    for entry in npm_registry_entries:
-        # save version specific data
-        for version, version_data in entry["versions"].items():
-            fields = extract_nested_fields(
-                version_data,
-                {
-                    "package_name": ["name"],
-                    "package_version": ["version"],
-                    "shasum": ["dist", "shasum"],
-                    "tarball": ["dist", "tarball"],
-                    "git_head": ["gitHead"],
-                    "repository_type": ["repository", "type"],
-                    "repository_url": ["repository", "url"],
-                    "description": ["description"],
-                    "url": ["url"],
-                    "license_type": ["license"],
-                    "keywords": ["keywords"],
-                    "has_shrinkwrap": ["_hasShrinkwrap"],
-                    "bugs_url": ["bugs", "url"],
-                    "bugs_email": ["bugs", "email"],
-                    "author_name": ["author", "name"],
-                    "author_email": ["author", "email"],
-                    "author_url": ["author", "url"],
-                    "maintainers": ["maintainers"],
-                    "contributors": ["contributors"],
-                    "publisher_name": ["_npmUser", "name"],
-                    "publisher_email": ["_npmUser", "email"],
-                    "publisher_node_version": ["_nodeVersion"],
-                    "publisher_npm_version": ["_npmVersion"],
-                },
+def insert_npm_registry_entries(entries: Iterable[NPMRegistryEntry]) -> None:
+    for entry in entries:
+        if (
+            db.session.query(NPMRegistryEntry.id)
+            .filter_by(
+                package_name=entry.package_name,
+                package_version=entry.package_version,
+                shasum=entry.shasum,
+                tarball=entry.tarball,
             )
-            # license can we a string e.g. 'MIT'
-            # or dict e.g. {'type': 'MIT', 'url': 'https://github.com/jonschlinkert/micromatch/blob/master/LICENSE'}
-            fields["license_url"] = None
-            if isinstance(fields["license_type"], dict):
-                fields["license_url"] = fields["license_type"].get("url", None)
-                fields["license_type"] = fields["license_type"].get("type", None)
-
-            # looking at you debuglog@0.0.{3,4} with:
-            # [{"name": "StrongLoop", "url": "http://strongloop.com/license/"}, "MIT"],
-            if not (
-                (
-                    isinstance(fields["license_type"], str)
-                    or fields["license_type"] is None
-                )
-                and (
-                    isinstance(fields["license_url"], str)
-                    or fields["license_url"] is None
-                )
-            ):
-                log.warning(f"skipping weird license format {fields['license_type']}")
-                fields["license_url"] = None
-                fields["license_type"] = None
-
-            # published_at .time[<version>] e.g. '2014-05-23T21:21:04.170Z' (not from
-            # the version info object)
-            # where time: an object mapping versions to the time published, along with created and modified timestamps
-            fields["published_at"] = get_in(entry, ["time", version])
-            fields["package_modified_at"] = get_in(entry, ["time", "modified"])
-
-            fields[
-                "source_url"
-            ] = f"https://registry.npmjs.org/{fields['package_name']}"
-
-            if (
-                db.session.query(NPMRegistryEntry.id)
-                .filter_by(
-                    package_name=fields["package_name"],
-                    package_version=fields["package_version"],
-                    shasum=fields["shasum"],
-                    tarball=fields["tarball"],
-                )
-                .one_or_none()
-            ):
-                log.debug(
-                    f"skipping inserting npm registry entry for {fields['package_name']}@{fields['package_version']}"
-                    f" from {fields['tarball']} with sha {fields['shasum']}"
-                )
-            else:
-                db.session.add(NPMRegistryEntry(**fields))
-                db.session.commit()
-                log.info(
-                    f"added npm registry entry for {fields['package_name']}@{fields['package_version']}"
-                    f" from {fields['tarball']} with sha {fields['shasum']}"
-                )
+            .one_or_none()
+        ):
+            log.debug(
+                f"skipping inserting npm registry entry for {entry.package_name}@{entry.package_version}"
+                f" from {entry.tarball} with sha {entry.shasum}"
+            )
+        else:
+            db.session.add(entry)
+            db.session.commit()
+            log.info(
+                f"added npm registry entry for {entry.package_name}@{entry.package_version}"
+                f" from {entry.tarball} with sha {entry.shasum}"
+            )
 
 
 VIEWS: Dict[str, str] = {}
