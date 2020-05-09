@@ -16,7 +16,7 @@ from typing import (
     Union,
 )
 
-from depobs.database.models import NPMRegistryEntry
+from depobs.database.models import NPMRegistryEntry, NPMSIOScore
 from depobs.scanner.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
@@ -384,3 +384,55 @@ def serialize_npm_registry_entries(
                 "source_url"
             ] = f"https://registry.npmjs.org/{fields['package_name']}"
             yield NPMRegistryEntry(**fields)
+
+
+def serialize_npmsio_scores(
+    npmsio_scores: Iterable[Dict[str, Any]]
+) -> Iterable[NPMSIOScore]:
+    for score in npmsio_scores:
+        fields = extract_nested_fields(
+            score,
+            {
+                "package_name": ["collected", "metadata", "name"],
+                "package_version": ["collected", "metadata", "version"],
+                "analyzed_at": ["analyzedAt"],  # e.g. "2019-11-27T19:31:42.541Z"
+                # overall score from .score.final on the interval [0, 1]
+                "score": ["score", "final"],
+                # score components on the interval [0, 1]
+                "quality": ["score", "detail", "quality"],
+                "popularity": ["score", "detail", "popularity"],
+                "maintenance": ["score", "detail", "maintenance"],
+                # score subcomponent/detail fields from .evaluation.<component>.<subcomponent>
+                # generally frequencies and subscores are decimals between [0, 1]
+                # or counts of downloads, stars, etc.
+                # acceleration is signed (+/-)
+                "branding": ["evaluation", "quality", "branding"],
+                "carefulness": ["evaluation", "quality", "carefulness"],
+                "health": ["evaluation", "quality", "health"],
+                "tests": ["evaluation", "quality", "tests"],
+                "community_interest": ["evaluation", "popularity", "communityInterest"],
+                "dependents_count": ["evaluation", "popularity", "dependentsCount"],
+                "downloads_acceleration": [
+                    "evaluation",
+                    "popularity",
+                    "downloadsAcceleration",
+                ],
+                "downloads_count": ["evaluation", "popularity", "downloadsCount"],
+                "commits_frequency": ["evaluation", "maintenance", "commitsFrequency"],
+                "issues_distribution": [
+                    "evaluation",
+                    "maintenance",
+                    "issuesDistribution",
+                ],
+                "open_issues": ["evaluation", "maintenance", "openIssues"],
+                "releases_frequency": [
+                    "evaluation",
+                    "maintenance",
+                    "releasesFrequency",
+                ],
+            },
+        )
+        fields[
+            "source_url"
+        ] = f"https://api.npms.io/v2/package/{fields['package_name']}"
+        yield NPMSIOScore(**fields)

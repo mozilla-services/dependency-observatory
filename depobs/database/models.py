@@ -999,74 +999,28 @@ def store_package_reports(prs: List[PackageReport]) -> None:
     db.session.commit()
 
 
-def insert_npmsio_scores(npmsio_scores: Iterable[Dict[str, Any]]) -> None:
+def insert_npmsio_scores(npmsio_scores: Iterable[NPMSIOScore]) -> None:
     for score in npmsio_scores:
-        fields = extract_nested_fields(
-            score,
-            {
-                "package_name": ["collected", "metadata", "name"],
-                "package_version": ["collected", "metadata", "version"],
-                "analyzed_at": ["analyzedAt"],  # e.g. "2019-11-27T19:31:42.541Z"
-                # overall score from .score.final on the interval [0, 1]
-                "score": ["score", "final"],
-                # score components on the interval [0, 1]
-                "quality": ["score", "detail", "quality"],
-                "popularity": ["score", "detail", "popularity"],
-                "maintenance": ["score", "detail", "maintenance"],
-                # score subcomponent/detail fields from .evaluation.<component>.<subcomponent>
-                # generally frequencies and subscores are decimals between [0, 1]
-                # or counts of downloads, stars, etc.
-                # acceleration is signed (+/-)
-                "branding": ["evaluation", "quality", "branding"],
-                "carefulness": ["evaluation", "quality", "carefulness"],
-                "health": ["evaluation", "quality", "health"],
-                "tests": ["evaluation", "quality", "tests"],
-                "community_interest": ["evaluation", "popularity", "communityInterest"],
-                "dependents_count": ["evaluation", "popularity", "dependentsCount"],
-                "downloads_acceleration": [
-                    "evaluation",
-                    "popularity",
-                    "downloadsAcceleration",
-                ],
-                "downloads_count": ["evaluation", "popularity", "downloadsCount"],
-                "commits_frequency": ["evaluation", "maintenance", "commitsFrequency"],
-                "issues_distribution": [
-                    "evaluation",
-                    "maintenance",
-                    "issuesDistribution",
-                ],
-                "open_issues": ["evaluation", "maintenance", "openIssues"],
-                "releases_frequency": [
-                    "evaluation",
-                    "maintenance",
-                    "releasesFrequency",
-                ],
-            },
-        )
-        fields[
-            "source_url"
-        ] = f"https://api.npms.io/v2/package/{fields['package_name']}"
-
         # only insert new rows
         if (
             db.session.query(NPMSIOScore.id)
             .filter_by(
-                package_name=fields["package_name"],
-                package_version=fields["package_version"],
-                analyzed_at=fields["analyzed_at"],
+                package_name=score.package_name,
+                package_version=score.package_version,
+                analyzed_at=score.analyzed_at,
             )
             .one_or_none()
         ):
             log.debug(
-                f"skipping inserting npms.io score for {fields['package_name']}@{fields['package_version']}"
-                f" analyzed at {fields['analyzed_at']}"
+                f"skipping inserting npms.io score for {score.package_name}@{score.package_version}"
+                f" analyzed at {score.analyzed_at}"
             )
         else:
-            db.session.add(NPMSIOScore(**fields))
+            db.session.add(score)
             db.session.commit()
             log.info(
-                f"added npms.io score for {fields['package_name']}@{fields['package_version']}"
-                f" analyzed at {fields['analyzed_at']}"
+                f"added npms.io score for {score.package_name}@{score.package_version}"
+                f" analyzed at {score.analyzed_at}"
             )
 
 

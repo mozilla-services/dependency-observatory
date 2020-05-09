@@ -332,7 +332,11 @@ def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
         log.info(
             f"fetched {len(npmsio_scores)} scores for {len(package_names)} package names"
         )
-    models.insert_npmsio_scores(score for score in npmsio_scores if score is not None)
+    models.insert_npmsio_scores(
+        serializers.serialize_npmsio_scores(
+            score for score in npmsio_scores if score is not None
+        )
+    )
     return npmsio_scores
 
 
