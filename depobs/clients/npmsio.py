@@ -4,7 +4,7 @@ from typing import Any, AsyncGenerator, Dict, Iterable, Optional
 
 import aiohttp
 
-from depobs.scanner.clients.aiohttp_client_config import AIOHTTPClientConfig
+from depobs.clients.aiohttp_client_config import AIOHTTPClientConfig
 from depobs.util.serialize_util import grouper
 from depobs.scanner.models.package_meta_result import Result
 

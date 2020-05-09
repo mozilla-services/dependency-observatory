@@ -5,7 +5,7 @@ import pathlib
 
 import pytest
 
-import depobs.scanner.docker.log_reader as m
+import depobs.docker.log_reader as m
 
 
 @pytest.fixture

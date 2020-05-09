@@ -5,10 +5,10 @@ import math
 from typing import Any, AsyncGenerator, Dict, Iterable, Optional, TypedDict
 import logging
 
-from depobs.scanner.clients.aiohttp_client_config import AIOHTTPClientConfig
+from depobs.clients.aiohttp_client_config import AIOHTTPClientConfig
 from depobs.scanner.models.package_meta_result import Result
-from depobs.scanner.pipelines.util import exc_to_str
 from depobs.util.serialize_util import grouper
+from depobs.util.traceback_util import exc_to_str
 
 log = logging.getLogger(__name__)
 

@@ -46,10 +46,10 @@ from depobs.database.models import (
 import depobs.worker.scoring as scoring
 import depobs.worker.validators as validators
 
-# import exc_to_str to resolve import cycle for the following depobs.scanner.clients
-from depobs.scanner.pipelines.util import exc_to_str as _
-from depobs.scanner.clients.npmsio import fetch_npmsio_scores, NPMSIOClientConfig
-from depobs.scanner.clients.npm_registry import (
+# import exc_to_str to resolve import cycle for the following depobs.clients
+from depobs.util.traceback_util import exc_to_str as _
+from depobs.clients.npmsio import fetch_npmsio_scores, NPMSIOClientConfig
+from depobs.clients.npm_registry import (
     fetch_npm_registry_metadata,
     NPMRegistryClientConfig,
 )
@@ -59,15 +59,15 @@ from depobs.database.models import (
     insert_package_audit,
     insert_package_graph,
 )
+import depobs.docker.containers as containers
 from depobs.scanner.models.package_meta_result import Result
 from depobs.worker.serializers import serialize_repo_task
-from depobs.scanner.pipelines.run_repo_tasks import (
+from depobs.scanner.repo_tasks import (
     RunRepoTasksConfig,
     iter_task_envs,
     build_images_for_envs,
-    run_task as run_repo_task,  # try to avoid confusing with celery tasks
+    run_repo_task,
 )
-import depobs.scanner.docker.containers as containers
 from depobs.scanner.models.language import (
     ContainerTask,
     DockerImage,
