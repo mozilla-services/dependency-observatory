@@ -33,6 +33,7 @@ LOGGING = {
         "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
         "depobs.worker.scoring": {"handlers": ["console"], "level": "INFO",},
         "depobs.scanner.clients.cratesio": {"handlers": ["console"], "level": "INFO"},
+        "depobs.scanner.clients.github": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.clients.npmsio": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.clients.npm_registry": {
             "handlers": ["console"],
