@@ -1,6 +1,5 @@
 import os
 import sys
-import argparse
 import asyncio
 import backoff
 from collections import ChainMap
@@ -13,17 +12,19 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Iterable,
     List,
     Optional,
     Sequence,
     Tuple,
+    TypedDict,
 )
 
 import aiohttp
 import snug
 import quiz
 
-from depobs.scanner.quiz_util import raw_result_to_dict
+from depobs.scanner.clients.aiohttp_client_config import AIOHTTPClientConfig
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.github import (
     ResourceKind,
@@ -34,13 +35,55 @@ from depobs.scanner.models.github import (
     MISSING,
 )
 from depobs.scanner.pipelines.util import exc_to_str
+from depobs.scanner.quiz_util import raw_result_to_dict
 
 log = logging.getLogger(__name__)
 
-__doc__ = """Given an input file with repo urls metadata output fetches
-dependency and vulnerability metadata from GitHub and an optional GitHub PAT
-and outputs them to jsonl and optionally saves them to a local SQLite3 DB.
-"""
+
+class GithubClientConfig(TypedDict, total=True):  # require all keys
+    # user agent to use
+    user_agent: str
+
+    # aiohttp total timeout in seconds
+    total_timeout: int
+
+    # number of simultaneous connections to open
+    max_connections: int
+
+    # A github personal access token. Defaults GITHUB_PAT env var. It should
+    # have most of the scopes from
+    # https://developer.github.com/v4/guides/forming-calls/#authenticating-with-graphql
+    github_auth_token: Optional[str]
+
+    # accept headers to add (e.g. to opt into preview APIs)
+    github_accept_headers: List[str]
+
+    # the number of concurrent workers to run github requests
+    github_workers: int
+
+    # github query types to fetch. When empty defaults to all query types.
+    github_query_type: Iterable[str]
+
+    # number of github repo langs to fetch with each request
+    github_repo_langs_page_size: int
+
+    # number of github repo dep manifests to fetch with each request (defaults to 1)
+    github_repo_dep_manifests_page_size: int
+
+    # number of github repo deps for a manifest to fetch with each request (defaults to 100)
+    github_repo_dep_manifest_deps_page_size: int
+
+    # number of github repo vuln alerts to fetch with each request (defaults to 25)
+    github_repo_vuln_alerts_page_size: int
+
+    # number of github repo vulns per alerts to fetch with each request (defaults to 25)
+    github_repo_vuln_alert_vulns_page_size: int
+
+    # frequency in seconds to check whether worker queues are empty and quit (defaults to 3)
+    github_poll_seconds: int
+
+    # max times to retry a query with jitter and exponential backoff (defaults to 12). Ignores 404s and graphql not found errors
+    github_max_retries: int
 
 
 def is_not_found_exception(err: Exception) -> bool:
@@ -80,84 +123,6 @@ async def run_graphql(
         # elif err.response.status_code in {403, 503}:
 
 
-def parse_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.add_argument(
-        "--github-accept-header",
-        nargs="*",
-        action="append",
-        default=[
-            # https://developer.github.com/v4/previews/#access-to-a-repositories-dependency-graph
-            "application/vnd.github.hawkgirl-preview+json",
-            # https://developer.github.com/v4/previews/#repository-vulnerability-alerts
-            "application/vnd.github.vixen-preview+json",
-        ],
-    )
-    parser.add_argument(
-        "--github-auth-token",
-        default=os.environ.get("GITHUB_PAT", None),
-        help="A github personal access token. Defaults GITHUB_PAT env var. It"
-        "should have most of the scopes from"
-        "https://developer.github.com/v4/guides/forming-calls/#authenticating-with-graphql",
-    )
-    parser.add_argument(
-        "--github-workers",
-        help="the number of concurrent workers to run github requests (defaults to 3)",
-        type=int,
-        default=3,
-    )
-    query_types = [k.name for k in ResourceKind]
-    parser.add_argument(
-        "--github-query-type",
-        help="a github query type to fetch. Defaults to all types",
-        action="append",
-        choices=query_types,
-    )
-    parser.add_argument(
-        "--github-repo-langs-page-size",
-        help="number of github repo langs to fetch with each request (defaults to 25)",
-        type=int,
-        default=25,
-    )
-    parser.add_argument(
-        "--github-repo-dep-manifests-page-size",
-        help="number of github repo dep manifests to fetch with each request (defaults to 1)",
-        type=int,
-        default=1,
-    )
-    parser.add_argument(
-        "--github-repo-dep-manifest-deps-page-size",
-        help="number of github repo deps for a manifest to fetch with each request (defaults to 100)",
-        type=int,
-        default=100,
-    )
-    parser.add_argument(
-        "--github-repo-vuln-alerts-page-size",
-        help="number of github repo vuln alerts to fetch with each request (defaults to 25)",
-        type=int,
-        default=25,
-    )
-    parser.add_argument(
-        "--github-repo-vuln-alert-vulns-page-size",
-        help="number of github repo vulns per alerts to fetch with each request (defaults to 25)",
-        type=int,
-        default=25,
-    )
-    parser.add_argument(
-        "--github-poll-seconds",
-        help="frequency in seconds to check whether worker queues are empty and quit (defaults to 3)",
-        type=int,
-        default=3,
-    )
-    parser.add_argument(
-        "--github-max-retries",
-        help="max times to retry a query with jitter and exponential backoff (defaults to 12)"
-        "Ignores 404s and graphql not found errors",
-        type=int,
-        default=12,
-    )
-    return parser
-
-
 @contextmanager
 def event_in_progress(event: asyncio.Event):
     "sets an asyncio.Event to true for the duration of the yield"
@@ -166,24 +131,26 @@ def event_in_progress(event: asyncio.Event):
     event.clear()
 
 
-def aiohttp_session(args: argparse.Namespace) -> aiohttp.ClientSession:
+def aiohttp_session(config: GithubClientConfig) -> aiohttp.ClientSession:
     return aiohttp.ClientSession(
         headers={
-            "Accept": ",".join(args.github_accept_header),
-            "User-Agent": args.user_agent,
+            "Accept": ",".join(config["github_accept_headers"]),
+            "User-Agent": config["user_agent"],
         },
-        timeout=aiohttp.ClientTimeout(total=args.total_timeout),
-        connector=aiohttp.TCPConnector(limit=args.max_connections),
+        timeout=aiohttp.ClientTimeout(total=config["total_timeout"]),
+        connector=aiohttp.TCPConnector(limit=config["max_connections"]),
         raise_for_status=True,
     )
 
 
 async def quiz_executor_and_schema(
-    args: argparse.Namespace, session: aiohttp.ClientSession
+    config: GithubClientConfig, session: aiohttp.ClientSession
 ) -> Tuple[quiz.execution.async_executor, quiz.Schema]:
     async_executor = quiz.async_executor(
         url="https://api.github.com/graphql",
-        auth=snug.header_adder({"Authorization": f"Bearer {args.github_auth_token}"}),
+        auth=snug.header_adder(
+            {"Authorization": f"Bearer {config['github_auth_token']}"}
+        ),
         client=session,
     )
     result = await async_executor(quiz.INTROSPECTION_QUERY)
@@ -214,7 +181,7 @@ async def worker(
     2. sets request pending
     3. runs the request
     4. clears request pending
-    5. pushes successful request response exhcanges to the to_write queue
+    5. pushes successful request response exchanges to the to_write queue
     """
     queue_wait_timeout_seconds = 2
 
@@ -270,16 +237,19 @@ def get_response(task):
 
 
 async def run_pipeline(
-    source: Generator[Dict[str, str], None, None], args: argparse.Namespace
-):
+    source: Generator[Dict[str, str], None, None], config: GithubClientConfig
+) -> AsyncGenerator[Dict, None]:
     log.info("pipeline github_metadata started")
+    if config["github_query_type"]:
+        config["github_query_type"] = [k.name for k in ResourceKind]
+        log.info(f"defaulting to all github query types {config['github_query_type']}")
 
-    async with aiohttp_session(args) as session:
-        executor, schema = await quiz_executor_and_schema(args, session)
+    async with aiohttp_session(config) as session:
+        executor, schema = await quiz_executor_and_schema(config, session)
         run_graphql_with_backoff = backoff.on_exception(
             backoff.expo,
             (quiz.ErrorResponse, quiz.HTTPError),
-            max_tries=args.github_max_retries,
+            max_tries=config["github_max_retries"],
             giveup=is_not_found_exception,
             logger=log,
         )(run_graphql)
@@ -291,7 +261,7 @@ async def run_pipeline(
         # start workers that run queries from to_run and write responses to
         # to_write until the stop_workers event is set
         pending_tasks: Dict[str, asyncio.Event] = {
-            f"worker-{i}": asyncio.Event() for i in range(args.github_workers)
+            f"worker-{i}": asyncio.Event() for i in range(config["github_workers"])
         }
         worker_tasks: Dict[str, asyncio.Task] = {
             name: asyncio.create_task(
@@ -311,10 +281,9 @@ async def run_pipeline(
         log.info(f"started {len(worker_tasks)} GH workers")
 
         # add initial items to the queue
-        args_dict = vars(args)
         for item in source:
             org_repo: OrgRepo = OrgRepo.from_github_repo_url(item["repo_url"])
-            context = ChainMap(args_dict, dict(owner=org_repo.org, name=org_repo.repo))
+            context = ChainMap(config, dict(owner=org_repo.org, name=org_repo.repo))
             for request in get_next_requests(log, context, last_exchange=None):
                 log.debug(f"initial request: {request.log_id}")
                 assert len(request.selection_updates) == len(
@@ -327,9 +296,7 @@ async def run_pipeline(
             try:
                 exchange: RequestResponseExchange = to_write.get_nowait()
 
-                next_requests = list(
-                    get_next_requests(log, ChainMap(args_dict), exchange)
-                )
+                next_requests = list(get_next_requests(log, ChainMap(config), exchange))
                 for request in next_requests:
                     assert (
                         len(request.selection_updates)
@@ -350,9 +317,9 @@ async def run_pipeline(
                 to_write.task_done()
             except asyncio.QueueEmpty:
                 log.debug(
-                    f"no responses to write. sleeping for {args.github_poll_seconds}s"
+                    f"no responses to write. sleeping for {config['github_poll_seconds']}s"
                 )
-                await asyncio.sleep(args.github_poll_seconds)
+                await asyncio.sleep(config["github_poll_seconds"])
 
             log.debug(
                 f"{to_run.qsize()} to run; "
