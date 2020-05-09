@@ -285,7 +285,7 @@ def parse_command(task_name: str, task_command: str, task_data: Dict) -> Optiona
     return None
 
 
-def postprocess_task(
+def serialize_repo_task(
     task_data: Dict[str, Any], task_names_to_process: AbstractSet[str],
 ) -> Optional[Dict[str, Any]]:
     # filter for node list_metadata output to parse and flatten deps
