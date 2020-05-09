@@ -41,10 +41,6 @@ LOGGING = {
         "depobs.scanner.docker.images": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.docker.containers": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.docker.log_reader": {"handlers": ["console"], "level": "WARN"},
-        "depobs.scanner.pipelines.fetch_package_data": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
         "depobs.scanner.pipelines.run_repo_tasks": {
             "handlers": ["console"],
             "level": "INFO",
