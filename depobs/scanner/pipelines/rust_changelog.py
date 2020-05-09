@@ -53,7 +53,7 @@ TODO: detect dep version changes
 """
 
 
-def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+def parse_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "-m",
         "--manifest-path",

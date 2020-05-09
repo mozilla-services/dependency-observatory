@@ -52,7 +52,7 @@ log = logging.getLogger(__name__)
 __doc__ = """Saves JSON lines to a postgres DB"""
 
 
-def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+def parse_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--input-type", type=str, required=True, help="Input type to save."
     )

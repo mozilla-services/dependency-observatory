@@ -54,7 +54,7 @@ Does not spin up containers or hit the network.
 """
 
 
-def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+def parse_args(parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
     parser.add_argument(
         "--repo-task",
         type=str,
