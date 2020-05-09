@@ -23,6 +23,7 @@ LOGGING = {
         "do": {"handlers": ["console"], "level": "DEBUG"},
         "request.summary": {"handlers": ["console"], "level": "INFO"},
         "depobs.database.models": {"handlers": ["console"], "level": "INFO"},
+        "depobs.database.serializers": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.views": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.scans": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.score_details.blueprint": {
@@ -40,19 +41,7 @@ LOGGING = {
         "depobs.scanner.docker.images": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.docker.containers": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.docker.log_reader": {"handlers": ["console"], "level": "WARN"},
-        "depobs.scanner.pipelines.fetch_package_data": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
         "depobs.scanner.pipelines.run_repo_tasks": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
-        "depobs.scanner.pipelines.postprocess": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
-        "depobs.scanner.pipelines.save_to_db": {
             "handlers": ["console"],
             "level": "INFO",
         },
@@ -136,16 +125,16 @@ _aiohttp_args = dict(
 
 NPM_CLIENT = {
     **_aiohttp_args,
-    "package_batch_size": 10,
-    # an npm registry access token for fetch_npm_registry_metadata. Defaults NPM_PAT env var. Should be read-only.
-    "npm_auth_token": os.environ.get("NPM_PAT", None),
+    # use second dict call to workaround update typerror with line above
+    # refs: https://github.com/python/mypy/issues/1430
+    **dict(
+        package_batch_size=10,
+        # an npm registry access token for fetch_npm_registry_metadata. Defaults NPM_PAT env var. Should be read-only.
+        npm_auth_token=os.environ.get("NPM_PAT", None),
+    ),
 }
 
-NPMSIO_CLIENT = {
-    **_aiohttp_args,
-    "max_connections": 1,
-    "package_batch_size": 50,
-}
+NPMSIO_CLIENT = {**_aiohttp_args, **dict(max_connections=1, package_batch_size=50,)}
 
 # shared docker args for multiple tasks
 _docker_args = dict(

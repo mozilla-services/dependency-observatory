@@ -54,20 +54,18 @@ from depobs.scanner.clients.npm_registry import (
     NPMRegistryClientConfig,
 )
 from depobs.database.models import (
-    PackageVersion,
     PackageGraph,
+    PackageVersion,
+    insert_package_audit,
+    insert_package_graph,
 )
 from depobs.scanner.models.package_meta_result import Result
-from depobs.scanner.pipelines.postprocess import postprocess_task
+from depobs.worker.serializers import serialize_repo_task
 from depobs.scanner.pipelines.run_repo_tasks import (
     RunRepoTasksConfig,
     iter_task_envs,
     build_images_for_envs,
     run_task as run_repo_task,  # try to avoid confusing with celery tasks
-)
-from depobs.scanner.pipelines.save_to_db import (
-    insert_package_graph,
-    insert_package_audit,
 )
 import depobs.scanner.docker.containers as containers
 from depobs.scanner.models.language import (
@@ -217,13 +215,13 @@ def scan_npm_package(
             log.info(f"got container task results for {package_name}@{package_version}")
             log.debug(f"got container task results:\n{container_task_results}")
             for task_result in container_task_results["task_results"]:
-                postprocessed_container_task_result: Optional[
+                serialized_container_task_result: Optional[
                     Dict[str, Any]
-                ] = postprocess_task(task_result, {"list_metadata", "audit"})
-                if not postprocessed_container_task_result:
+                ] = serialize_repo_task(task_result, {"list_metadata", "audit"})
+                if not serialized_container_task_result:
                     continue
 
-                task_data = postprocessed_container_task_result
+                task_data = serialized_container_task_result
                 task_name = task_data["name"]
                 if task_name == "list_metadata":
                     insert_package_graph(models.db.session, task_data)

@@ -1,15 +1,6 @@
-import argparse
-import asyncio
-from collections import ChainMap
-from dataclasses import asdict, dataclass
-import functools
-import itertools
+from dataclasses import asdict
 import json
 import logging
-import pathlib
-from random import randrange
-import sys
-import time
 from typing import (
     AbstractSet,
     Any,
@@ -23,7 +14,6 @@ from typing import (
     Tuple,
     Union,
 )
-import typing
 
 from depobs.scanner.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
 from depobs.util.serialize_util import (
@@ -41,30 +31,9 @@ from depobs.scanner.models.language import (
     package_managers,
 )
 from depobs.scanner.models.nodejs import NPMPackage, flatten_deps
-from depobs.scanner.pipelines.util import exc_to_str
 
 
 log = logging.getLogger(__name__)
-
-
-__doc__ = """Post processes tasks for various outputs e.g. flattening deps,
-filtering and extracting fields, etc.
-
-Does not spin up containers or hit the network.
-"""
-
-
-def parse_args(pipeline_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-    parser.add_argument(
-        "--repo-task",
-        type=str,
-        action="append",
-        required=False,
-        default=[],
-        help="postprocess install, list_metadata, or audit tasks."
-        "Defaults to none of them.",
-    )
-    return parser
 
 
 def parse_stdout_as_json(stdout: Optional[str]) -> Optional[Dict]:
@@ -316,7 +285,7 @@ def parse_command(task_name: str, task_command: str, task_data: Dict) -> Optiona
     return None
 
 
-def postprocess_task(
+def serialize_repo_task(
     task_data: Dict[str, Any], task_names_to_process: AbstractSet[str],
 ) -> Optional[Dict[str, Any]]:
     # filter for node list_metadata output to parse and flatten deps
@@ -344,30 +313,3 @@ def postprocess_task(
             )
         task_result.update(updates)
     return task_result
-
-
-async def run_pipeline(
-    source: Generator[Dict[str, Any], None, None], args: argparse.Namespace
-) -> AsyncGenerator[Dict, None]:
-    log.info(f"{__name__} pipeline started")
-
-    for i, line in enumerate(source):
-        result = extract_fields(
-            line,
-            [
-                "branch",
-                "commit",
-                "tag",
-                "org",
-                "repo",
-                "repo_url",
-                "ref",
-                "dependency_files",
-            ],
-        )
-        result["tasks"] = []
-
-        for task_data in get_in(line, ["task_results"], []):
-            task_result = postprocess_task(task_data, args.repo_task)
-            result["tasks"].append(task_result)
-        yield result
