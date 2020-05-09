@@ -60,7 +60,7 @@ from depobs.database.models import (
     insert_package_graph,
 )
 from depobs.scanner.models.package_meta_result import Result
-from depobs.scanner.pipelines.postprocess import postprocess_task
+from depobs.worker.serializers import postprocess_task
 from depobs.scanner.pipelines.run_repo_tasks import (
     RunRepoTasksConfig,
     iter_task_envs,
