@@ -54,8 +54,10 @@ from depobs.scanner.clients.npm_registry import (
     NPMRegistryClientConfig,
 )
 from depobs.database.models import (
-    PackageVersion,
     PackageGraph,
+    PackageVersion,
+    insert_package_audit,
+    insert_package_graph,
 )
 from depobs.scanner.models.package_meta_result import Result
 from depobs.scanner.pipelines.postprocess import postprocess_task
@@ -64,10 +66,6 @@ from depobs.scanner.pipelines.run_repo_tasks import (
     iter_task_envs,
     build_images_for_envs,
     run_task as run_repo_task,  # try to avoid confusing with celery tasks
-)
-from depobs.scanner.pipelines.save_to_db import (
-    insert_package_graph,
-    insert_package_audit,
 )
 import depobs.scanner.docker.containers as containers
 from depobs.scanner.models.language import (

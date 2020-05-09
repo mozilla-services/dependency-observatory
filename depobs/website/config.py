@@ -52,10 +52,6 @@ LOGGING = {
             "handlers": ["console"],
             "level": "INFO",
         },
-        "depobs.scanner.pipelines.save_to_db": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
     },
 }
 
