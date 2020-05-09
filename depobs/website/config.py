@@ -22,6 +22,10 @@ LOGGING = {
     "loggers": {
         "do": {"handlers": ["console"], "level": "DEBUG"},
         "request.summary": {"handlers": ["console"], "level": "INFO"},
+        "depobs.clients.cratesio": {"handlers": ["console"], "level": "INFO"},
+        "depobs.clients.github": {"handlers": ["console"], "level": "INFO"},
+        "depobs.clients.npmsio": {"handlers": ["console"], "level": "INFO"},
+        "depobs.clients.npm_registry": {"handlers": ["console"], "level": "INFO",},
         "depobs.database.models": {"handlers": ["console"], "level": "INFO"},
         "depobs.database.serializers": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.views": {"handlers": ["console"], "level": "INFO"},
@@ -32,20 +36,10 @@ LOGGING = {
         },
         "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
         "depobs.worker.scoring": {"handlers": ["console"], "level": "INFO",},
-        "depobs.scanner.clients.cratesio": {"handlers": ["console"], "level": "INFO"},
-        "depobs.scanner.clients.github": {"handlers": ["console"], "level": "INFO"},
-        "depobs.scanner.clients.npmsio": {"handlers": ["console"], "level": "INFO"},
-        "depobs.scanner.clients.npm_registry": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
         "depobs.scanner.docker.images": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.docker.containers": {"handlers": ["console"], "level": "INFO"},
         "depobs.scanner.docker.log_reader": {"handlers": ["console"], "level": "WARN"},
-        "depobs.scanner.repo_tasks": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
+        "depobs.scanner.repo_tasks": {"handlers": ["console"], "level": "INFO",},
     },
 }
 
