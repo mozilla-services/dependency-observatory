@@ -62,7 +62,6 @@ from depobs.database.models import (
 )
 import depobs.docker.containers as containers
 from depobs.scanner.models.package_meta_result import Result
-from depobs.worker.serializers import serialize_repo_task
 from depobs.scanner.repo_tasks import (
     RunRepoTasksConfig,
     iter_task_envs,
@@ -218,7 +217,9 @@ def scan_npm_package(
             for task_result in container_task_results["task_results"]:
                 serialized_container_task_result: Optional[
                     Dict[str, Any]
-                ] = serialize_repo_task(task_result, {"list_metadata", "audit"})
+                ] = serializers.serialize_repo_task(
+                    task_result, {"list_metadata", "audit"}
+                )
                 if not serialized_container_task_result:
                     continue
 
