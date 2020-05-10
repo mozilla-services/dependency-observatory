@@ -34,7 +34,6 @@ from sqlalchemy import func
 
 from depobs.database.mixins import TaskIDMixin
 
-from depobs.util.serialize_util import extract_nested_fields
 
 log = logging.getLogger(__name__)
 
@@ -1175,91 +1174,59 @@ def insert_package_graph(task_data: Dict) -> None:
     db.session.commit()
 
 
-def insert_package_audit(task_data: Dict) -> None:
-    is_yarn_cmd = bool("yarn" in task_data["command"])
-    # NB: yarn has .advisory and .resolution
+def insert_advisories(advisories: Iterable[Advisory]) -> None:
+    for advisory in advisories:
+        # TODO: update advisory fields if the advisory to insert is newer
+        get_node_advisory_id_query(advisory).one_or_none() or db.session.add(advisory)
+        db.session.commit()
 
-    # the same advisory JSON (from the npm DB) is
-    # at .advisories{k, v} for npm and .advisories[].advisory for yarn
-    advisories = (
-        (item.get("advisory", None) for item in task_data.get("advisories", []))
-        if is_yarn_cmd
-        else task_data.get("advisories", dict()).values()
+
+def update_advisory_vulnerable_package_versions(
+    advisory: Advisory, impacted_versions: Set[str]
+) -> None:
+    # make sure the advisory we want to update is already in the db
+    db_advisory = (
+        db.session.query(Advisory.id, Advisory.vulnerable_package_version_ids)
+        .filter_by(language="node", url=advisory.url)
+        .first()
     )
-    non_null_advisories = (adv for adv in advisories if adv)
-
-    for advisory in non_null_advisories:
-        advisory_fields = extract_nested_fields(
-            advisory,
-            {
-                "package_name": ["module_name"],
-                "npm_advisory_id": ["id"],
-                "vulnerable_versions": ["vulnerable_versions"],
-                "patched_versions": ["patched_versions"],
-                "created": ["created"],
-                "updated": ["updated"],
-                "url": ["url"],
-                "severity": ["severity"],
-                "cves": ["cves"],
-                "cwe": ["cwe"],
-                "exploitability": ["metadata", "exploitability"],
-                "title": ["title"],
-            },
+    # look up PackageVersions for known impacted versions
+    impacted_version_package_ids = list(
+        vid
+        for result in db.session.query(PackageVersion.id)
+        .filter(
+            PackageVersion.name == advisory.package_name,
+            PackageVersion.version.in_(impacted_versions),
         )
-        advisory_fields["cwe"] = int(advisory_fields["cwe"].lower().replace("cwe-", ""))
-        advisory_fields["language"] = "node"
-        advisory_fields["vulnerable_package_version_ids"] = []
-
-        get_node_advisory_id_query(advisory_fields).one_or_none() or db.session.add(
-            Advisory(**advisory_fields)
+        .all()
+        for vid in result
+    )
+    if len(impacted_versions) != len(impacted_version_package_ids):
+        log.warning(
+            f"missing package versions for {advisory.package_name!r}"
+            f" in the db or misparsed audit output version:"
+            f" {impacted_versions} {impacted_version_package_ids}"
         )
-        db.session.commit()
 
-        # TODO: update other advisory fields too
-        impacted_versions = set(
-            finding.get("version", None)
-            for finding in advisory.get("findings", [])
-            if finding.get("version", None)
-        )
-        db_advisory = (
-            db.session.query(Advisory.id, Advisory.vulnerable_package_version_ids)
-            .filter_by(language="node", url=advisory["url"])
-            .first()
-        )
-        impacted_version_package_ids = list(
-            vid
-            for result in db.session.query(PackageVersion.id)
-            .filter(
-                PackageVersion.name == advisory_fields["package_name"],
-                PackageVersion.version.in_(impacted_versions),
-            )
-            .all()
-            for vid in result
-        )
-        if len(impacted_versions) != len(impacted_version_package_ids):
-            log.warning(
-                f"missing package versions for {advisory_fields['package_name']!r}"
-                f" in the db or misparsed audit output version:"
-                f" {impacted_versions} {impacted_version_package_ids}"
-            )
-
-        if db_advisory.vulnerable_package_version_ids is None:
-            db.session.query(Advisory.id).filter_by(id=db_advisory.id).update(
-                dict(vulnerable_package_version_ids=list())
-            )
-
-        # TODO: lock the row?
-        vpvids = set(
-            list(
-                db.session.query(Advisory)
-                .filter_by(id=db_advisory.id)
-                .first()
-                .vulnerable_package_version_ids
-            )
-        )
-        vpvids.update(set(impacted_version_package_ids))
-
+    # handle null Advisory.vulnerable_package_version_ids
+    if db_advisory.vulnerable_package_version_ids is None:
         db.session.query(Advisory.id).filter_by(id=db_advisory.id).update(
-            dict(vulnerable_package_version_ids=sorted(vpvids))
+            dict(vulnerable_package_version_ids=list())
         )
-        db.session.commit()
+
+    # TODO: lock the row?
+    vpvids = set(
+        list(
+            db.session.query(Advisory)
+            .filter_by(id=db_advisory.id)
+            .first()
+            .vulnerable_package_version_ids
+        )
+    )
+    vpvids.update(set(impacted_version_package_ids))
+
+    # update the vulnerable_package_version_ids for the advisory
+    db.session.query(Advisory.id).filter_by(id=db_advisory.id).update(
+        dict(vulnerable_package_version_ids=sorted(vpvids))
+    )
+    db.session.commit()

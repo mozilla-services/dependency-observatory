@@ -12,11 +12,12 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
 )
 
-from depobs.database.models import NPMRegistryEntry, NPMSIOScore
+from depobs.database.models import Advisory, NPMRegistryEntry, NPMSIOScore
 from depobs.scanner.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
@@ -436,3 +437,57 @@ def serialize_npmsio_scores(
             "source_url"
         ] = f"https://api.npms.io/v2/package/{fields['package_name']}"
         yield NPMSIOScore(**fields)
+
+
+def get_advisory_impacted_versions(advisory_json: Dict) -> Set[str]:
+    """
+    Extracts the findings field listing impacted versions for an
+    advisory from npm audit JSON output
+    """
+    impacted_versions = set(
+        finding.get("version", None)
+        for finding in advisory_json.get("findings", [])  # NB: not an Advisory model
+        if finding.get("version", None)
+    )
+    return impacted_versions
+
+
+def node_repo_task_audit_output_to_advisories_and_impacted_versions(
+    task_data: Dict,
+) -> Iterable[Tuple[Advisory, AbstractSet[str]]]:
+    is_yarn_cmd = bool("yarn" in task_data["command"])
+    # NB: yarn has .advisory and .resolution
+
+    # the same advisory JSON (from the npm DB) is
+    # at .advisories{k, v} for npm and .advisories[].advisory for yarn
+    advisories = (
+        (item.get("advisory", None) for item in task_data.get("advisories", []))
+        if is_yarn_cmd
+        else task_data.get("advisories", dict()).values()
+    )
+    return ((adv, get_advisory_impacted_versions(adv)) for adv in advisories if adv)
+
+
+def serialize_advisories(advisories_data: Iterable[Dict]) -> Iterable[Advisory]:
+    for advisory_data in advisories_data:
+        advisory_fields = extract_nested_fields(
+            advisory_data,
+            {
+                "package_name": ["module_name"],
+                "npm_advisory_id": ["id"],
+                "vulnerable_versions": ["vulnerable_versions"],
+                "patched_versions": ["patched_versions"],
+                "created": ["created"],
+                "updated": ["updated"],
+                "url": ["url"],
+                "severity": ["severity"],
+                "cves": ["cves"],
+                "cwe": ["cwe"],
+                "exploitability": ["metadata", "exploitability"],
+                "title": ["title"],
+            },
+        )
+        advisory_fields["cwe"] = int(advisory_fields["cwe"].lower().replace("cwe-", ""))
+        advisory_fields["language"] = "node"
+        advisory_fields["vulnerable_package_version_ids"] = []
+        yield Advisory(**advisory_fields)

@@ -57,7 +57,6 @@ from depobs.clients.npm_registry import (
 from depobs.database.models import (
     PackageGraph,
     PackageVersion,
-    insert_package_audit,
     insert_package_graph,
 )
 import depobs.docker.containers as containers
@@ -228,7 +227,17 @@ def scan_npm_package(
                 if task_name == "list_metadata":
                     insert_package_graph(task_data)
                 elif task_name == "audit":
-                    insert_package_audit(task_data)
+
+                    for (
+                        advisory,
+                        impacted_versions,
+                    ) in serializers.node_repo_task_audit_output_to_advisories_and_impacted_versions(
+                        task_data
+                    ):
+                        models.insert_advisories([advisory])
+                        models.update_advisory_vulnerable_package_versions(
+                            advisory, set(impacted_versions)
+                        )
                 else:
                     log.warning(f"skipping unrecognized task {task_name}")
 
