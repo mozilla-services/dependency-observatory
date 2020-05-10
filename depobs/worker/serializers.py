@@ -8,20 +8,17 @@ from typing import (
     AsyncGenerator,
     Dict,
     Generator,
+    Iterable,
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
 )
 
+from depobs.database.models import Advisory, NPMRegistryEntry, NPMSIOScore
 from depobs.scanner.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
-from depobs.util.serialize_util import (
-    get_in,
-    extract_fields,
-    extract_nested_fields,
-    iter_jsonlines,
-)
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
 from depobs.scanner.models.language import (
@@ -31,6 +28,12 @@ from depobs.scanner.models.language import (
     package_managers,
 )
 from depobs.scanner.models.nodejs import NPMPackage, flatten_deps
+from depobs.util.serialize_util import (
+    get_in,
+    extract_fields,
+    extract_nested_fields,
+    iter_jsonlines,
+)
 
 
 log = logging.getLogger(__name__)
@@ -313,3 +316,178 @@ def serialize_repo_task(
             )
         task_result.update(updates)
     return task_result
+
+
+def serialize_npm_registry_entries(
+    npm_registry_entries: Iterable[Dict[str, Any]]
+) -> Iterable[NPMRegistryEntry]:
+    for entry in npm_registry_entries:
+        # save version specific data
+        for version, version_data in entry["versions"].items():
+            fields = extract_nested_fields(
+                version_data,
+                {
+                    "package_name": ["name"],
+                    "package_version": ["version"],
+                    "shasum": ["dist", "shasum"],
+                    "tarball": ["dist", "tarball"],
+                    "git_head": ["gitHead"],
+                    "repository_type": ["repository", "type"],
+                    "repository_url": ["repository", "url"],
+                    "description": ["description"],
+                    "url": ["url"],
+                    "license_type": ["license"],
+                    "keywords": ["keywords"],
+                    "has_shrinkwrap": ["_hasShrinkwrap"],
+                    "bugs_url": ["bugs", "url"],
+                    "bugs_email": ["bugs", "email"],
+                    "author_name": ["author", "name"],
+                    "author_email": ["author", "email"],
+                    "author_url": ["author", "url"],
+                    "maintainers": ["maintainers"],
+                    "contributors": ["contributors"],
+                    "publisher_name": ["_npmUser", "name"],
+                    "publisher_email": ["_npmUser", "email"],
+                    "publisher_node_version": ["_nodeVersion"],
+                    "publisher_npm_version": ["_npmVersion"],
+                },
+            )
+            # license can we a string e.g. 'MIT'
+            # or dict e.g. {'type': 'MIT', 'url': 'https://github.com/jonschlinkert/micromatch/blob/master/LICENSE'}
+            fields["license_url"] = None
+            if isinstance(fields["license_type"], dict):
+                fields["license_url"] = fields["license_type"].get("url", None)
+                fields["license_type"] = fields["license_type"].get("type", None)
+
+            # looking at you debuglog@0.0.{3,4} with:
+            # [{"name": "StrongLoop", "url": "http://strongloop.com/license/"}, "MIT"],
+            if not (
+                (
+                    isinstance(fields["license_type"], str)
+                    or fields["license_type"] is None
+                )
+                and (
+                    isinstance(fields["license_url"], str)
+                    or fields["license_url"] is None
+                )
+            ):
+                log.warning(f"skipping weird license format {fields['license_type']}")
+                fields["license_url"] = None
+                fields["license_type"] = None
+
+            # published_at .time[<version>] e.g. '2014-05-23T21:21:04.170Z' (not from
+            # the version info object)
+            # where time: an object mapping versions to the time published, along with created and modified timestamps
+            fields["published_at"] = get_in(entry, ["time", version])
+            fields["package_modified_at"] = get_in(entry, ["time", "modified"])
+
+            fields[
+                "source_url"
+            ] = f"https://registry.npmjs.org/{fields['package_name']}"
+            yield NPMRegistryEntry(**fields)
+
+
+def serialize_npmsio_scores(
+    npmsio_scores: Iterable[Dict[str, Any]]
+) -> Iterable[NPMSIOScore]:
+    for score in npmsio_scores:
+        fields = extract_nested_fields(
+            score,
+            {
+                "package_name": ["collected", "metadata", "name"],
+                "package_version": ["collected", "metadata", "version"],
+                "analyzed_at": ["analyzedAt"],  # e.g. "2019-11-27T19:31:42.541Z"
+                # overall score from .score.final on the interval [0, 1]
+                "score": ["score", "final"],
+                # score components on the interval [0, 1]
+                "quality": ["score", "detail", "quality"],
+                "popularity": ["score", "detail", "popularity"],
+                "maintenance": ["score", "detail", "maintenance"],
+                # score subcomponent/detail fields from .evaluation.<component>.<subcomponent>
+                # generally frequencies and subscores are decimals between [0, 1]
+                # or counts of downloads, stars, etc.
+                # acceleration is signed (+/-)
+                "branding": ["evaluation", "quality", "branding"],
+                "carefulness": ["evaluation", "quality", "carefulness"],
+                "health": ["evaluation", "quality", "health"],
+                "tests": ["evaluation", "quality", "tests"],
+                "community_interest": ["evaluation", "popularity", "communityInterest"],
+                "dependents_count": ["evaluation", "popularity", "dependentsCount"],
+                "downloads_acceleration": [
+                    "evaluation",
+                    "popularity",
+                    "downloadsAcceleration",
+                ],
+                "downloads_count": ["evaluation", "popularity", "downloadsCount"],
+                "commits_frequency": ["evaluation", "maintenance", "commitsFrequency"],
+                "issues_distribution": [
+                    "evaluation",
+                    "maintenance",
+                    "issuesDistribution",
+                ],
+                "open_issues": ["evaluation", "maintenance", "openIssues"],
+                "releases_frequency": [
+                    "evaluation",
+                    "maintenance",
+                    "releasesFrequency",
+                ],
+            },
+        )
+        fields[
+            "source_url"
+        ] = f"https://api.npms.io/v2/package/{fields['package_name']}"
+        yield NPMSIOScore(**fields)
+
+
+def get_advisory_impacted_versions(advisory_json: Dict) -> Set[str]:
+    """
+    Extracts the findings field listing impacted versions for an
+    advisory from npm audit JSON output
+    """
+    impacted_versions = set(
+        finding.get("version", None)
+        for finding in advisory_json.get("findings", [])  # NB: not an Advisory model
+        if finding.get("version", None)
+    )
+    return impacted_versions
+
+
+def node_repo_task_audit_output_to_advisories_and_impacted_versions(
+    task_data: Dict,
+) -> Iterable[Tuple[Advisory, AbstractSet[str]]]:
+    is_yarn_cmd = bool("yarn" in task_data["command"])
+    # NB: yarn has .advisory and .resolution
+
+    # the same advisory JSON (from the npm DB) is
+    # at .advisories{k, v} for npm and .advisories[].advisory for yarn
+    advisories = (
+        (item.get("advisory", None) for item in task_data.get("advisories", []))
+        if is_yarn_cmd
+        else task_data.get("advisories", dict()).values()
+    )
+    return ((adv, get_advisory_impacted_versions(adv)) for adv in advisories if adv)
+
+
+def serialize_advisories(advisories_data: Iterable[Dict]) -> Iterable[Advisory]:
+    for advisory_data in advisories_data:
+        advisory_fields = extract_nested_fields(
+            advisory_data,
+            {
+                "package_name": ["module_name"],
+                "npm_advisory_id": ["id"],
+                "vulnerable_versions": ["vulnerable_versions"],
+                "patched_versions": ["patched_versions"],
+                "created": ["created"],
+                "updated": ["updated"],
+                "url": ["url"],
+                "severity": ["severity"],
+                "cves": ["cves"],
+                "cwe": ["cwe"],
+                "exploitability": ["metadata", "exploitability"],
+                "title": ["title"],
+            },
+        )
+        advisory_fields["cwe"] = int(advisory_fields["cwe"].lower().replace("cwe-", ""))
+        advisory_fields["language"] = "node"
+        advisory_fields["vulnerable_package_version_ids"] = []
+        yield Advisory(**advisory_fields)

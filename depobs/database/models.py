@@ -34,7 +34,6 @@ from sqlalchemy import func
 
 from depobs.database.mixins import TaskIDMixin
 
-from depobs.util.serialize_util import extract_nested_fields, get_in
 
 log = logging.getLogger(__name__)
 
@@ -999,163 +998,54 @@ def store_package_reports(prs: List[PackageReport]) -> None:
     db.session.commit()
 
 
-def insert_npmsio_scores(npmsio_scores: Iterable[Dict[str, Any]]) -> None:
+def insert_npmsio_scores(npmsio_scores: Iterable[NPMSIOScore]) -> None:
     for score in npmsio_scores:
-        fields = extract_nested_fields(
-            score,
-            {
-                "package_name": ["collected", "metadata", "name"],
-                "package_version": ["collected", "metadata", "version"],
-                "analyzed_at": ["analyzedAt"],  # e.g. "2019-11-27T19:31:42.541Z"
-                # overall score from .score.final on the interval [0, 1]
-                "score": ["score", "final"],
-                # score components on the interval [0, 1]
-                "quality": ["score", "detail", "quality"],
-                "popularity": ["score", "detail", "popularity"],
-                "maintenance": ["score", "detail", "maintenance"],
-                # score subcomponent/detail fields from .evaluation.<component>.<subcomponent>
-                # generally frequencies and subscores are decimals between [0, 1]
-                # or counts of downloads, stars, etc.
-                # acceleration is signed (+/-)
-                "branding": ["evaluation", "quality", "branding"],
-                "carefulness": ["evaluation", "quality", "carefulness"],
-                "health": ["evaluation", "quality", "health"],
-                "tests": ["evaluation", "quality", "tests"],
-                "community_interest": ["evaluation", "popularity", "communityInterest"],
-                "dependents_count": ["evaluation", "popularity", "dependentsCount"],
-                "downloads_acceleration": [
-                    "evaluation",
-                    "popularity",
-                    "downloadsAcceleration",
-                ],
-                "downloads_count": ["evaluation", "popularity", "downloadsCount"],
-                "commits_frequency": ["evaluation", "maintenance", "commitsFrequency"],
-                "issues_distribution": [
-                    "evaluation",
-                    "maintenance",
-                    "issuesDistribution",
-                ],
-                "open_issues": ["evaluation", "maintenance", "openIssues"],
-                "releases_frequency": [
-                    "evaluation",
-                    "maintenance",
-                    "releasesFrequency",
-                ],
-            },
-        )
-        fields[
-            "source_url"
-        ] = f"https://api.npms.io/v2/package/{fields['package_name']}"
-
         # only insert new rows
         if (
             db.session.query(NPMSIOScore.id)
             .filter_by(
-                package_name=fields["package_name"],
-                package_version=fields["package_version"],
-                analyzed_at=fields["analyzed_at"],
+                package_name=score.package_name,
+                package_version=score.package_version,
+                analyzed_at=score.analyzed_at,
             )
             .one_or_none()
         ):
             log.debug(
-                f"skipping inserting npms.io score for {fields['package_name']}@{fields['package_version']}"
-                f" analyzed at {fields['analyzed_at']}"
+                f"skipping inserting npms.io score for {score.package_name}@{score.package_version}"
+                f" analyzed at {score.analyzed_at}"
             )
         else:
-            db.session.add(NPMSIOScore(**fields))
+            db.session.add(score)
             db.session.commit()
             log.info(
-                f"added npms.io score for {fields['package_name']}@{fields['package_version']}"
-                f" analyzed at {fields['analyzed_at']}"
+                f"added npms.io score for {score.package_name}@{score.package_version}"
+                f" analyzed at {score.analyzed_at}"
             )
 
 
-def insert_npm_registry_entries(npm_registry_entries: Iterable[Dict[str, Any]]) -> None:
-    for entry in npm_registry_entries:
-        # save version specific data
-        for version, version_data in entry["versions"].items():
-            fields = extract_nested_fields(
-                version_data,
-                {
-                    "package_name": ["name"],
-                    "package_version": ["version"],
-                    "shasum": ["dist", "shasum"],
-                    "tarball": ["dist", "tarball"],
-                    "git_head": ["gitHead"],
-                    "repository_type": ["repository", "type"],
-                    "repository_url": ["repository", "url"],
-                    "description": ["description"],
-                    "url": ["url"],
-                    "license_type": ["license"],
-                    "keywords": ["keywords"],
-                    "has_shrinkwrap": ["_hasShrinkwrap"],
-                    "bugs_url": ["bugs", "url"],
-                    "bugs_email": ["bugs", "email"],
-                    "author_name": ["author", "name"],
-                    "author_email": ["author", "email"],
-                    "author_url": ["author", "url"],
-                    "maintainers": ["maintainers"],
-                    "contributors": ["contributors"],
-                    "publisher_name": ["_npmUser", "name"],
-                    "publisher_email": ["_npmUser", "email"],
-                    "publisher_node_version": ["_nodeVersion"],
-                    "publisher_npm_version": ["_npmVersion"],
-                },
+def insert_npm_registry_entries(entries: Iterable[NPMRegistryEntry]) -> None:
+    for entry in entries:
+        if (
+            db.session.query(NPMRegistryEntry.id)
+            .filter_by(
+                package_name=entry.package_name,
+                package_version=entry.package_version,
+                shasum=entry.shasum,
+                tarball=entry.tarball,
             )
-            # license can we a string e.g. 'MIT'
-            # or dict e.g. {'type': 'MIT', 'url': 'https://github.com/jonschlinkert/micromatch/blob/master/LICENSE'}
-            fields["license_url"] = None
-            if isinstance(fields["license_type"], dict):
-                fields["license_url"] = fields["license_type"].get("url", None)
-                fields["license_type"] = fields["license_type"].get("type", None)
-
-            # looking at you debuglog@0.0.{3,4} with:
-            # [{"name": "StrongLoop", "url": "http://strongloop.com/license/"}, "MIT"],
-            if not (
-                (
-                    isinstance(fields["license_type"], str)
-                    or fields["license_type"] is None
-                )
-                and (
-                    isinstance(fields["license_url"], str)
-                    or fields["license_url"] is None
-                )
-            ):
-                log.warning(f"skipping weird license format {fields['license_type']}")
-                fields["license_url"] = None
-                fields["license_type"] = None
-
-            # published_at .time[<version>] e.g. '2014-05-23T21:21:04.170Z' (not from
-            # the version info object)
-            # where time: an object mapping versions to the time published, along with created and modified timestamps
-            fields["published_at"] = get_in(entry, ["time", version])
-            fields["package_modified_at"] = get_in(entry, ["time", "modified"])
-
-            fields[
-                "source_url"
-            ] = f"https://registry.npmjs.org/{fields['package_name']}"
-
-            if (
-                db.session.query(NPMRegistryEntry.id)
-                .filter_by(
-                    package_name=fields["package_name"],
-                    package_version=fields["package_version"],
-                    shasum=fields["shasum"],
-                    tarball=fields["tarball"],
-                )
-                .one_or_none()
-            ):
-                log.debug(
-                    f"skipping inserting npm registry entry for {fields['package_name']}@{fields['package_version']}"
-                    f" from {fields['tarball']} with sha {fields['shasum']}"
-                )
-            else:
-                db.session.add(NPMRegistryEntry(**fields))
-                db.session.commit()
-                log.info(
-                    f"added npm registry entry for {fields['package_name']}@{fields['package_version']}"
-                    f" from {fields['tarball']} with sha {fields['shasum']}"
-                )
+            .one_or_none()
+        ):
+            log.debug(
+                f"skipping inserting npm registry entry for {entry.package_name}@{entry.package_version}"
+                f" from {entry.tarball} with sha {entry.shasum}"
+            )
+        else:
+            db.session.add(entry)
+            db.session.commit()
+            log.info(
+                f"added npm registry entry for {entry.package_name}@{entry.package_version}"
+                f" from {entry.tarball} with sha {entry.shasum}"
+            )
 
 
 VIEWS: Dict[str, str] = {}
@@ -1207,8 +1097,8 @@ def get_advisories_by_package_versions(
     )
 
 
-def add_new_package_version(session: sqlalchemy.orm.Session, pkg: Dict) -> None:
-    get_package_version_id_query(session, pkg).one_or_none() or session.add(
+def add_new_package_version(pkg: Dict) -> None:
+    get_package_version_id_query(pkg).one_or_none() or db.session.add(
         PackageVersion(
             name=pkg.get("name", None),
             version=pkg.get("version", None),
@@ -1220,63 +1110,59 @@ def add_new_package_version(session: sqlalchemy.orm.Session, pkg: Dict) -> None:
     )
 
 
-def get_package_version_id_query(
-    session: sqlalchemy.orm.Session, pkg: Dict
-) -> sqlalchemy.orm.query.Query:
-    return session.query(PackageVersion.id).filter_by(
+def get_package_version_id_query(pkg: Dict) -> sqlalchemy.orm.query.Query:
+    return db.session.query(PackageVersion.id).filter_by(
         name=pkg["name"], version=pkg["version"], language="node"
     )
 
 
 def get_package_version_link_id_query(
-    session: sqlalchemy.orm.Session, link: Tuple[int, int]
+    link: Tuple[int, int]
 ) -> sqlalchemy.orm.query.Query:
     parent_package_id, child_package_id = link
-    return session.query(PackageLink.id).filter_by(
+    return db.session.query(PackageLink.id).filter_by(
         parent_package_id=parent_package_id, child_package_id=child_package_id
     )
 
 
-def get_node_advisory_id_query(
-    session: sqlalchemy.orm.Session, advisory: Dict
-) -> sqlalchemy.orm.query.Query:
-    return session.query(Advisory.id).filter_by(language="node", url=advisory["url"])
+def get_node_advisory_id_query(advisory: Dict) -> sqlalchemy.orm.query.Query:
+    return db.session.query(Advisory.id).filter_by(language="node", url=advisory["url"])
 
 
-def insert_package_graph(session: sqlalchemy.orm.Session, task_data: Dict) -> None:
+def insert_package_graph(task_data: Dict) -> None:
     link_ids = []
     for task_dep in task_data.get("dependencies", []):
-        add_new_package_version(session, task_dep)
-        session.commit()
-        parent_package_id = get_package_version_id_query(session, task_dep).first()
+        add_new_package_version(task_dep)
+        db.session.commit()
+        parent_package_id = get_package_version_id_query(task_dep).first()
 
         for dep in task_dep.get("dependencies", []):
             # is fully qualified semver for npm (or file: or github: url), semver for yarn
             name, version = dep.rsplit("@", 1)
             child_package_id = get_package_version_id_query(
-                session, dict(name=name, version=version)
+                dict(name=name, version=version)
             ).first()
 
             link_id = get_package_version_link_id_query(
-                session, (parent_package_id, child_package_id)
+                (parent_package_id, child_package_id)
             ).one_or_none()
             if not link_id:
-                session.add(
+                db.session.add(
                     PackageLink(
                         child_package_id=child_package_id,
                         parent_package_id=parent_package_id,
                     )
                 )
-                session.commit()
+                db.session.commit()
                 link_id = get_package_version_link_id_query(
-                    session, (parent_package_id, child_package_id)
+                    (parent_package_id, child_package_id)
                 ).first()
             link_ids.append(link_id)
 
-    session.add(
+    db.session.add(
         PackageGraph(
             root_package_version_id=get_package_version_id_query(
-                session, task_data["root"]
+                task_data["root"]
             ).first()
             if task_data["root"]
             else None,
@@ -1285,94 +1171,62 @@ def insert_package_graph(session: sqlalchemy.orm.Session, task_data: Dict) -> No
             package_manager_version=None,
         )
     )
-    session.commit()
+    db.session.commit()
 
 
-def insert_package_audit(session: sqlalchemy.orm.Session, task_data: Dict) -> None:
-    is_yarn_cmd = bool("yarn" in task_data["command"])
-    # NB: yarn has .advisory and .resolution
+def insert_advisories(advisories: Iterable[Advisory]) -> None:
+    for advisory in advisories:
+        # TODO: update advisory fields if the advisory to insert is newer
+        get_node_advisory_id_query(advisory).one_or_none() or db.session.add(advisory)
+        db.session.commit()
 
-    # the same advisory JSON (from the npm DB) is
-    # at .advisories{k, v} for npm and .advisories[].advisory for yarn
-    advisories = (
-        (item.get("advisory", None) for item in task_data.get("advisories", []))
-        if is_yarn_cmd
-        else task_data.get("advisories", dict()).values()
+
+def update_advisory_vulnerable_package_versions(
+    advisory: Advisory, impacted_versions: Set[str]
+) -> None:
+    # make sure the advisory we want to update is already in the db
+    db_advisory = (
+        db.session.query(Advisory.id, Advisory.vulnerable_package_version_ids)
+        .filter_by(language="node", url=advisory.url)
+        .first()
     )
-    non_null_advisories = (adv for adv in advisories if adv)
-
-    for advisory in non_null_advisories:
-        advisory_fields = extract_nested_fields(
-            advisory,
-            {
-                "package_name": ["module_name"],
-                "npm_advisory_id": ["id"],
-                "vulnerable_versions": ["vulnerable_versions"],
-                "patched_versions": ["patched_versions"],
-                "created": ["created"],
-                "updated": ["updated"],
-                "url": ["url"],
-                "severity": ["severity"],
-                "cves": ["cves"],
-                "cwe": ["cwe"],
-                "exploitability": ["metadata", "exploitability"],
-                "title": ["title"],
-            },
+    # look up PackageVersions for known impacted versions
+    impacted_version_package_ids = list(
+        vid
+        for result in db.session.query(PackageVersion.id)
+        .filter(
+            PackageVersion.name == advisory.package_name,
+            PackageVersion.version.in_(impacted_versions),
         )
-        advisory_fields["cwe"] = int(advisory_fields["cwe"].lower().replace("cwe-", ""))
-        advisory_fields["language"] = "node"
-        advisory_fields["vulnerable_package_version_ids"] = []
-
-        get_node_advisory_id_query(
-            session, advisory_fields
-        ).one_or_none() or session.add(Advisory(**advisory_fields))
-        session.commit()
-
-        # TODO: update other advisory fields too
-        impacted_versions = set(
-            finding.get("version", None)
-            for finding in advisory.get("findings", [])
-            if finding.get("version", None)
+        .all()
+        for vid in result
+    )
+    if len(impacted_versions) != len(impacted_version_package_ids):
+        log.warning(
+            f"missing package versions for {advisory.package_name!r}"
+            f" in the db or misparsed audit output version:"
+            f" {impacted_versions} {impacted_version_package_ids}"
         )
-        db_advisory = (
-            session.query(Advisory.id, Advisory.vulnerable_package_version_ids)
-            .filter_by(language="node", url=advisory["url"])
+
+    # handle null Advisory.vulnerable_package_version_ids
+    if db_advisory.vulnerable_package_version_ids is None:
+        db.session.query(Advisory.id).filter_by(id=db_advisory.id).update(
+            dict(vulnerable_package_version_ids=list())
+        )
+
+    # TODO: lock the row?
+    vpvids = set(
+        list(
+            db.session.query(Advisory)
+            .filter_by(id=db_advisory.id)
             .first()
+            .vulnerable_package_version_ids
         )
-        impacted_version_package_ids = list(
-            vid
-            for result in session.query(PackageVersion.id)
-            .filter(
-                PackageVersion.name == advisory_fields["package_name"],
-                PackageVersion.version.in_(impacted_versions),
-            )
-            .all()
-            for vid in result
-        )
-        if len(impacted_versions) != len(impacted_version_package_ids):
-            log.warning(
-                f"missing package versions for {advisory_fields['package_name']!r}"
-                f" in the db or misparsed audit output version:"
-                f" {impacted_versions} {impacted_version_package_ids}"
-            )
+    )
+    vpvids.update(set(impacted_version_package_ids))
 
-        if db_advisory.vulnerable_package_version_ids is None:
-            session.query(Advisory.id).filter_by(id=db_advisory.id).update(
-                dict(vulnerable_package_version_ids=list())
-            )
-
-        # TODO: lock the row?
-        vpvids = set(
-            list(
-                session.query(Advisory)
-                .filter_by(id=db_advisory.id)
-                .first()
-                .vulnerable_package_version_ids
-            )
-        )
-        vpvids.update(set(impacted_version_package_ids))
-
-        session.query(Advisory.id).filter_by(id=db_advisory.id).update(
-            dict(vulnerable_package_version_ids=sorted(vpvids))
-        )
-        session.commit()
+    # update the vulnerable_package_version_ids for the advisory
+    db.session.query(Advisory.id).filter_by(id=db_advisory.id).update(
+        dict(vulnerable_package_version_ids=sorted(vpvids))
+    )
+    db.session.commit()

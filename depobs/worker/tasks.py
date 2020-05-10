@@ -44,6 +44,7 @@ from depobs.database.models import (
 )
 
 import depobs.worker.scoring as scoring
+import depobs.worker.serializers as serializers
 import depobs.worker.validators as validators
 
 # import exc_to_str to resolve import cycle for the following depobs.clients
@@ -56,12 +57,10 @@ from depobs.clients.npm_registry import (
 from depobs.database.models import (
     PackageGraph,
     PackageVersion,
-    insert_package_audit,
     insert_package_graph,
 )
 import depobs.docker.containers as containers
 from depobs.scanner.models.package_meta_result import Result
-from depobs.worker.serializers import serialize_repo_task
 from depobs.scanner.repo_tasks import (
     RunRepoTasksConfig,
     iter_task_envs,
@@ -217,16 +216,28 @@ def scan_npm_package(
             for task_result in container_task_results["task_results"]:
                 serialized_container_task_result: Optional[
                     Dict[str, Any]
-                ] = serialize_repo_task(task_result, {"list_metadata", "audit"})
+                ] = serializers.serialize_repo_task(
+                    task_result, {"list_metadata", "audit"}
+                )
                 if not serialized_container_task_result:
                     continue
 
                 task_data = serialized_container_task_result
                 task_name = task_data["name"]
                 if task_name == "list_metadata":
-                    insert_package_graph(models.db.session, task_data)
+                    insert_package_graph(task_data)
                 elif task_name == "audit":
-                    insert_package_audit(models.db.session, task_data)
+
+                    for (
+                        advisory,
+                        impacted_versions,
+                    ) in serializers.node_repo_task_audit_output_to_advisories_and_impacted_versions(
+                        task_data
+                    ):
+                        models.insert_advisories([advisory])
+                        models.update_advisory_vulnerable_package_versions(
+                            advisory, set(impacted_versions)
+                        )
                 else:
                     log.warning(f"skipping unrecognized task {task_name}")
 
@@ -331,7 +342,11 @@ def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
         log.info(
             f"fetched {len(npmsio_scores)} scores for {len(package_names)} package names"
         )
-    models.insert_npmsio_scores(score for score in npmsio_scores if score is not None)
+    models.insert_npmsio_scores(
+        serializers.serialize_npmsio_scores(
+            score for score in npmsio_scores if score is not None
+        )
+    )
     return npmsio_scores
 
 
@@ -358,8 +373,10 @@ def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
         )
     # inserts new entries for new versions (but doesn't update old ones)
     models.insert_npm_registry_entries(
-        registry_entry
-        for registry_entry in npm_registry_entries
-        if registry_entry is not None
+        serializers.serialize_npm_registry_entries(
+            registry_entry
+            for registry_entry in npm_registry_entries
+            if registry_entry is not None
+        )
     )
     return npm_registry_entries
