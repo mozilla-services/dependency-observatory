@@ -175,7 +175,7 @@ _docker_args = dict(
     # build docker images
     docker_build=True,
     # non-default docker images to use for the task
-    docker_image=[],
+    docker_images=[],
     # Print commands we would run and their context, but don't run them
     dry_run=False,
 )
