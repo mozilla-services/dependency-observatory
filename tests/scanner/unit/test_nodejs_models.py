@@ -23,6 +23,7 @@ def load_json_fixture(path: str) -> Dict[str, Any]:
         pytest.param({"dependencies": {}}, [], id="empty_deps_dict"),
     ],
 )
+@pytest.mark.unit
 def test_visit_deps(
     node_js_ls_output: Dict[str, Union[str, Dict]], expected: List[m.JSONPath]
 ):
@@ -61,6 +62,7 @@ def test_visit_deps(
         ),
     ),
 )
+@pytest.mark.unit
 def test_visit_deps_from_fixtures(
     node_js_ls_output_path: pathlib.Path, expected_json_path: pathlib.Path
 ):
@@ -84,6 +86,7 @@ def test_visit_deps_from_fixtures(
         pytest.param({"dependencies": {}}, [], id="empty_deps_dict"),
     ],
 )
+@pytest.mark.unit
 def test_flatten_deps(
     node_js_ls_output: Dict[str, Union[str, Dict]], expected: List[m.NPMPackage]
 ):
@@ -116,6 +119,7 @@ def test_flatten_deps(
         ),
     ),
 )
+@pytest.mark.unit
 def test_flatten_deps_from_fixtures(
     node_js_ls_output_path: str, expected_json_path: str
 ):

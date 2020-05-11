@@ -20,6 +20,7 @@ import depobs.worker.validators as validators
     ],
     ids=["name", "namespaced name", "none", "invalid name - shebang",],
 )
+@pytest.mark.unit
 def test_get_npm_package_name_validation_error(
     package_name: str, expected_validation_error: Optional[Exception]
 ) -> None:
@@ -54,6 +55,7 @@ def test_get_npm_package_name_validation_error(
         "invalid name - shebang",
     ],
 )
+@pytest.mark.unit
 def test_get_npm_package_version_validation_error(
     package_version: str, expected_validation_error: Optional[Exception]
 ) -> None:

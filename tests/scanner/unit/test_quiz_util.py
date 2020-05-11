@@ -68,6 +68,7 @@ def set_org_repo_kwargs():
     return add_org_repo_to_repository_field
 
 
+@pytest.mark.unit
 def test_get_in(_):
     selection = _.repository(owner="testrepoowner", name="testreponame")[_.id]
 
@@ -131,6 +132,7 @@ def test_get_in(_):
     )
 
 
+@pytest.mark.unit
 def test_update_in_top_level_by_name(_, set_org_repo_kwargs):
     selection = _.repository(owner="testrepoowner", name="testreponame")[_.id]
     assert (
@@ -139,6 +141,7 @@ def test_update_in_top_level_by_name(_, set_org_repo_kwargs):
     )
 
 
+@pytest.mark.unit
 def test_update_in_top_level_by_index(_, set_org_repo_kwargs):
     selection = _.foo.repository(owner="testrepoowner", name="testreponame")[_.id]
     assert (
@@ -147,6 +150,7 @@ def test_update_in_top_level_by_index(_, set_org_repo_kwargs):
     )
 
 
+@pytest.mark.unit
 def test_update_in_nested_by_name(_, set_org_repo_kwargs):
     selection = _.baz.foo[
         _.bar.repository(owner="testrepoowner", name="testreponame")[_.id]
@@ -160,6 +164,7 @@ def test_update_in_nested_by_name(_, set_org_repo_kwargs):
     )
 
 
+@pytest.mark.unit
 def test_update_in_nested_three_levels(_, set_org_repo_kwargs):
     selection = _.blah[
         _.baz.foo[_.bar.repository(owner="testrepoowner", name="testreponame")[_.id]]
@@ -174,6 +179,7 @@ def test_update_in_nested_three_levels(_, set_org_repo_kwargs):
 
 
 @pytest.mark.xfail(reason="sort out later")
+@pytest.mark.unit
 def test_update_in_nested_by_index(_, set_org_repo_kwargs):
     selection = _.foo[
         _.bar.repository(owner="testrepoowner", name="testreponame")[_.id]
@@ -185,6 +191,7 @@ def test_update_in_nested_by_index(_, set_org_repo_kwargs):
 
 
 @pytest.mark.xfail(reason="sort out later")
+@pytest.mark.unit
 def test_update_in_nested_by_name_then_index(_, set_org_repo_kwargs):
     selection = _.foo[
         _.bar.repository(owner="testrepoowner", name="testreponame")[_.id]
@@ -195,6 +202,7 @@ def test_update_in_nested_by_name_then_index(_, set_org_repo_kwargs):
     )
 
 
+@pytest.mark.unit
 def test_get_kwargs_in(_):
     selection = _.repository(name="foo", owner="blah")[_.id.page(eggs="good")]
     assert m.get_kwargs_in(selection, []) is None

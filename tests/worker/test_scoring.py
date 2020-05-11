@@ -39,6 +39,7 @@ _default_report_json = {
 }
 
 
+@pytest.mark.unit
 def test_score_package_component_fails_for_empty_graph():
     with pytest.raises(KeyError):
         assert m.score_package(
@@ -50,6 +51,7 @@ def test_score_package_component_fails_for_empty_graph():
         )
 
 
+@pytest.mark.unit
 def test_score_package_component_fails_for_node_id_not_in_graph():
     with pytest.raises(KeyError):
         assert m.score_package(
@@ -317,6 +319,7 @@ score_package_component_testcases = {
     score_package_component_testcases.values(),
     ids=score_package_component_testcases.keys(),
 )
+@pytest.mark.unit
 def test_score_package_component(
     g: m.nx.DiGraph,
     node_id: int,
@@ -498,6 +501,7 @@ score_package_graph_testcases = {
     score_package_graph_testcases.values(),
     ids=score_package_graph_testcases.keys(),
 )
+@pytest.mark.unit
 def test_score_package_graph(
     db_graph: m.PackageGraph,
     expected_package_reports_with_deps_json: List[Dict[str, Any]],
@@ -565,12 +569,14 @@ count_advisories_by_severity_testcases = {
     count_advisories_by_severity_testcases.values(),
     ids=count_advisories_by_severity_testcases.keys(),
 )
+@pytest.mark.unit
 def test_count_advisories_by_severity(
     advisories: List[m.Advisory], expected_counter: m.Counter
 ):
     assert m.count_advisories_by_severity(advisories) == expected_counter
 
 
+@pytest.mark.unit
 def test_zeroed_severity_counter():
     zeroed = m.zeroed_severity_counter()
     for severity in m.AdvisorySeverity:
