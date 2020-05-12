@@ -7,9 +7,9 @@ def test_lbheartbeat(client):
     assert response.status == "200 OK"
 
 
-@pytest.mark.unit
+# hits the database so it isn't a unit test
 def test_heartbeat(client):
-    response = client.get("/__lbheartbeat__")
+    response = client.get("/__heartbeat__")
     assert response.status == "200 OK"
 
 
