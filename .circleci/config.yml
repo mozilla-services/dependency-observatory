@@ -120,9 +120,14 @@ jobs:
           name: show running containers
           command: docker ps --no-trunc
       - run:
-          name: run E2E tests with coverage
+          name: run unit and integration tests with coverage
           command: |
             CI=1 ./util/run_tests_with_coverage.sh -v
+      - run:
+          name: run e2e test
+          command: |
+            docker cp "$(pwd)/util/e2e_test.sh" dependency-observatory-api:/app/
+            docker exec -u 0 dependency-observatory-api /app/e2e_test.sh
       - run:
           name: stop test DB
           command: docker-compose stop db
