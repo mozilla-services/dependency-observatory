@@ -24,6 +24,7 @@ outer_in_dag_iter_failing_testcases = {
     [(g, Exception) for g in outer_in_dag_iter_failing_testcases.values()],
     ids=outer_in_dag_iter_failing_testcases.keys(),
 )
+@pytest.mark.unit
 def test_outer_in_dag_iter_bad_input(bad_graph, expected_exception):
     with pytest.raises(expected_exception):
         next(m.outer_in_dag_iter(bad_graph))
@@ -47,6 +48,7 @@ outer_in_dag_iter_testcases = {
     outer_in_dag_iter_testcases.values(),
     ids=outer_in_dag_iter_testcases.keys(),
 )
+@pytest.mark.unit
 def test_outer_in_dag_iter(graph, expected_nodes):
     nodes = list(m.outer_in_dag_iter(graph))
     # visits all nodes
@@ -82,6 +84,7 @@ outer_in_graph_iter_failing_testcases = {
     [(g, Exception) for g in outer_in_graph_iter_failing_testcases.values()],
     ids=outer_in_graph_iter_failing_testcases.keys(),
 )
+@pytest.mark.unit
 def test_outer_in_graph_iter_bad_input(bad_graph, expected_exception):
     with pytest.raises(expected_exception):
         next(m.outer_in_graph_iter(bad_graph))
@@ -111,6 +114,7 @@ graph_iter_testcases = {
     graph_iter_testcases.values(),
     ids=graph_iter_testcases.keys(),
 )
+@pytest.mark.unit
 def test_outer_in_graph_iter(graph: m.nx.DiGraph, expected_nodes):
     output = list(m.outer_in_graph_iter(graph))
     nodes = [result[0] for result in output]
@@ -202,6 +206,7 @@ node_dep_ids_iter_testcases = {
     node_dep_ids_iter_testcases.values(),
     ids=node_dep_ids_iter_testcases.keys(),
 )
+@pytest.mark.unit
 def test_node_dep_ids_iter(
     graph: m.nx.DiGraph,
     expected_values: List[

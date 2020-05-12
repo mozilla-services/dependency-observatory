@@ -20,6 +20,7 @@ default_get_in_obj = {"a": 1, "b": {"foo": [-1, {}]}}
         (set(), [-1], None, None),
     ],
 )
+@pytest.mark.unit
 def test_get_in(value, path, default, expected):
     assert m.get_in(value, path, default) == expected
 
@@ -27,6 +28,7 @@ def test_get_in(value, path, default, expected):
 @pytest.mark.parametrize(
     "value,path,default,expected_error", [({}, [set()], None, NotImplementedError)]
 )
+@pytest.mark.unit
 def test_get_in_errors(value, path, default, expected_error):
     with pytest.raises(expected_error):
         m.get_in(value, path, default)

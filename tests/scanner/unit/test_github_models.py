@@ -123,11 +123,13 @@ def assert_selection_is_sane(selection: m.quiz.Selection, schema: m.quiz.Schema)
 
 
 @pytest.mark.parametrize("resource,diff_path", unique_diff_paths(), ids=resource_id)
+@pytest.mark.unit
 def test_can_get_diff_paths(resource: m.Resource, diff_path: m.SelectionPath):
     assert m.get_kwargs_in(resource.base_graphql, diff_path) is not None
 
 
 @pytest.mark.parametrize("resource", m._resources, ids=lambda r: r.kind.name)
+@pytest.mark.unit
 def test_get_first_page_selection(
     resource, github_args_dict, owner_repo_dict, github_schema
 ):
@@ -144,6 +146,7 @@ def test_get_first_page_selection(
     #     assert "after" in str(selection)
 
 
+@pytest.mark.unit
 def test_get_next_page_selection(_):
     # should add first and after params and drop totalCount, totalSize
     assert (
@@ -189,6 +192,7 @@ def test_get_next_page_selection(_):
 
 
 @pytest.mark.parametrize("resource", m._resources, ids=lambda r: r.kind.name)
+@pytest.mark.unit
 def test_get_first_page_selection_against_fixtures(
     resource, github_args_dict, owner_repo_dict
 ):
@@ -236,6 +240,7 @@ get_next_requests_for_initial_requests_params = [
         for p in get_next_requests_for_initial_requests_params
     ],
 )
+@pytest.mark.unit
 def test_get_next_requests_for_initial_requests(
     logger,
     github_args_dict,
@@ -267,6 +272,7 @@ def id_resource_by_kind(val):
 
 
 @pytest.mark.parametrize("last_resource", m._resources, ids=id_resource_by_kind)
+@pytest.mark.unit
 def test_get_next_requests_for_last_page_returns_no_more_requests_for_resource(
     logger, github_args_dict, owner_repo_dict, last_resource
 ):
@@ -301,6 +307,7 @@ gql for next {r.resource.kind} from {last_exchange.request.resource.kind}"
 @pytest.mark.parametrize(
     "last_resource", [r for r in m._resources if r != m.Repo], ids=id_resource_by_kind
 )
+@pytest.mark.unit
 def test_get_next_requests_returns_more_pages_of_the_same_resource_and_linked_resources(
     logger, github_args_dict, owner_repo_dict, last_resource, github_schema
 ):
@@ -348,6 +355,7 @@ gql for next {r.resource.kind} from {last_exchange.request.resource.kind}"
 
 
 @pytest.mark.parametrize("last_resource", m._resources, ids=id_resource_by_kind)
+@pytest.mark.unit
 def test_get_next_requests_for_last_page_returns_no_more_requests_for_resource(
     logger, github_args_dict, owner_repo_dict, last_resource, github_schema
 ):
@@ -384,6 +392,7 @@ def test_get_next_requests_for_last_page_returns_no_more_requests_for_resource(
 gql for next {r.resource.kind} from {last_exchange.request.resource.kind}"
 
 
+@pytest.mark.unit
 def test_get_next_requests_only_returns_requests_for_enabled_resource(
     logger, github_args_dict, owner_repo_dict, github_schema
 ):
@@ -424,6 +433,7 @@ gql for next {r.resource.kind} from {last_exchange.request.resource.kind}"
 @pytest.mark.parametrize(
     "last_resource", [r for r in m._resources if r != m.Repo], ids=id_resource_by_kind
 )
+@pytest.mark.unit
 def test_get_next_requests_does_not_grow_request_selection_updates(
     logger, github_args_dict, owner_repo_dict, last_resource, github_schema
 ):
@@ -473,6 +483,7 @@ def test_get_next_requests_does_not_grow_request_selection_updates(
     assert len(r.selection_updates) == len(r.resource.first_page_diffs) + 1
 
 
+@pytest.mark.unit
 def test_request_properties():
     r = m.Request(resource=m.RepoVulnAlerts, selection_updates=[])
     assert r.page_number == 0
@@ -540,6 +551,7 @@ def test_request_properties():
     assert r.log_str
 
 
+@pytest.mark.unit
 def test_response_properties():
     r = m.Response(resource=m.RepoManifests)
     assert r.end_cursor is None
@@ -563,6 +575,7 @@ def test_response_properties():
 @pytest.mark.parametrize(
     "resource", [r for r in m._resources if r != m.Repo], ids=id_resource_by_kind
 )
+@pytest.mark.unit
 def test_response_fetching_results(resource):
     r = m.Response(
         resource=resource,
@@ -593,6 +606,7 @@ def test_response_fetching_results(resource):
     assert r.log_str
 
 
+@pytest.mark.unit
 def test_resouce_parent_link():
     assert m.RepoVulnAlertVulns.parent == m.RepoVulnAlerts
     assert m.RepoManifestDeps.parent == m.RepoManifests

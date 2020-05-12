@@ -60,7 +60,9 @@ jobs:
       - run:
           name: run unit tests with coverage (no DB)
           command: |
-            CI=1 ./util/run_tests_with_coverage.sh
+            coverage run -m pytest -m unit
+            coverage report
+            coverage html
       - run:
           name: generate coverage reports
           command: |
@@ -95,9 +97,9 @@ jobs:
     docker:
       - image: circleci/python:buster
     environment:
-      CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
-      CELERY_RESULT_BACKEND=db+postgresql://postgres:postgres@db/dependency_observatory
-      SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
+      CELERY_BROKER_URL: sqla+postgresql://postgres:postgres@db/dependency_observatory
+      CELERY_RESULT_BACKEND: db+postgresql://postgres:postgres@db/dependency_observatory
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://postgres:postgres@db/dependency_observatory
     steps:
       - checkout
       - setup_remote_docker
@@ -107,36 +109,32 @@ jobs:
           name: Restore Docker image cache
           command: gunzip -c /tmp/docker.tgz | docker load
       - run:
-          name: start test DB
+          name: start test DB and create project_default network
           command: docker-compose up -d db
       - run:
           name: start test api and worker (w/o volume mounts)
           command: |
-            docker run -d --rm --name dep-obs-api -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" -e "INIT_DB=1" -e "HOST=0.0.0.0" -e "PORT=8000" -e "FLASK_ENV=production" -e "FLASK_APP=/app/depobs/website/do.py" -p 8000:8000 mozilla/dependency-observatory
-            docker run -d -u 0 --rm -v /var/run/docker.sock:/var/run/docker.sock --net=host --name dep-obs-worker -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" mozilla/dependency-observatory /bin/bash -c "celery -A depobs.worker.tasks worker --loglevel=debug"
+            docker run -d --rm --name dependency-observatory-api --network project_default --link db -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" -e "INIT_DB=1" -e "HOST=0.0.0.0" -e "PORT=8000" -e "FLASK_ENV=production" -e "FLASK_APP=/app/depobs/website/do.py" -p 8000:8000 mozilla/dependency-observatory
+            docker run -d -u 0 --rm -v /var/run/docker.sock:/var/run/docker.sock  --network project_default --link db --name dependency-observatory-worker -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" mozilla/dependency-observatory /bin/bash -c "celery -A depobs.worker.tasks worker --loglevel=debug"
       - run:
-          name: write a version.json in depobs/
-          command: |
-            CI=1 ./util/write_version_json.sh > depobs/version.json
+          name: show running containers
+          command: docker ps --no-trunc
       - run:
-          name: install python deps
+          name: run unit and integration tests with coverage
           command: |
-            pip config --user set global.progress_bar off
-            pip install --user -r depobs/requirements.txt
+            CI=1 ./util/run_tests_with_coverage.sh -v
       - run:
-          name: run unit tests with coverage using DB and celery app
+          name: run e2e test
           command: |
-            # TODO: pytest marks for E2E tests
-            CI=1 ./util/run_tests_with_coverage.sh
+            docker cp "$(pwd)/util/e2e_test.sh" dependency-observatory-api:/app/
+            docker exec -u 0 dependency-observatory-api /app/e2e_test.sh
       - run:
           name: stop test DB
           command: docker-compose stop db
       - run:
-          name: generate coverage reports
+          name: mv coverage reports
           command: |
-            coverage report
-            coverage html
-            mv /tmp/htmlcov/ test-images-htmlcov
+            mv htmlcov/ test-images-htmlcov
       - store_artifacts:
           path: test-images-htmlcov
 

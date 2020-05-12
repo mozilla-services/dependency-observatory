@@ -21,18 +21,21 @@ def long_cargo_metadata_output():
 
 
 @pytest.mark.dlog
+@pytest.mark.unit
 def test_too_short_for_prefix():
     with pytest.raises(m.DockerLogReadError):
         next(m.iter_messages(b"123"))
 
 
 @pytest.mark.dlog
+@pytest.mark.unit
 def test_corrupt_prefix_in_middle():
     with pytest.raises(m.DockerLogReadError):
         next(m.iter_messages(b"Hi!\x01\x00\x00\x00"))
 
 
 @pytest.mark.dlog
+@pytest.mark.unit
 def test_unrecognized_stream_byte():
     with pytest.raises(m.DockerLogReadError):
         next(m.iter_messages(b"\x03\x00\x00\x00\x00\x00\x00\x01"))
@@ -42,23 +45,27 @@ def test_unrecognized_stream_byte():
 
 @pytest.mark.dlog
 @pytest.mark.xfail
+@pytest.mark.unit
 def test_grows_initial_buffer():
     pass
 
 
 @pytest.mark.dlog
 @pytest.mark.xfail
+@pytest.mark.unit
 def test_message_limit_at_limit():
     pass
 
 
 @pytest.mark.dlog
 @pytest.mark.xfail
+@pytest.mark.unit
 def test_message_limit_exceeds():
     pass
 
 
 @pytest.mark.dlog
+@pytest.mark.unit
 def test_corrupt_message_missing_body():
     # no body
     with pytest.raises(m.DockerLogReadError):
@@ -66,6 +73,7 @@ def test_corrupt_message_missing_body():
 
 
 @pytest.mark.dlog
+@pytest.mark.unit
 def test_corrupt_message_partial_body():
     # no trailing newline
     with pytest.raises(m.DockerLogReadError):
@@ -76,17 +84,20 @@ def test_corrupt_message_partial_body():
 
 
 @pytest.mark.dlog
+@pytest.mark.unit
 def test_message_read_failure():
     # expected message length 5 from header does not match line length 4
     with pytest.raises(m.DockerLogReadError):
         next(m.iter_messages(b"\x01\x00\x00\x00\x00\x00\x00\x05"))
 
 
+@pytest.mark.unit
 def test_empty_message_skipped():
     assert tuple(m.iter_messages(b"")) == ()
 
 
 @pytest.mark.dlog
+@pytest.mark.unit
 def test_two_small_messages_parsed_correctly():
     assert tuple(
         m.iter_messages(
@@ -100,6 +111,7 @@ def test_two_small_messages_parsed_correctly():
 
 
 @pytest.mark.dlog
+@pytest.mark.unit
 def test_two_small_messages_to_same_stream_parsed_correctly():
     assert tuple(
         m.iter_messages(
@@ -112,6 +124,7 @@ def test_two_small_messages_to_same_stream_parsed_correctly():
     )
 
 
+@pytest.mark.unit
 def test_two_small_messages_different_streams_parsed_correctly():
     assert tuple(
         m.iter_messages(
@@ -124,6 +137,7 @@ def test_two_small_messages_different_streams_parsed_correctly():
     )
 
 
+@pytest.mark.unit
 def test_small_message():
     assert next(m.iter_messages(b"\x01\x00\x00\x00\x00\x00\x00\x0bCargo.lock\n")) == (
         m.DockerLogStream.STDOUT,
@@ -131,27 +145,32 @@ def test_small_message():
     )
 
 
+@pytest.mark.unit
 def test_message_containing_newline():
     assert next(
         m.iter_messages(b"\x01\x00\x00\x00\x00\x00\x00\x0eCargo.lock\nfoo")
     ) == (m.DockerLogStream.STDOUT, b"Cargo.lock\nfoo")
 
 
+@pytest.mark.unit
 def test_messages_handles_one_long_line_over_many_messages(long_cargo_metadata_output):
     assert len(tuple(m.iter_messages(long_cargo_metadata_output))) == math.ceil(
         len(long_cargo_metadata_output) / m.STARTING_BUF_CONTENTS_LEN
     )
 
 
+@pytest.mark.unit
 def test_messages_combined_to_one_line(long_cargo_metadata_output):
     assert len(tuple(m.iter_lines(m.iter_messages(long_cargo_metadata_output)))) == 1
 
 
+@pytest.mark.unit
 def test_messages_final_line_returned_even_without_final_newline():
     msgs = (msg for msg in [(m.DockerLogStream.STDOUT, b"Cargo.lock")])
     assert len(tuple(m.iter_lines(msgs))) == 1
 
 
+@pytest.mark.unit
 def test_messages_line_containing_newline():
     msgs = (
         msg for msg in [(m.DockerLogStream.STDOUT, b"Cargo.lock\nfoo/Cargo.lock\n")]
@@ -165,6 +184,7 @@ def test_messages_line_containing_newline():
     assert tuple(m.iter_lines(msgs)) == ("", "Cargo.lock")
 
 
+@pytest.mark.unit
 def test_messages_defaults_to_returning_stdout():
     msgs = (
         msg
