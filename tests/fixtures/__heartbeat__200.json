@@ -1,0 +1,7 @@
+{
+  "checks": {
+    "check_database_connected": "ok"
+  }, 
+  "details": {}, 
+  "status": "ok"
+}
