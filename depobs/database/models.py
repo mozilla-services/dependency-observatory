@@ -1050,24 +1050,38 @@ def insert_npm_registry_entries(entries: Iterable[NPMRegistryEntry]) -> None:
 
 VIEWS: Dict[str, str] = {
     "score_view": """
-    CREATE OR REPLACE VIEW score_view AS
-    SELECT package, version,
-    npmsio_score * 100 +
-    CASE
-    WHEN all_deps <= 5 THEN 20
-    WHEN all_deps <= 20 THEN 10
-    WHEN all_deps >= 500 THEN -20
-    WHEN all_deps >= 100 THEN -10
-    END +
-    CASE WHEN "directVulnsCritical_score" > 0 THEN -20 ELSE 0 END +
-    CASE WHEN "directVulnsHigh_score" > 0 THEN -10 ELSE 0 END +
-    CASE WHEN "directVulnsMedium_score" > 0 THEN -5 ELSE 0 END +
-    CASE WHEN "indirectVulnsCritical_score" > 0 THEN -10 ELSE 0 END +
-    CASE WHEN "indirectVulnsHigh_score" > 0 THEN -7 ELSE 0 END +
-    CASE WHEN "indirectVulnsMedium_score" > 0 THEN -3 ELSE 0 END
-    as score
-    from reports
-    """
+        CREATE OR REPLACE VIEW score_view AS
+        SELECT id, package, version, scoring_date,
+        npmsio_score * 100 +
+        CASE
+        WHEN all_deps <= 5 THEN 20
+        WHEN all_deps <= 20 THEN 10
+        WHEN all_deps >= 500 THEN -20
+        WHEN all_deps >= 100 THEN -10
+        END +
+        CASE WHEN "directVulnsCritical_score" > 0 THEN -20 ELSE 0 END +
+        CASE WHEN "directVulnsHigh_score" > 0 THEN -10 ELSE 0 END +
+        CASE WHEN "directVulnsMedium_score" > 0 THEN -5 ELSE 0 END +
+        CASE WHEN "indirectVulnsCritical_score" > 0 THEN -10 ELSE 0 END +
+        CASE WHEN "indirectVulnsHigh_score" > 0 THEN -7 ELSE 0 END +
+        CASE WHEN "indirectVulnsMedium_score" > 0 THEN -3 ELSE 0 END
+        as score
+        from reports
+        WHERE status = 'scanned'
+        """,
+    "score_code_view": """
+        CREATE OR REPLACE VIEW score_code_view AS
+        SELECT *,
+        CASE  
+        WHEN score >= 80 THEN 'A'
+        WHEN score >= 60 THEN 'B'
+        WHEN score >= 40 THEN 'C'
+        WHEN score >= 20 THEN 'D'
+        WHEN score IS NULL THEN ''
+        ELSE 'E'
+        END AS score_code
+        FROM score_view
+        """,
 }
 
 
