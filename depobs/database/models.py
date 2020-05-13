@@ -147,6 +147,8 @@ class PackageScoreReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
     @property
     def report_json(self) -> Dict:
         return dict(
+            score=self.score,
+            score_code=self.score_code,
             id=self.id,
             task_id=self.task_id,
             # from database.mixins.TaskIDMixin
