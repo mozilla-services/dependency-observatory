@@ -698,15 +698,15 @@ def get_most_recently_scored_package_report(
     package_name: str,
     package_version: Optional[str] = None,
     scored_after: Optional[datetime] = None,
-) -> Optional[PackageReport]:
-    "Get the most recently scored PackageReport with package_name, optional package_version, and optionally scored_after the scored_after datetime or None"
-    query = db.session.query(PackageReport).filter_by(package=package_name)
+) -> Optional[PackageScoreReport]:
+    "Get the most recently scored PackageScoreReport with package_name, optional package_version, and optionally scored_after the scored_after datetime or None"
+    query = db.session.query(PackageScoreReport).filter_by(package=package_name)
     if package_version is not None:
         query = query.filter_by(version=package_version)
     if scored_after is not None:
-        query = query.filter(PackageReport.scoring_date >= scored_after)
+        query = query.filter(PackageScoreReport.scoring_date >= scored_after)
     log.debug(f"Query is {query}")
-    return query.order_by(PackageReport.scoring_date.desc()).limit(1).one_or_none()
+    return query.order_by(PackageScoreReport.scoring_date.desc()).limit(1).one_or_none()
 
 
 def get_placeholder_entry(
