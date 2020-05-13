@@ -140,6 +140,15 @@ class PackageReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
         }
 
 
+class PackageScoreReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
+    __tablename__ = "report_score_view"
+
+    id = Column("id", Integer, primary_key=True)
+
+    score = Column(Float)
+    score_code = Column(String(1))
+
+
 class PackageVersion(db.Model):
     __tablename__ = "package_versions"
 
