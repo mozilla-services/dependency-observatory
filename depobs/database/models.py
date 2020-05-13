@@ -135,6 +135,61 @@ class PackageScoreReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
     score = Column(Float)
     score_code = Column(String(1))
 
+    # this relationship is used for persistence
+    dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
+        "PackageReport",
+        secondary=Dependency.__table__,
+        primaryjoin=id == Dependency.__table__.c.depends_on_id,
+        secondaryjoin=id == Dependency.__table__.c.used_by_id,
+        backref="score_parents",
+    )
+
+    @property
+    def report_json(self) -> Dict:
+        return dict(
+            id=self.id,
+            task_id=self.task_id,
+            # from database.mixins.TaskIDMixin
+            task_status=self.task_status,
+            package=self.package,
+            version=self.version,
+            status=self.status,
+            release_date=self.release_date,
+            scoring_date=self.scoring_date,
+            top_score=self.top_score,
+            npmsio_score=self.npmsio_score,
+            directVulnsCritical_score=self.directVulnsCritical_score,
+            directVulnsHigh_score=self.directVulnsHigh_score,
+            directVulnsMedium_score=self.directVulnsMedium_score,
+            directVulnsLow_score=self.directVulnsLow_score,
+            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
+            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
+            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
+            indirectVulnsLow_score=self.indirectVulnsLow_score,
+            authors=self.authors,
+            contributors=self.contributors,
+            immediate_deps=self.immediate_deps,
+            all_deps=self.all_deps,
+        )
+
+    def json_with_dependencies(self, depth: int = 1) -> Dict:
+        return {
+            "dependencies": [
+                rep.json_with_dependencies(depth - 1) for rep in self.dependencies
+            ]
+            if depth > 0
+            else [],
+            **self.report_json,
+        }
+
+    def json_with_parents(self, depth: int = 1) -> Dict:
+        return {
+            "parents": [rep.json_with_parents(depth - 1) for rep in self.score_parents]
+            if depth > 0
+            else [],
+            **self.report_json,
+        }
+
 
 class PackageVersion(db.Model):
     __tablename__ = "package_versions"
