@@ -32,7 +32,7 @@ from sqlalchemy.types import DateTime
 from sqlalchemy.schema import Table
 from sqlalchemy import func
 
-from depobs.database.mixins import TaskIDMixin
+from depobs.database.mixins import PackageReportColumnsMixin, TaskIDMixin
 
 
 log = logging.getLogger(__name__)
@@ -66,30 +66,10 @@ class Dependency(db.Model):
     used_by_id = Column(Integer, ForeignKey("reports.id"), primary_key=True)
 
 
-class PackageReport(TaskIDMixin, db.Model):
+class PackageReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
     __tablename__ = "reports"
 
     id = Column("id", Integer, primary_key=True)
-
-    package = Column(String(200))
-    version = Column(String(200))
-    status = Column(String(200))
-    release_date = Column(DateTime)
-    scoring_date = Column(DateTime)
-    top_score = Column(Integer)
-    npmsio_score = Column(Float)
-    directVulnsCritical_score = Column(Integer)
-    directVulnsHigh_score = Column(Integer)
-    directVulnsMedium_score = Column(Integer)
-    directVulnsLow_score = Column(Integer)
-    indirectVulnsCritical_score = Column(Integer)
-    indirectVulnsHigh_score = Column(Integer)
-    indirectVulnsMedium_score = Column(Integer)
-    indirectVulnsLow_score = Column(Integer)
-    authors = Column(Integer)
-    contributors = Column(Integer)
-    immediate_deps = Column(Integer)
-    all_deps = Column(Integer)
 
     # this relationship is used for persistence
     dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
