@@ -1071,7 +1071,7 @@ def insert_npm_registry_entries(entries: Iterable[NPMRegistryEntry]) -> None:
 VIEWS: Dict[str, str] = {
     "score_view": """
         CREATE OR REPLACE VIEW score_view AS
-        SELECT id, package, version, scoring_date,
+        SELECT reports.*,
         npmsio_score * 100 +
         CASE
         WHEN all_deps <= 5 THEN 20
@@ -1089,18 +1089,17 @@ VIEWS: Dict[str, str] = {
         from reports
         WHERE status = 'scanned'
         """,
-    "score_code_view": """
-        CREATE OR REPLACE VIEW score_code_view AS
-        SELECT *,
-        CASE  
-        WHEN score >= 80 THEN 'A'
-        WHEN score >= 60 THEN 'B'
-        WHEN score >= 40 THEN 'C'
-        WHEN score >= 20 THEN 'D'
-        WHEN score IS NULL THEN ''
+    "report_score_view": """
+        CREATE OR REPLACE VIEW report_score_view AS
+        SELECT reports.*, score_view.score AS score,
+        CASE
+        WHEN score_view.score >= 80 THEN 'A'
+        WHEN score_view.score >= 60 THEN 'B'
+        WHEN score_view.score >= 40 THEN 'C'
+        WHEN score_view.score >= 20 THEN 'D'
         ELSE 'E'
-        END AS score_code
-        FROM score_view
+        END as score_code
+        from reports inner join score_view on reports.id = score_view.id
         """,
 }
 
