@@ -541,9 +541,9 @@ class NPMRegistryEntry(db.Model):
     # https://github.com/npm/registry/blob/master/docs/responses/package-metadata.md#dist
     #
     # from .versions[<version>].dist.shasum e.g. f616eda9d3e4b66b8ca7fca79f695722c5f8e26f
-    shasum = deferred(Column(String, nullable=False, primary_key=True))
+    shasum = Column(String, nullable=False, primary_key=True)
     # from .versions[<version>].dist.tarball e.g. https://registry.npmjs.org/backoff/-/backoff-2.5.0.tgz
-    tarball = deferred(Column(String, nullable=False, primary_key=True))
+    tarball = Column(String, nullable=False, primary_key=True)
 
     # from .versions[<version>].gitHead e.g. '811118fd1f89e9ca4e6b67292b9ef5da6c4f60e9'
     git_head = deferred(Column(String, nullable=True))
