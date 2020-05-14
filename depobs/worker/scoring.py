@@ -341,6 +341,7 @@ def add_scoring_component_data_to_node_attrs(
 def score_package_graph(
     db_graph: PackageGraph,
     score_components: Optional[Iterable[Type[ScoreComponent]]] = None,
+    nx_graph: Optional[nx.DiGraph] = None,
 ) -> Dict[PackageVersionID, PackageReport]:
     """
     Scores a database PackageGraph model with the provided components.
@@ -355,7 +356,7 @@ def score_package_graph(
 
     g: nx.DiGraph = add_scoring_component_data_to_node_attrs(
         db_graph,
-        graph_util.package_graph_to_networkx_graph(db_graph),
+        nx_graph or graph_util.package_graph_to_networkx_graph(db_graph),
         graph_score_components,
     )
     log.info(
