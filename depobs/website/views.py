@@ -182,6 +182,8 @@ def handle_package_report_not_found(e):
             ),
             404,
         )
+    # save any registry entries we fetch checking for package name and version
+    models.db.session.commit()
 
     # start a task to scan the package
     scan_task: celery.result.AsyncResult = get_celery_tasks().scan_npm_package_then_build_report_tree.delay(
