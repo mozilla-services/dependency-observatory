@@ -378,3 +378,12 @@ def score_package_graph(
         )
 
     return reports_by_package_version_id
+
+
+def find_component_with_package_report_field(
+    package_report_field: str,
+) -> Optional[Type[ScoreComponent]]:
+    for component in all_score_components:
+        if package_report_field in component.package_report_fields.keys():
+            return component
+    return None
