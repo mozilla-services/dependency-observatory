@@ -14,6 +14,14 @@ def app():
 
 
 @pytest.fixture
+def models(app):
+    import depobs.database.models as models
+
+    with app.app_context():
+        yield models
+
+
+@pytest.fixture
 def client(app):
     with app.test_client() as client:
         yield client
