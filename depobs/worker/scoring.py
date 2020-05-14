@@ -341,7 +341,7 @@ def add_scoring_component_data_to_node_attrs(
 def score_package_graph(
     db_graph: PackageGraph,
     score_components: Optional[Iterable[Type[ScoreComponent]]] = None,
-) -> List[PackageReport]:
+) -> Dict[PackageVersionID, PackageReport]:
     """
     Scores a database PackageGraph model with the provided components.
     """
@@ -377,4 +377,4 @@ def score_package_graph(
             reports_by_package_version_id[dep_node_id] for dep_node_id in direct_dep_ids
         )
 
-    return list(reports_by_package_version_id.values())
+    return reports_by_package_version_id

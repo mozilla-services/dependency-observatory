@@ -287,7 +287,7 @@ def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
         db_graph = PackageGraph(id=None, link_ids=[])
         db_graph.distinct_package_ids = set([package.id])
 
-    store_package_reports(scoring.score_package_graph(db_graph))
+    store_package_reports(list(scoring.score_package_graph(db_graph).values()))
 
 
 @app.task()

@@ -513,7 +513,7 @@ def test_score_package_graph(
         for dep in r.get("dependencies", []):
             dep["scoring_date"] = dt_mock.now()
 
-    reports = m.score_package_graph(db_graph)
+    reports = list(m.score_package_graph(db_graph).values())
 
     # one report per node
     assert (
