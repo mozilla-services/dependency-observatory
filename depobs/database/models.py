@@ -138,11 +138,11 @@ class PackageScoreReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
 
     # this relationship is used for persistence
     dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
-        "PackageReport",
+        "PackageScoreReport",
         secondary=Dependency.__table__,
         primaryjoin=id == Dependency.__table__.c.depends_on_id,
         secondaryjoin=id == Dependency.__table__.c.used_by_id,
-        backref="score_parents",
+        backref="parents",
     )
 
     @property
@@ -188,7 +188,7 @@ class PackageScoreReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
 
     def json_with_parents(self, depth: int = 1) -> Dict:
         return {
-            "parents": [rep.json_with_parents(depth - 1) for rep in self.score_parents]
+            "parents": [rep.json_with_parents(depth - 1) for rep in self.parents]
             if depth > 0
             else [],
             **self.report_json,
