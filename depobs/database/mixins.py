@@ -23,6 +23,7 @@ class PackageReportColumnsMixin:
     scoring_date = Column(DateTime)
     top_score = Column(Integer)
     npmsio_score = Column(Float)
+    npmsio_scored_package_version = Column(String)
     directVulnsCritical_score = Column(Integer)
     directVulnsHigh_score = Column(Integer)
     directVulnsMedium_score = Column(Integer)
