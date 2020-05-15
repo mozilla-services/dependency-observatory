@@ -33,6 +33,7 @@ _default_report_json = {
     "dependencies": [],
     "immediate_deps": 0,
     "npmsio_score": 0,
+    "npmsio_scored_package_version": None,
     "release_date": None,
     "status": "scanned",
     "top_score": None,
@@ -110,25 +111,49 @@ score_package_component_testcases = {
         create_single_node_digraph_with_attrs({"npmsio_score": None}),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": None},
+        {"npmsio_score": None, "npmsio_scored_package_version": None,},
     ],
-    "npmsio_score_zero": [
-        create_single_node_digraph_with_attrs({"npmsio_score": 0}),
+    "npmsio_score_empty_tuple": [
+        create_single_node_digraph_with_attrs({"npmsio_score": ()}),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": 0.0,},
+        {"npmsio_score": None, "npmsio_scored_package_version": None,},
     ],
-    "npmsio_score_halfish": [
-        create_single_node_digraph_with_attrs({"npmsio_score": 0.53}),
+    "npmsio_score_null_package_version": [
+        create_single_node_digraph_with_attrs({"npmsio_score": (None, None)}),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": 0.53,},
+        {"npmsio_score": None, "npmsio_scored_package_version": None,},
     ],
-    "npmsio_score_one": [
-        create_single_node_digraph_with_attrs({"npmsio_score": 1}),
+    "npmsio_score_empty_scores": [
+        create_single_node_digraph_with_attrs({"npmsio_score": ("0.1.0", {})}),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": 1.0,},
+        {"npmsio_score": None, "npmsio_scored_package_version": None,},
+    ],
+    "npmsio_score_zero_exact_match": [
+        create_single_node_digraph_with_attrs(
+            {"npmsio_score": ("0.1.0", {"0.1.0": 0, "2.3.4": 0.5,})}
+        ),
+        0,
+        [m.NPMSIOScoreComponent],
+        {"npmsio_score": 0.0, "npmsio_scored_package_version": "0.1.0",},
+    ],
+    "npmsio_score_halfish_major_version_match": [
+        create_single_node_digraph_with_attrs(
+            {"npmsio_score": ("0.1.0", {"0.2.1": 0.53, "0.4.1": 0.2}),}
+        ),
+        0,
+        [m.NPMSIOScoreComponent],
+        {"npmsio_score": 0.53, "npmsio_scored_package_version": "0.2.1"},
+    ],
+    "npmsio_score_one_no_match": [
+        create_single_node_digraph_with_attrs(
+            {"npmsio_score": ("0.1.0", {"10.0.0": 1.0})}
+        ),
+        0,
+        [m.NPMSIOScoreComponent],
+        {"npmsio_score": 1.0, "npmsio_scored_package_version": "10.0.0"},
     ],
     "null_npm_reg": [
         create_single_node_digraph_with_attrs({"registry_entry": None}),
@@ -357,7 +382,9 @@ score_package_graph_testcases = {
             distinct_package_versions_by_id={
                 0: m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
             },
-            get_npmsio_scores_by_package_version_id=lambda: {0: 0.0},
+            get_npmsio_scores_by_package_version_id=lambda: {
+                0: ("0.1.0", {"0.1.0": 0})
+            },
             get_npm_registry_data_by_package_version_id=lambda: {0: None},
             get_advisories_by_package_version_id=lambda: {0: []},
         ),
@@ -377,6 +404,7 @@ score_package_graph_testcases = {
                 indirectVulnsLow_score=0,
                 indirectVulnsMedium_score=0,
                 npmsio_score=0.0,
+                npmsio_scored_package_version="0.1.0",
             ).json_with_dependencies(depth=0)
         ],
     ),
@@ -390,7 +418,11 @@ score_package_graph_testcases = {
                 1: m.PackageVersion(id=1, name="test-child-pkg", version="0.0.3"),
                 2: m.PackageVersion(id=2, name="test-grandchild-pkg", version="2.1.0"),
             },
-            get_npmsio_scores_by_package_version_id=lambda: {0: 0.34, 1: 0.9, 2: 0.25},
+            get_npmsio_scores_by_package_version_id=lambda: {
+                0: ("0.1.0", {"0.1.3": 0.34}),
+                1: ("0.0.3", {"0.0.3": 0.9}),
+                2: ("2.1.0", {"2.0.0": 0.25}),
+            },
             get_npm_registry_data_by_package_version_id=lambda: {
                 0: None,
                 1: None,
@@ -402,6 +434,7 @@ score_package_graph_testcases = {
             {
                 **_default_report_json,
                 "npmsio_score": 0.25,
+                "npmsio_scored_package_version": "2.0.0",
                 "package": "test-grandchild-pkg",
                 "version": "2.1.0",
             },
@@ -412,12 +445,14 @@ score_package_graph_testcases = {
                     {
                         **_default_report_json,
                         "npmsio_score": 0.25,
+                        "npmsio_scored_package_version": "2.0.0",
                         "package": "test-grandchild-pkg",
                         "version": "2.1.0",
                     },
                 ],
                 "immediate_deps": 1,
                 "npmsio_score": 0.9,
+                "npmsio_scored_package_version": "0.0.3",
                 "package": "test-child-pkg",
                 "version": "0.0.3",
             },
@@ -431,12 +466,14 @@ score_package_graph_testcases = {
                         "all_deps": 1,
                         "immediate_deps": 1,
                         "npmsio_score": 0.9,
+                        "npmsio_scored_package_version": "0.0.3",
                         "package": "test-child-pkg",
                         "version": "0.0.3",
                     },
                 ],
                 "immediate_deps": 1,
                 "npmsio_score": 0.34,
+                "npmsio_scored_package_version": "0.1.3",
                 "package": "test-root-pkg",
                 "version": "0.1.0",
             },
@@ -450,7 +487,10 @@ score_package_graph_testcases = {
                 0: m.PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
                 1: m.PackageVersion(id=1, name="test-child-pkg", version="0.0.3"),
             },
-            get_npmsio_scores_by_package_version_id=lambda: {0: 0.2, 1: 0.8,},
+            get_npmsio_scores_by_package_version_id=lambda: {
+                0: ("0.1.0", {"0.1.3": 0.2}),
+                1: ("0.0.3", {"0.0.3": 0.8}),
+            },
             get_npm_registry_data_by_package_version_id=lambda: {0: None, 1: None},
             get_advisories_by_package_version_id=lambda: {0: [], 1: [],},
         ),
@@ -460,6 +500,7 @@ score_package_graph_testcases = {
                 "all_deps": 1,
                 "immediate_deps": 1,
                 "npmsio_score": 0.8,
+                "npmsio_scored_package_version": "0.0.3",
                 "package": "test-child-pkg",
                 "version": "0.0.3",
                 "dependencies": [
@@ -468,6 +509,7 @@ score_package_graph_testcases = {
                         "all_deps": 1,
                         "immediate_deps": 1,
                         "npmsio_score": 0.2,
+                        "npmsio_scored_package_version": "0.1.3",
                         "package": "test-root-pkg",
                         "version": "0.1.0",
                     }
@@ -478,6 +520,7 @@ score_package_graph_testcases = {
                 "all_deps": 1,
                 "immediate_deps": 1,
                 "npmsio_score": 0.2,
+                "npmsio_scored_package_version": "0.1.3",
                 "package": "test-root-pkg",
                 "version": "0.1.0",
                 "dependencies": [
@@ -486,6 +529,7 @@ score_package_graph_testcases = {
                         "all_deps": 1,
                         "immediate_deps": 1,
                         "npmsio_score": 0.8,
+                        "npmsio_scored_package_version": "0.0.3",
                         "package": "test-child-pkg",
                         "version": "0.0.3",
                     }

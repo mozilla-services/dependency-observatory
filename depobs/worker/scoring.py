@@ -3,6 +3,7 @@ from collections import ChainMap, Counter
 from datetime import datetime
 import enum
 import logging
+from os.path import commonprefix
 from typing import Any, Dict, List, Optional, Set, Type, Tuple, Union, Iterable
 
 import networkx as nx
@@ -132,6 +133,7 @@ class NPMSIOScoreComponent(ScoreComponent):
 
     package_report_fields = {
         "npmsio_score": Union[None, float, int],
+        "npmsio_scored_package_version": str,
     }
 
     @staticmethod
@@ -147,8 +149,40 @@ class NPMSIOScoreComponent(ScoreComponent):
         node_id: int,
         direct_dep_ids: Set[int],
         indirect_dep_ids: Set[int],
-    ) -> Dict[str, Union[None, float, int]]:
-        return dict(npmsio_score=g.nodes[node_id][component.graph_node_attr_name])
+    ) -> Dict[str, Union[None, float, int, str]]:
+        package_version_and_scores: Optional[
+            Tuple[str, Dict[str, Union[int, float, None]]]
+        ] = g.nodes[node_id][component.graph_node_attr_name]
+        if not (
+            isinstance(package_version_and_scores, tuple)
+            and len(package_version_and_scores) == 2
+        ):
+            return dict(npmsio_score=None, npmsio_scored_package_version=None,)
+
+        package_version, scores = package_version_and_scores
+        if not scores:
+            return dict(npmsio_score=None, npmsio_scored_package_version=None,)
+
+        if package_version in scores:  # this exact version was scored
+            return dict(
+                npmsio_score=scores[package_version],
+                npmsio_scored_package_version=package_version,
+            )
+        # assuming semver versions find the longest common prefix
+        scored_versions = sorted(scores.keys())
+        closest_version = scored_versions[0]
+        for scored_version in scored_versions:
+            if len(commonprefix([package_version, scored_version])) > len(
+                commonprefix([package_version, closest_version])
+            ):
+                closest_version = scored_version
+
+        if closest_version:
+            return dict(
+                npmsio_score=scores[closest_version],
+                npmsio_scored_package_version=closest_version,
+            )
+        return dict(npmsio_score=None, npmsio_scored_package_version=None,)
 
 
 class NPMRegistryScoreComponent(ScoreComponent):

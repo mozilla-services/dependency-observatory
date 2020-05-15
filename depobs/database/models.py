@@ -32,7 +32,7 @@ from sqlalchemy.types import DateTime
 from sqlalchemy.schema import Table
 from sqlalchemy import func
 
-from depobs.database.mixins import TaskIDMixin
+from depobs.database.mixins import PackageReportColumnsMixin, TaskIDMixin
 
 
 log = logging.getLogger(__name__)
@@ -66,30 +66,10 @@ class Dependency(db.Model):
     used_by_id = Column(Integer, ForeignKey("reports.id"), primary_key=True)
 
 
-class PackageReport(TaskIDMixin, db.Model):
+class PackageReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
     __tablename__ = "reports"
 
     id = Column("id", Integer, primary_key=True)
-
-    package = Column(String(200))
-    version = Column(String(200))
-    status = Column(String(200))
-    release_date = Column(DateTime)
-    scoring_date = Column(DateTime)
-    top_score = Column(Integer)
-    npmsio_score = Column(Float)
-    directVulnsCritical_score = Column(Integer)
-    directVulnsHigh_score = Column(Integer)
-    directVulnsMedium_score = Column(Integer)
-    directVulnsLow_score = Column(Integer)
-    indirectVulnsCritical_score = Column(Integer)
-    indirectVulnsHigh_score = Column(Integer)
-    indirectVulnsMedium_score = Column(Integer)
-    indirectVulnsLow_score = Column(Integer)
-    authors = Column(Integer)
-    contributors = Column(Integer)
-    immediate_deps = Column(Integer)
-    all_deps = Column(Integer)
 
     # this relationship is used for persistence
     dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
@@ -99,19 +79,6 @@ class PackageReport(TaskIDMixin, db.Model):
         secondaryjoin=id == Dependency.__table__.c.used_by_id,
         backref="parents",
     )
-
-    @staticmethod
-    def get_letter_grade(score: int) -> str:
-        if score >= 80:
-            return "A"
-        elif score >= 60:
-            return "B"
-        elif score >= 40:
-            return "C"
-        elif score >= 20:
-            return "D"
-        else:
-            return "E"
 
     @property
     def report_json(self) -> Dict:
@@ -127,6 +94,7 @@ class PackageReport(TaskIDMixin, db.Model):
             scoring_date=self.scoring_date,
             top_score=self.top_score,
             npmsio_score=self.npmsio_score,
+            npmsio_scored_package_version=self.npmsio_scored_package_version,
             directVulnsCritical_score=self.directVulnsCritical_score,
             directVulnsHigh_score=self.directVulnsHigh_score,
             directVulnsMedium_score=self.directVulnsMedium_score,
@@ -154,6 +122,73 @@ class PackageReport(TaskIDMixin, db.Model):
     def json_with_parents(self, depth: int = 1) -> Dict:
         return {
             "parents": [rep.json_with_parents(depth - 1) for rep in self.parents]
+            if depth > 0
+            else [],
+            **self.report_json,
+        }
+
+
+class PackageScoreReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
+    __tablename__ = "report_score_view"
+
+    id = Column("id", Integer, primary_key=True)
+
+    score = Column(Float)
+    score_code = Column(String(1))
+
+    # this relationship is used for persistence
+    dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
+        "PackageReport",
+        secondary=Dependency.__table__,
+        primaryjoin=id == Dependency.__table__.c.depends_on_id,
+        secondaryjoin=id == Dependency.__table__.c.used_by_id,
+        backref="score_parents",
+    )
+
+    @property
+    def report_json(self) -> Dict:
+        return dict(
+            score=self.score,
+            score_code=self.score_code,
+            id=self.id,
+            task_id=self.task_id,
+            # from database.mixins.TaskIDMixin
+            task_status=self.task_status,
+            package=self.package,
+            version=self.version,
+            status=self.status,
+            release_date=self.release_date,
+            scoring_date=self.scoring_date,
+            top_score=self.top_score,
+            npmsio_score=self.npmsio_score,
+            npmsio_scored_package_version=self.npmsio_scored_package_version,
+            directVulnsCritical_score=self.directVulnsCritical_score,
+            directVulnsHigh_score=self.directVulnsHigh_score,
+            directVulnsMedium_score=self.directVulnsMedium_score,
+            directVulnsLow_score=self.directVulnsLow_score,
+            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
+            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
+            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
+            indirectVulnsLow_score=self.indirectVulnsLow_score,
+            authors=self.authors,
+            contributors=self.contributors,
+            immediate_deps=self.immediate_deps,
+            all_deps=self.all_deps,
+        )
+
+    def json_with_dependencies(self, depth: int = 1) -> Dict:
+        return {
+            "dependencies": [
+                rep.json_with_dependencies(depth - 1) for rep in self.dependencies
+            ]
+            if depth > 0
+            else [],
+            **self.report_json,
+        }
+
+    def json_with_parents(self, depth: int = 1) -> Dict:
+        return {
+            "parents": [rep.json_with_parents(depth - 1) for rep in self.score_parents]
             if depth > 0
             else [],
             **self.report_json,
@@ -309,19 +344,37 @@ class PackageGraph(db.Model):
 
     def get_npmsio_scores_by_package_version_id(
         self,
-    ) -> Dict[PackageVersionID, Optional[float]]:
+    ) -> Dict[PackageVersionID, Tuple[str, Dict[str, float]]]:
+        """
+        Returns a dict of package version ID to:
+
+        Tuple[desired_package_version: str, Dict[scored_package_version: str, score: float]]
+
+        ordered by analyzed_at field.
+
+        e.g. {0: ('0.0.0', {'2.0.0': 0.75, '1.0.0': 0.3})}
+        """
         # TODO: fetch all scores in one request
-        # not cached since it can change as scores fetched or updated
-        tmp = {
-            package_version.id: get_npms_io_score(
-                package_version.name, package_version.version
-            ).first()
-            for package_version in self.distinct_package_versions_by_id.values()
-        }
+        # not cached since it can change as scores are updated
+        def get_package_scores_by_version(
+            package_version: PackageVersion,
+        ) -> Dict[str, float]:
+            return {
+                scored_version: score
+                for (score, scored_version) in (
+                    get_npms_io_score(
+                        package_version.name, package_version.version
+                    ).all()
+                    or get_npms_io_score(package_version.name).all()
+                )
+            }
+
         return {
-            # TODO: figure out if we cant get one row or None back
-            pv_id: score[0] if isinstance(score, tuple) else None
-            for pv_id, score in tmp.items()
+            package_version.id: (
+                package_version.version,
+                get_package_scores_by_version(package_version),
+            )
+            for package_version in self.distinct_package_versions_by_id.values()
         }
 
     def get_advisories_by_package_version_id(
@@ -709,15 +762,15 @@ def get_most_recently_scored_package_report(
     package_name: str,
     package_version: Optional[str] = None,
     scored_after: Optional[datetime] = None,
-) -> Optional[PackageReport]:
-    "Get the most recently scored PackageReport with package_name, optional package_version, and optionally scored_after the scored_after datetime or None"
-    query = db.session.query(PackageReport).filter_by(package=package_name)
+) -> Optional[PackageScoreReport]:
+    "Get the most recently scored PackageScoreReport with package_name, optional package_version, and optionally scored_after the scored_after datetime or None"
+    query = db.session.query(PackageScoreReport).filter_by(package=package_name)
     if package_version is not None:
         query = query.filter_by(version=package_version)
     if scored_after is not None:
-        query = query.filter(PackageReport.scoring_date >= scored_after)
+        query = query.filter(PackageScoreReport.scoring_date >= scored_after)
     log.debug(f"Query is {query}")
-    return query.order_by(PackageReport.scoring_date.desc()).limit(1).one_or_none()
+    return query.order_by(PackageScoreReport.scoring_date.desc()).limit(1).one_or_none()
 
 
 def get_placeholder_entry(
@@ -819,12 +872,33 @@ def get_vulnerabilities_report(package: str, version: str) -> Dict:
     return dict(package=package, version=version, vulnerabilities=vulns)
 
 
-def get_npms_io_score(package: str, version: str) -> sqlalchemy.orm.query.Query:
-    return (
-        db.session.query(NPMSIOScore.score)
-        .filter_by(package_name=package, package_version=version)
+def get_npms_io_score(
+    package: str, version: Optional[str] = None
+) -> sqlalchemy.orm.query.Query:
+    """
+    Returns NPMRegistryEntry models for the given package name and
+    optional version ordered by most recently inserted.
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app(dict(INIT_DB=False)).app_context():
+    ...     just_name_query = str(get_npms_io_score("package_foo"))
+    ...     name_and_version_query = str(get_npms_io_score("package_foo", "version_1"))
+
+    >>> just_name_query
+    'SELECT npmsio_scores.score AS npmsio_scores_score, npmsio_scores.package_version AS npmsio_scores_package_version \\nFROM npmsio_scores \\nWHERE npmsio_scores.package_name = %(package_name_1)s ORDER BY npmsio_scores.analyzed_at DESC'
+
+    >>> name_and_version_query
+    'SELECT npmsio_scores.score AS npmsio_scores_score, npmsio_scores.package_version AS npmsio_scores_package_version \\nFROM npmsio_scores \\nWHERE npmsio_scores.package_name = %(package_name_1)s AND npmsio_scores.package_version = %(package_version_1)s ORDER BY npmsio_scores.analyzed_at DESC'
+
+    """
+    query = (
+        db.session.query(NPMSIOScore.score, NPMSIOScore.package_version)
+        .filter_by(package_name=package)
         .order_by(NPMSIOScore.analyzed_at.desc())
     )
+    if version:
+        query = query.filter_by(package_version=version)
+    return query
 
 
 def get_package_names_with_missing_npms_io_scores() -> sqlalchemy.orm.query.Query:
@@ -1071,7 +1145,7 @@ def insert_npm_registry_entries(entries: Iterable[NPMRegistryEntry]) -> None:
 VIEWS: Dict[str, str] = {
     "score_view": """
         CREATE OR REPLACE VIEW score_view AS
-        SELECT id, package, version, scoring_date,
+        SELECT reports.*,
         npmsio_score * 100 +
         CASE
         WHEN all_deps <= 5 THEN 20
@@ -1089,18 +1163,17 @@ VIEWS: Dict[str, str] = {
         from reports
         WHERE status = 'scanned'
         """,
-    "score_code_view": """
-        CREATE OR REPLACE VIEW score_code_view AS
-        SELECT *,
-        CASE  
-        WHEN score >= 80 THEN 'A'
-        WHEN score >= 60 THEN 'B'
-        WHEN score >= 40 THEN 'C'
-        WHEN score >= 20 THEN 'D'
-        WHEN score IS NULL THEN ''
+    "report_score_view": """
+        CREATE OR REPLACE VIEW report_score_view AS
+        SELECT reports.*, score_view.score AS score,
+        CASE
+        WHEN score_view.score >= 80 THEN 'A'
+        WHEN score_view.score >= 60 THEN 'B'
+        WHEN score_view.score >= 40 THEN 'C'
+        WHEN score_view.score >= 20 THEN 'D'
         ELSE 'E'
-        END AS score_code
-        FROM score_view
+        END as score_code
+        from reports inner join score_view on reports.id = score_view.id
         """,
 }
 
