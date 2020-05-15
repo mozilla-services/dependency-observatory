@@ -19,7 +19,7 @@ def delete_reports(models, package_name, package_version):
     models.db.session.commit()
 
 
-def test_found_package_report_with_error_status_returns_500(models, client):
+def test_found_package_report_with_error_status_returns_502(models, client):
     delete_reports(models, "dep-obs-internal-wokka-wokka", "0.0.1")
     add_report(
         models,
@@ -31,7 +31,7 @@ def test_found_package_report_with_error_status_returns_500(models, client):
     response = client.get(
         "/package?package_name=dep-obs-internal-wokka-wokka&package_version=0.0.1"
     )
-    assert response.status == "500 INTERNAL SERVER ERROR"
+    assert response.status == "502 BAD GATEWAY"
 
 
 def test_found_package_report_without_score_returns_202(models, client):

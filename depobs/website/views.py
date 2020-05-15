@@ -159,7 +159,7 @@ def handle_package_report_not_found(e):
     package_report = models.get_placeholder_entry(package_name, package_version)
     if package_report:
         if package_report.status == "error":
-            return package_report.report_json, 500
+            return package_report.report_json, 502
         return package_report.report_json, 202
 
     if not check_package_name_registered(package_name):
