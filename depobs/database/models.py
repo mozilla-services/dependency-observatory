@@ -348,7 +348,7 @@ class PackageGraph(db.Model):
         tmp = {
             package_version.id: get_npms_io_score(
                 package_version.name, package_version.version
-            ).first()
+            ).first()[0]
             for package_version in self.distinct_package_versions_by_id.values()
         }
         return {
@@ -852,12 +852,33 @@ def get_vulnerabilities_report(package: str, version: str) -> Dict:
     return dict(package=package, version=version, vulnerabilities=vulns)
 
 
-def get_npms_io_score(package: str, version: str) -> sqlalchemy.orm.query.Query:
-    return (
-        db.session.query(NPMSIOScore.score)
-        .filter_by(package_name=package, package_version=version)
+def get_npms_io_score(
+    package: str, version: Optional[str] = None
+) -> sqlalchemy.orm.query.Query:
+    """
+    Returns NPMRegistryEntry models for the given package name and
+    optional version ordered by most recently inserted.
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app(dict(INIT_DB=False)).app_context():
+    ...     just_name_query = str(get_npms_io_score("package_foo"))
+    ...     name_and_version_query = str(get_npms_io_score("package_foo", "version_1"))
+
+    >>> just_name_query
+    'SELECT npmsio_scores.score AS npmsio_scores_score, npmsio_scores.package_version AS npmsio_scores_package_version \\nFROM npmsio_scores \\nWHERE npmsio_scores.package_name = %(package_name_1)s ORDER BY npmsio_scores.analyzed_at DESC'
+
+    >>> name_and_version_query
+    'SELECT npmsio_scores.score AS npmsio_scores_score, npmsio_scores.package_version AS npmsio_scores_package_version \\nFROM npmsio_scores \\nWHERE npmsio_scores.package_name = %(package_name_1)s AND npmsio_scores.package_version = %(package_version_1)s ORDER BY npmsio_scores.analyzed_at DESC'
+
+    """
+    query = (
+        db.session.query(NPMSIOScore.score, NPMSIOScore.package_version)
+        .filter_by(package_name=package)
         .order_by(NPMSIOScore.analyzed_at.desc())
     )
+    if version:
+        query = query.filter_by(package_version=version)
+    return query
 
 
 def get_package_names_with_missing_npms_io_scores() -> sqlalchemy.orm.query.Query:
