@@ -34,11 +34,13 @@ do
     status=$(echo -n "$response" | jq -rc '.status')
     echo ".task_status: ${task_status} .status: ${status}"
     if [[ "$status" = 'error' ]]; then
-        echo "scan task errored"
+        echo "scan task errored with response:"
+        echo "$response"
         exit 1
     fi
     if [[ "$task_status" = 'FAILURE' ]]; then
-        echo "queuing task failed"
+        echo "queuing task failed with response:"
+        echo "$response"
         exit 1
     fi
 

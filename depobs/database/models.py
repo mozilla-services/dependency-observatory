@@ -541,9 +541,9 @@ class NPMRegistryEntry(db.Model):
     # https://github.com/npm/registry/blob/master/docs/responses/package-metadata.md#dist
     #
     # from .versions[<version>].dist.shasum e.g. f616eda9d3e4b66b8ca7fca79f695722c5f8e26f
-    shasum = deferred(Column(String, nullable=False, primary_key=True))
+    shasum = Column(String, nullable=False, primary_key=True)
     # from .versions[<version>].dist.tarball e.g. https://registry.npmjs.org/backoff/-/backoff-2.5.0.tgz
-    tarball = deferred(Column(String, nullable=False, primary_key=True))
+    tarball = Column(String, nullable=False, primary_key=True)
 
     # from .versions[<version>].gitHead e.g. '811118fd1f89e9ca4e6b67292b9ef5da6c4f60e9'
     git_head = deferred(Column(String, nullable=True))
@@ -864,14 +864,34 @@ def get_npm_registry_entries_to_scan(
     return query
 
 
-def get_NPMRegistryEntry(package: str, version: str) -> sqlalchemy.orm.query.Query:
-    return (
-        db.session.query(NPMRegistryEntry)
-        .filter_by(package_name=package, package_version=version)
-        .order_by(
-            NPMRegistryEntry.inserted_at.desc(), NPMRegistryEntry.inserted_at.desc()
-        )
+def get_NPMRegistryEntry(
+    package: str, version: Optional[str] = None,
+) -> sqlalchemy.orm.query.Query:
+    """
+    Returns NPMRegistryEntry models for the given package name and
+    optional version ordered by most recently inserted.
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app(dict(INIT_DB=False)).app_context():
+    ...     just_name_query = str(get_NPMRegistryEntry("package_foo"))
+    ...     name_and_version_query = str(get_NPMRegistryEntry("package_foo", "version_1"))
+
+    >>> just_name_query
+    'SELECT npm_registry_entries.id AS npm_registry_entries_id, npm_registry_entries.package_name AS npm_registry_entries_package_name, npm_registry_entries.package_version AS npm_registry_entries_package_version, npm_registry_entries.has_shrinkwrap AS npm_registry_entries_has_shrinkwrap, npm_registry_entries.published_at AS npm_registry_entries_published_at, npm_registry_entries.package_modified_at AS npm_registry_entries_package_modified_at, npm_registry_entries.source_url AS npm_registry_entries_source_url \\nFROM npm_registry_entries \\nWHERE npm_registry_entries.package_name = %(package_name_1)s ORDER BY npm_registry_entries.inserted_at DESC'
+
+    >>> name_and_version_query
+    'SELECT npm_registry_entries.id AS npm_registry_entries_id, npm_registry_entries.package_name AS npm_registry_entries_package_name, npm_registry_entries.package_version AS npm_registry_entries_package_version, npm_registry_entries.has_shrinkwrap AS npm_registry_entries_has_shrinkwrap, npm_registry_entries.published_at AS npm_registry_entries_published_at, npm_registry_entries.package_modified_at AS npm_registry_entries_package_modified_at, npm_registry_entries.source_url AS npm_registry_entries_source_url \\nFROM npm_registry_entries \\nWHERE npm_registry_entries.package_name = %(package_name_1)s AND npm_registry_entries.package_version = %(package_version_1)s ORDER BY npm_registry_entries.inserted_at DESC
+'
+    """
+    query = db.session.query(NPMRegistryEntry).order_by(
+        NPMRegistryEntry.inserted_at.desc()
     )
+    if version:
+        query = query.filter_by(package_name=package, package_version=version)
+    else:
+        query = query.filter_by(package_name=package)
+
+    return query
 
 
 def get_maintainers_contributors(

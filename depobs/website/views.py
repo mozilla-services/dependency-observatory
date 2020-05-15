@@ -182,25 +182,27 @@ def handle_package_report_not_found(e):
             ),
             404,
         )
+    # save any registry entries we fetch checking for package name and version
+    models.db.session.commit()
 
     # start a task to scan the package
-    result: celery.result.AsyncResult = get_celery_tasks().scan_npm_package_then_build_report_tree.delay(
+    scan_task: celery.result.AsyncResult = get_celery_tasks().scan_npm_package_then_build_report_tree.delay(
         package_name, package_version
     )
 
     # TODO: make sure concurrent API calls don't introduce a data race
     if package_version is not None:
         package_report = models.insert_package_report_placeholder_or_update_task_id(
-            package_name, package_version, result.id
+            package_name, package_version, scan_task.id
         )
     else:
         # a version wasn't specified, so scan_npm_package will scan all versions
         # update or insert placeholders for all the versions referencing the same scan task
         package_reports = [
             models.insert_package_report_placeholder_or_update_task_id(
-                package_name, reg_package_version, result.id
+                package_name, entry.package_version, scan_task.id
             )
-            for reg_package_version in sorted(package_versions_on_registry.keys())
+            for entry in models.get_NPMRegistryEntry(package_name)
         ]
         log.info(
             f"inserted placeholder PackageReports for {package_name} at versions {[(pr.id, pr.version) for pr in package_reports]}"
