@@ -342,19 +342,37 @@ class PackageGraph(db.Model):
 
     def get_npmsio_scores_by_package_version_id(
         self,
-    ) -> Dict[PackageVersionID, Optional[float]]:
+    ) -> Dict[PackageVersionID, Tuple[str, Dict[str, float]]]:
+        """
+        Returns a dict of package version ID to:
+
+        Tuple[desired_package_version: str, Dict[scored_package_version: str, score: float]]
+
+        ordered by analyzed_at field.
+
+        e.g. {0: ('0.0.0', {'2.0.0': 0.75, '1.0.0': 0.3})}
+        """
         # TODO: fetch all scores in one request
-        # not cached since it can change as scores fetched or updated
-        tmp = {
-            package_version.id: get_npms_io_score(
-                package_version.name, package_version.version
-            ).first()[0]
-            for package_version in self.distinct_package_versions_by_id.values()
-        }
+        # not cached since it can change as scores are updated
+        def get_package_scores_by_version(
+            package_version: PackageVersion,
+        ) -> Dict[str, float]:
+            return {
+                scored_version: score
+                for (score, scored_version) in (
+                    get_npms_io_score(
+                        package_version.name, package_version.version
+                    ).all()
+                    or get_npms_io_score(package_version.name).all()
+                )
+            }
+
         return {
-            # TODO: figure out if we cant get one row or None back
-            pv_id: score[0] if isinstance(score, tuple) else None
-            for pv_id, score in tmp.items()
+            package_version.id: (
+                package_version.version,
+                get_package_scores_by_version(package_version),
+            )
+            for package_version in self.distinct_package_versions_by_id.values()
         }
 
     def get_advisories_by_package_version_id(
