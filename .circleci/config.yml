@@ -126,8 +126,7 @@ jobs:
       - run:
           name: run e2e test
           command: |
-            docker cp "$(pwd)/util/e2e_test.sh" dependency-observatory-api:/app/
-            docker exec -u 0 dependency-observatory-api /app/e2e_test.sh || (
+            docker exec -u 0 dependency-observatory-api /app/bin/e2e_test.sh || (
                 docker logs dependency-observatory-worker;
                 docker logs dependency-observatory-api;
             )
