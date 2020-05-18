@@ -28,6 +28,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 
 WORKDIR /app
 
+COPY setup.cfg .
+COPY pyproject.toml .
 COPY depobs depobs
 COPY bin bin
 RUN pip install --upgrade --no-cache-dir -r depobs/requirements.txt
