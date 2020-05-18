@@ -48,6 +48,7 @@ def create_app(test_config=None):
     models.db.init_app(app)
     if app.config["INIT_DB"]:
         models.create_tables_and_views(app)
+    models.migrate.init_app(app, models.db)
 
     dockerflow = Customflow(app, db=models.db)
     dockerflow.init_app(app)
