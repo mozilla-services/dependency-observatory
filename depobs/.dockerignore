@@ -1,7 +1,0 @@
-worker/fixtures/
-**/__pycache__/
-*.log
-*.jsonl
-venv/
-data/
-*.sql

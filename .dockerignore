@@ -1,0 +1,14 @@
+depobs/worker/fixtures/
+**/__pycache__/
+*.pyc
+*.log
+*.jsonl
+venv/
+data/
+*.sql
+.git/
+.gitignore
+Dockerfile
+docker-compose.yml
+.circleci/
+htmlcov/

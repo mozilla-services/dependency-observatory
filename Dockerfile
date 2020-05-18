@@ -28,9 +28,12 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 
 WORKDIR /app
 
-COPY . depobs
+COPY setup.cfg .
+COPY pyproject.toml .
+COPY depobs depobs
+COPY bin bin
 RUN pip install --upgrade --no-cache-dir -r depobs/requirements.txt
 
 USER app
-ENTRYPOINT [ ]
-CMD [ "python", "depobs/website/do.py" ]
+ENTRYPOINT [ "/app/bin/docker-entrypoint.sh" ]
+CMD [ "web" ]
