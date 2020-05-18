@@ -4,6 +4,7 @@ import logging
 from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
 
 import flask
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 import networkx as nx
 import sqlalchemy
@@ -39,6 +40,7 @@ log = logging.getLogger(__name__)
 
 
 db: SQLAlchemy = SQLAlchemy()
+migrate = Migrate()
 
 # define type aliases to make ints distinguishable in type annotations
 PackageLinkID = int
