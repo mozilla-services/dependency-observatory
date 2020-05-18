@@ -12,7 +12,7 @@ services:
 
   api:
     build:
-      context: depobs/
+      context: .
     container_name: dependency-observatory-api
     image: mozilla/dependency-observatory
     volumes:
@@ -36,7 +36,7 @@ services:
   # celery worker for scanner
   worker:
     build:
-      context: depobs/
+      context: .
     container_name: dependency-observatory-worker
     image: mozilla/dependency-observatory
     depends_on:
