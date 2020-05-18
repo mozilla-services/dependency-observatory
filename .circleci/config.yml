@@ -115,7 +115,7 @@ jobs:
           name: start test api and worker (w/o volume mounts)
           command: |
             docker run -d --rm --name dependency-observatory-api --network project_default --link db -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" -e "INIT_DB=1" -e "HOST=0.0.0.0" -e "PORT=8000" -e "FLASK_ENV=production" -e "FLASK_APP=/app/depobs/website/do.py" -p 8000:8000 mozilla/dependency-observatory
-            docker run -d -u 0 --rm -v /var/run/docker.sock:/var/run/docker.sock  --network project_default --link db --name dependency-observatory-worker -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" mozilla/dependency-observatory /bin/bash -c "celery -A depobs.worker.tasks worker --loglevel=debug"
+            docker run -d -u 0 --rm -v /var/run/docker.sock:/var/run/docker.sock  --network project_default --link db --name dependency-observatory-worker -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" mozilla/dependency-observatory worker
       - run:
           name: show running containers
           command: docker ps --no-trunc
