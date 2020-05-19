@@ -1184,33 +1184,6 @@ VIEWS: Dict[str, str] = {
 }
 
 
-def create_views(engine: sqlalchemy.engine.Engine) -> None:
-    connection = engine.connect()
-    log.info(f"creating views if they don't exist: {list(VIEWS.keys())}")
-    for view_command in VIEWS.values():
-        _ = connection.execute(view_command)
-    connection.close()
-
-
-def create_tables_and_views(app: flask.app.Flask) -> None:
-    # TODO: fix using the stub for flask.ctx.AppContext
-    with app.app_context():  # type: ignore
-        non_view_table_names = [
-            table_name
-            for table_name in db.Model.metadata.tables
-            if table_name not in VIEWS.keys()
-        ]
-        log.info(f"creating tables if they don't exist: {non_view_table_names}")
-        db.Model.metadata.create_all(
-            bind=db.engine,
-            tables=[
-                db.Model.metadata.tables[table_name]
-                for table_name in non_view_table_names
-            ],
-        )
-        create_views(db.engine)
-
-
 def get_advisories_by_package_versions(
     package_versions: List[PackageVersion],
 ) -> sqlalchemy.orm.query.Query:
