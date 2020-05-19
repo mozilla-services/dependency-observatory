@@ -133,6 +133,10 @@ class PackageReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
 class PackageScoreReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
     __tablename__ = "report_score_view"
 
+    # flag as view for Flask-Migrate running alembic doesn't try to create a table
+    # https://alembic.sqlalchemy.org/en/latest/cookbook.html#don-t-emit-create-table-statements-for-views
+    __table_args__ = {"info": {"is_view": True}}
+
     id = Column("id", Integer, primary_key=True)
 
     score = Column(Float)
