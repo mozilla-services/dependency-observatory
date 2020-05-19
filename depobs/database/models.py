@@ -882,7 +882,7 @@ def get_npms_io_score(
     optional version ordered by most recently inserted.
 
     >>> from depobs.website.do import create_app
-    >>> with create_app(dict(INIT_DB=False)).app_context():
+    >>> with create_app().app_context():
     ...     just_name_query = str(get_npms_io_score("package_foo"))
     ...     name_and_version_query = str(get_npms_io_score("package_foo", "version_1"))
 
@@ -908,7 +908,7 @@ def get_package_names_with_missing_npms_io_scores() -> sqlalchemy.orm.query.Quer
     Returns PackageVersion names not in npmsio_scores.
 
     >>> from depobs.website.do import create_app
-    >>> with create_app(dict(INIT_DB=False)).app_context():
+    >>> with create_app().app_context():
     ...     str(get_package_names_with_missing_npms_io_scores())
     ...
     'SELECT DISTINCT package_versions.name AS anon_1 \\nFROM package_versions LEFT OUTER JOIN npmsio_scores ON package_versions.name = npmsio_scores.package_name \\nWHERE npmsio_scores.id IS NULL ORDER BY package_versions.name ASC'
@@ -948,7 +948,7 @@ def get_NPMRegistryEntry(
     optional version ordered by most recently inserted.
 
     >>> from depobs.website.do import create_app
-    >>> with create_app(dict(INIT_DB=False)).app_context():
+    >>> with create_app().app_context():
     ...     just_name_query = str(get_NPMRegistryEntry("package_foo"))
     ...     name_and_version_query = str(get_NPMRegistryEntry("package_foo", "version_1"))
 
@@ -992,7 +992,7 @@ def get_package_names_with_missing_npm_entries() -> sqlalchemy.orm.query.Query:
     Returns PackageVersion names not in npmsio_scores.
 
     >>> from depobs.website.do import create_app
-    >>> with create_app(dict(INIT_DB=False)).app_context():
+    >>> with create_app().app_context():
     ...     str(get_package_names_with_missing_npm_entries())
     ...
     'SELECT DISTINCT package_versions.name AS anon_1 \\nFROM package_versions LEFT OUTER JOIN npm_registry_entries ON package_versions.name = npm_registry_entries.package_name \\nWHERE npm_registry_entries.id IS NULL ORDER BY package_versions.name ASC'
@@ -1214,7 +1214,7 @@ def get_advisories_by_package_versions(
     Returns all advisories that directly impact the provided PackageVersion objects.
 
     >>> from depobs.website.do import create_app
-    >>> with create_app(dict(INIT_DB=False)).app_context():
+    >>> with create_app().app_context():
     ...     str(get_advisories_by_package_versions([PackageVersion(id=932)]))
     ...
     'SELECT advisories.id AS advisories_id, advisories.language AS advisories_language, advisories.package_name AS advisories_package_name, advisories.npm_advisory_id AS advisories_npm_advisory_id, advisories.url AS advisories_url, advisories.severity AS advisories_severity, advisories.cwe AS advisories_cwe, advisories.exploitability AS advisories_exploitability, advisories.title AS advisories_title \\nFROM advisories \\nWHERE advisories.vulnerable_package_version_ids @> %(vulnerable_package_version_ids_1)s'
