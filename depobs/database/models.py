@@ -1148,42 +1148,6 @@ def insert_npm_registry_entries(entries: Iterable[NPMRegistryEntry]) -> None:
             )
 
 
-VIEWS: Dict[str, str] = {
-    "score_view": """
-        CREATE OR REPLACE VIEW score_view AS
-        SELECT reports.*,
-        npmsio_score * 100 +
-        CASE
-        WHEN all_deps <= 5 THEN 20
-        WHEN all_deps <= 20 THEN 10
-        WHEN all_deps >= 500 THEN -20
-        WHEN all_deps >= 100 THEN -10
-        END +
-        CASE WHEN "directVulnsCritical_score" > 0 THEN -20 ELSE 0 END +
-        CASE WHEN "directVulnsHigh_score" > 0 THEN -10 ELSE 0 END +
-        CASE WHEN "directVulnsMedium_score" > 0 THEN -5 ELSE 0 END +
-        CASE WHEN "indirectVulnsCritical_score" > 0 THEN -10 ELSE 0 END +
-        CASE WHEN "indirectVulnsHigh_score" > 0 THEN -7 ELSE 0 END +
-        CASE WHEN "indirectVulnsMedium_score" > 0 THEN -3 ELSE 0 END
-        as score
-        from reports
-        WHERE status = 'scanned'
-        """,
-    "report_score_view": """
-        CREATE OR REPLACE VIEW report_score_view AS
-        SELECT reports.*, score_view.score AS score,
-        CASE
-        WHEN score_view.score >= 80 THEN 'A'
-        WHEN score_view.score >= 60 THEN 'B'
-        WHEN score_view.score >= 40 THEN 'C'
-        WHEN score_view.score >= 20 THEN 'D'
-        ELSE 'E'
-        END as score_code
-        from reports inner join score_view on reports.id = score_view.id
-        """,
-}
-
-
 def get_advisories_by_package_versions(
     package_versions: List[PackageVersion],
 ) -> sqlalchemy.orm.query.Query:
