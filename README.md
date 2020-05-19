@@ -197,12 +197,13 @@ docker pull mozilla/dependency-observatory:latest
    `postgresql://pguser:pgpass@pghost/dbname`, run the following:
 
 ```console
-export SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://pguser:pgpass@pghost/dbname
 export CELERY_BROKER_URL=sqla+postgresql://pguser:pgpass@pghost/dbname
 export CELERY_RESULT_BACKEND=db+postgresql://pguser:pgpass@pghost/dbname
+export FLASK_APP=/app/depobs/website/do.py
+export SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://pguser:pgpass@pghost/dbname
 
-docker run -d --rm --name dependency-observatory-api -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" -e "FLASK_APP=/app/depobs/website/do.py" -p 8000:8000 mozilla/dependency-observatory
-docker run -d -u 0 --rm -v /var/run/docker.sock:/var/run/docker.sock --net=host --name dependency-observatory-worker -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" mozilla/dependency-observatory worker
+docker run -d --rm --name dependency-observatory-api -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" -e "FLASK_APP=$FLASK_APP" -p 8000:8000 mozilla/dependency-observatory
+docker run -d -u 0 --rm -v /var/run/docker.sock:/var/run/docker.sock --net=host --name dependency-observatory-worker -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" -e "FLASK_APP=$FLASK_APP" mozilla/dependency-observatory worker
 ```
 
 Note that you'll probably want to derive from the image to properly deamonize the worker and web server.
