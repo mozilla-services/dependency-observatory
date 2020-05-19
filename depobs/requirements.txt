@@ -24,7 +24,7 @@ multidict==4.7.6
 mypy-extensions==0.4.3
 mypy==0.770
 networkx==2.4
-packaging==20.3
+packaging==20.4
 pathspec==0.8.0
 pip-api==0.0.14
 pluggy==0.13.1
