@@ -10,6 +10,8 @@ if [ "$1" = 'migrate' ]; then
     shift
 fi
 
+flask db show
+
 if [ "$1" = 'web' ]; then
     python depobs/website/do.py
 elif [ "$1" = 'worker' ]; then
