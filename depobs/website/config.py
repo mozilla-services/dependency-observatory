@@ -49,9 +49,6 @@ SQLALCHEMY_TRACK_MODIFICATIONS = bool(
     os.environ.get("SQLALCHEMY_TRACK_MODIFICATIONS", False)
 )
 
-# try to create tables and views for depobs
-INIT_DB = bool(os.environ.get("INIT_DB", False) == "1")
-
 # Task names the web/flask app can register and run
 WEB_TASK_NAMES = [
     "add",

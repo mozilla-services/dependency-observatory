@@ -4,6 +4,7 @@ import logging
 from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
 
 import flask
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 import networkx as nx
 import sqlalchemy
@@ -39,6 +40,7 @@ log = logging.getLogger(__name__)
 
 
 db: SQLAlchemy = SQLAlchemy()
+migrate = Migrate()
 
 # define type aliases to make ints distinguishable in type annotations
 PackageLinkID = int
@@ -130,6 +132,10 @@ class PackageReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
 
 class PackageScoreReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
     __tablename__ = "report_score_view"
+
+    # flag as view for Flask-Migrate running alembic doesn't try to create a table
+    # https://alembic.sqlalchemy.org/en/latest/cookbook.html#don-t-emit-create-table-statements-for-views
+    __table_args__ = {"info": {"is_view": True}}
 
     id = Column("id", Integer, primary_key=True)
 
@@ -880,7 +886,7 @@ def get_npms_io_score(
     optional version ordered by most recently inserted.
 
     >>> from depobs.website.do import create_app
-    >>> with create_app(dict(INIT_DB=False)).app_context():
+    >>> with create_app().app_context():
     ...     just_name_query = str(get_npms_io_score("package_foo"))
     ...     name_and_version_query = str(get_npms_io_score("package_foo", "version_1"))
 
@@ -906,7 +912,7 @@ def get_package_names_with_missing_npms_io_scores() -> sqlalchemy.orm.query.Quer
     Returns PackageVersion names not in npmsio_scores.
 
     >>> from depobs.website.do import create_app
-    >>> with create_app(dict(INIT_DB=False)).app_context():
+    >>> with create_app().app_context():
     ...     str(get_package_names_with_missing_npms_io_scores())
     ...
     'SELECT DISTINCT package_versions.name AS anon_1 \\nFROM package_versions LEFT OUTER JOIN npmsio_scores ON package_versions.name = npmsio_scores.package_name \\nWHERE npmsio_scores.id IS NULL ORDER BY package_versions.name ASC'
@@ -946,7 +952,7 @@ def get_NPMRegistryEntry(
     optional version ordered by most recently inserted.
 
     >>> from depobs.website.do import create_app
-    >>> with create_app(dict(INIT_DB=False)).app_context():
+    >>> with create_app().app_context():
     ...     just_name_query = str(get_NPMRegistryEntry("package_foo"))
     ...     name_and_version_query = str(get_NPMRegistryEntry("package_foo", "version_1"))
 
@@ -990,7 +996,7 @@ def get_package_names_with_missing_npm_entries() -> sqlalchemy.orm.query.Query:
     Returns PackageVersion names not in npmsio_scores.
 
     >>> from depobs.website.do import create_app
-    >>> with create_app(dict(INIT_DB=False)).app_context():
+    >>> with create_app().app_context():
     ...     str(get_package_names_with_missing_npm_entries())
     ...
     'SELECT DISTINCT package_versions.name AS anon_1 \\nFROM package_versions LEFT OUTER JOIN npm_registry_entries ON package_versions.name = npm_registry_entries.package_name \\nWHERE npm_registry_entries.id IS NULL ORDER BY package_versions.name ASC'
@@ -1142,69 +1148,6 @@ def insert_npm_registry_entries(entries: Iterable[NPMRegistryEntry]) -> None:
             )
 
 
-VIEWS: Dict[str, str] = {
-    "score_view": """
-        CREATE OR REPLACE VIEW score_view AS
-        SELECT reports.*,
-        npmsio_score * 100 +
-        CASE
-        WHEN all_deps <= 5 THEN 20
-        WHEN all_deps <= 20 THEN 10
-        WHEN all_deps >= 500 THEN -20
-        WHEN all_deps >= 100 THEN -10
-        END +
-        CASE WHEN "directVulnsCritical_score" > 0 THEN -20 ELSE 0 END +
-        CASE WHEN "directVulnsHigh_score" > 0 THEN -10 ELSE 0 END +
-        CASE WHEN "directVulnsMedium_score" > 0 THEN -5 ELSE 0 END +
-        CASE WHEN "indirectVulnsCritical_score" > 0 THEN -10 ELSE 0 END +
-        CASE WHEN "indirectVulnsHigh_score" > 0 THEN -7 ELSE 0 END +
-        CASE WHEN "indirectVulnsMedium_score" > 0 THEN -3 ELSE 0 END
-        as score
-        from reports
-        WHERE status = 'scanned'
-        """,
-    "report_score_view": """
-        CREATE OR REPLACE VIEW report_score_view AS
-        SELECT reports.*, score_view.score AS score,
-        CASE
-        WHEN score_view.score >= 80 THEN 'A'
-        WHEN score_view.score >= 60 THEN 'B'
-        WHEN score_view.score >= 40 THEN 'C'
-        WHEN score_view.score >= 20 THEN 'D'
-        ELSE 'E'
-        END as score_code
-        from reports inner join score_view on reports.id = score_view.id
-        """,
-}
-
-
-def create_views(engine: sqlalchemy.engine.Engine) -> None:
-    connection = engine.connect()
-    log.info(f"creating views if they don't exist: {list(VIEWS.keys())}")
-    for view_command in VIEWS.values():
-        _ = connection.execute(view_command)
-    connection.close()
-
-
-def create_tables_and_views(app: flask.app.Flask) -> None:
-    # TODO: fix using the stub for flask.ctx.AppContext
-    with app.app_context():  # type: ignore
-        non_view_table_names = [
-            table_name
-            for table_name in db.Model.metadata.tables
-            if table_name not in VIEWS.keys()
-        ]
-        log.info(f"creating tables if they don't exist: {non_view_table_names}")
-        db.Model.metadata.create_all(
-            bind=db.engine,
-            tables=[
-                db.Model.metadata.tables[table_name]
-                for table_name in non_view_table_names
-            ],
-        )
-        create_views(db.engine)
-
-
 def get_advisories_by_package_versions(
     package_versions: List[PackageVersion],
 ) -> sqlalchemy.orm.query.Query:
@@ -1212,7 +1155,7 @@ def get_advisories_by_package_versions(
     Returns all advisories that directly impact the provided PackageVersion objects.
 
     >>> from depobs.website.do import create_app
-    >>> with create_app(dict(INIT_DB=False)).app_context():
+    >>> with create_app().app_context():
     ...     str(get_advisories_by_package_versions([PackageVersion(id=932)]))
     ...
     'SELECT advisories.id AS advisories_id, advisories.language AS advisories_language, advisories.package_name AS advisories_package_name, advisories.npm_advisory_id AS advisories_npm_advisory_id, advisories.url AS advisories_url, advisories.severity AS advisories_severity, advisories.cwe AS advisories_cwe, advisories.exploitability AS advisories_exploitability, advisories.title AS advisories_title \\nFROM advisories \\nWHERE advisories.vulnerable_package_version_ids @> %(vulnerable_package_version_ids_1)s'

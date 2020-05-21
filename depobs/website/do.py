@@ -46,8 +46,7 @@ def create_app(test_config=None):
     # setup up request-scoped DB connections
     log.info(f"connecting to database")
     models.db.init_app(app)
-    if app.config["INIT_DB"]:
-        models.create_tables_and_views(app)
+    models.migrate.init_app(app, models.db)
 
     dockerflow = Customflow(app, db=models.db)
     dockerflow.init_app(app)
@@ -69,7 +68,7 @@ def create_celery_app(flask_app=None, test_config=None, tasks=None):
     To avoid import cycles web views should use the
     depobs.website.get_celery_tasks to kick off celery tasks.
     """
-    flask_app = flask_app if flask_app else create_app(dict(INIT_DB=False))
+    flask_app = flask_app if flask_app else create_app()
     if tasks is None:
         tasks = []
 
