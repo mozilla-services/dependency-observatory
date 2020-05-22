@@ -18,4 +18,7 @@ elif [ "$1" = 'worker' ]; then
     celery --task-events -A depobs.worker.tasks worker --loglevel=info
 elif [ "$1" = 'worker-dev' ]; then
     celery --task-events --purge -c 1 -A depobs.worker.tasks worker --loglevel=debug
+else
+    echo "got unrecognized command:" "$1"
+    exit 1
 fi
