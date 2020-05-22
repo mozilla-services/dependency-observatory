@@ -24,7 +24,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
             ca-certificates \
             build-essential \
             libpq-dev \
-            graphviz
+            graphviz \
+            jq \
+            curl
 
 WORKDIR /app
 
