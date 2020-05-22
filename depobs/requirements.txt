@@ -36,7 +36,7 @@ pytest-mock==3.1.0
 pytest==5.4.2
 quiz==0.2.0
 regex==2020.5.14
-six==1.14.0
+six==1.15.0
 snug==2.0.0
 toml==0.10.1
 typed-ast==1.4.1
