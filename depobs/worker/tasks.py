@@ -110,11 +110,6 @@ async def scan_tarball_url(
                 command=f"""bash -c "cat <<EOF > /tmp/package.json\n{{\\"dependencies\\": {{\\"{package_name}\\": \\"{package_version}\\"}} }}\nEOF" """,
                 check=True,
             ),
-            ContainerTask(
-                name="check_package_json",
-                command="""cat /tmp/package.json""",
-                check=True,
-            ),
         ] + container_tasks
 
         # fixup install command to take the tarball URL
