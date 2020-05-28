@@ -21,12 +21,7 @@ from depobs.database.models import Advisory, NPMRegistryEntry, NPMSIOScore
 from depobs.scanner.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
 from depobs.scanner.models.org_repo import OrgRepo
 from depobs.scanner.models.git_ref import GitRef
-from depobs.scanner.models.language import (
-    DependencyFile,
-    languages,
-    ContainerTask,
-    package_managers,
-)
+from depobs.scanner.models.language import package_managers
 from depobs.scanner.models.nodejs import NPMPackage, flatten_deps
 from depobs.util.serialize_util import (
     get_in,
