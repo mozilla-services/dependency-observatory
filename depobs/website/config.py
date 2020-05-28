@@ -164,17 +164,11 @@ GITHUB_CLIENT = {
     ),
 }
 
-# shared docker args for multiple tasks
-_docker_args = dict(
-    # non-default docker images to use for the task
-    docker_images=[],
-    # Print commands we would run and their context, but don't run them
-    dry_run=False,
-)
-
 SCAN_NPM_TARBALL_ARGS = {
-    **_docker_args,
     **dict(
+        # Print commands we would run and their context, but don't run them
+        dry_run=False,
+        image_name="dep-obs/node-10",
         languages=["nodejs"],
         package_managers=["npm"],
         repo_tasks=["install", "list_metadata", "audit"],
