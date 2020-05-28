@@ -103,7 +103,8 @@ Run:
 
 ```console
 ./util/write_version_json.sh > depobs/version.json
-docker-compose up --build -d
+docker-compose build node-10 rust-1
+docker-compose up -d db api worker
 ```
 
 #### API

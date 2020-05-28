@@ -55,3 +55,24 @@ services:
       - ./:/app
     user: "root"
     command: "worker-dev"
+
+  # images we build for the worker to run
+  node-10:
+    build:
+      context: depobs/scanner/
+      args:
+        - BASE_NAME=node
+        - BASE_VERSION=10-buster-slim
+    container_name: dependency-observatory-node-10
+    image: dep-obs/node-10
+    command: /bin/bash
+
+  rust-1:
+    build:
+      context: depobs/scanner/
+      args:
+        - BASE_NAME=rust
+        - BASE_VERSION=1-slim-buster
+    container_name: dependency-observatory-rust-1
+    image: dep-obs/rust-1
+    command: /bin/bash
