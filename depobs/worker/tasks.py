@@ -122,14 +122,6 @@ async def scan_tarball_url(
             if t.name == "install" and t.command == "npm install --save=true":
                 t.command = f"npm install --save=true {tarball_url}"
 
-        if config["dry_run"]:
-            log.info(
-                f"for {lang.name} {pm.name} would run in {image_name}"
-                f" {list(version_commands.values())} concurrently then"
-                f" {[t.command for t in container_tasks]} "
-            )
-            continue
-
         # TODO: reuse flask request ID or celery task id
         # use a unique container names to avoid conflicts
         container_name = f"dependency-observatory-scanner-scan_tarball_url-{hex(randrange(1 << 32))[2:]}"

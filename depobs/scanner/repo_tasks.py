@@ -34,9 +34,6 @@ __doc__ = """Runs tasks on a checked out git ref with dep. files"""
 
 
 class RunRepoTasksConfig(TypedDict):
-    # Print commands we would run and their context, but don't run them.
-    dry_run: bool
-
     # Languages to run commands for. Defaults to all of them.
     # choices=language_names
     languages: List[str]

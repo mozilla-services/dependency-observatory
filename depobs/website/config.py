@@ -166,8 +166,6 @@ GITHUB_CLIENT = {
 
 SCAN_NPM_TARBALL_ARGS = {
     **dict(
-        # Print commands we would run and their context, but don't run them
-        dry_run=False,
         image_name="dep-obs/node-10",
         languages=["nodejs"],
         package_managers=["npm"],
