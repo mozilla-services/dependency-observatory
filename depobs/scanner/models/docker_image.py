@@ -36,10 +36,3 @@ class DockerImage:
 
     # local tag
     local: DockerImageName
-
-    # dockerfile contents template should start with 'FROM {base.repo_name}:{base.tag}'
-    dockerfile_template: str
-
-    @property
-    def dockerfile_bytes(self) -> bytes:
-        return self.dockerfile_template.format(base=self.base).encode("utf-8")
