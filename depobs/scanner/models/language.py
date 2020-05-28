@@ -256,22 +256,6 @@ package_manager_names = [pm.name for pm in package_managers.values()]
 
 
 docker_images: Dict[str, DockerImage] = {
-    "dep-obs/find-git-refs:latest": DockerImage(
-        base=DockerImageName(None, "debian", "buster-slim"),
-        local=DockerImageName("dep-obs", "find-git-refs", "latest"),
-        dockerfile_template="""FROM {base.repo_name}:{base.tag}
-RUN apt-get -y update && apt-get install -y git ripgrep
-CMD ["bash", "-c"]
-""",
-    ),
-    "dep-obs/find-dep-files:latest": DockerImage(
-        base=DockerImageName(None, "debian", "buster-slim"),
-        local=DockerImageName("dep-obs", "find-dep-files", "latest"),
-        dockerfile_template="""FROM {base.repo_name}:{base.tag}
-RUN apt-get -y update && apt-get install -y git ripgrep
-CMD ["bash", "-c"]
-""",
-    ),
     "dep-obs/node-10:latest": DockerImage(
         base=DockerImageName(None, "node", "10-buster-slim"),
         local=DockerImageName("dep-obs", "node-10", "latest"),
