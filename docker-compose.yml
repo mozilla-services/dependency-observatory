@@ -55,19 +55,3 @@ services:
       - ./:/app
     user: "root"
     command: "worker-dev"
-
-  # should run then exit on compose up
-  # run it again to load more data from ./scanner/fixtures/postprocessed_repo_tasks.jsonl
-  scan-fixture-loader:
-    image: mozilla/dependencyscan:latest
-    depends_on:
-      - db
-    environment:
-      - DB_URL=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
-    volumes:
-      - ./depobs/worker/fixtures:/fixtures
-    command: bash -c "
-        gunzip -c /fixtures/npmsio_scores.jsonl.gz | python fpr/run_pipeline.py save_to_db --create-tables --input-type dep_meta_npmsio;
-        gunzip -c /fixtures/npm_registry_meta.jsonl.gz | python fpr/run_pipeline.py save_to_db --create-tables --input-type dep_meta_npm_reg;
-        gunzip -c /fixtures/postprocessed_repo_tasks.jsonl.gz | python fpr/run_pipeline.py save_to_db --create-tables --input-type postprocessed_repo_task;
-      "
