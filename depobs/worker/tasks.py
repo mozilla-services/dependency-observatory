@@ -64,7 +64,6 @@ from depobs.scanner.models.package_meta_result import Result
 from depobs.scanner.repo_tasks import (
     RunRepoTasksConfig,
     iter_task_envs,
-    build_images_for_envs,
     run_repo_task,
 )
 from depobs.scanner.models.language import (
@@ -99,8 +98,6 @@ async def scan_tarball_url(
     task_envs: List[
         Tuple[Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]]
     ] = list(iter_task_envs(config))
-    if config["docker_build"]:
-        await build_images_for_envs(config, task_envs)
 
     assert len(task_envs) == 1, "scan_tarball_url: No task envs found to run tasks"
     for lang, pm, image, version_commands, container_tasks in task_envs:

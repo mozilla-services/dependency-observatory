@@ -17,7 +17,6 @@ from typing import (
 )
 
 import depobs.docker.containers as containers
-from depobs.docker.images import build_images
 from depobs.scanner.models.language import (
     ContainerTask,
     DependencyFile,
@@ -38,12 +37,6 @@ __doc__ = """Runs tasks on a checked out git ref with dep. files"""
 
 
 class RunRepoTasksConfig(TypedDict):
-    # pull base docker images before building them
-    docker_pull: bool
-
-    # build docker images
-    docker_build: bool
-
     # Print commands we would run and their context, but don't run them.
     dry_run: bool
 
@@ -155,22 +148,3 @@ def iter_task_envs(
             package_manager.tasks[task_name] for task_name in config["repo_tasks"]
         ]
         yield language, package_manager, image, version_commands, tasks
-
-
-async def build_images_for_envs(
-    config: RunRepoTasksConfig,
-    task_envs: List[
-        Tuple[Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]]
-    ],
-) -> None:
-    image_keys: AbstractSet[str] = {
-        image.local.repo_name_tag for (_, _, image, _, _) in task_envs
-    }
-    images: Iterable[DockerImage] = [
-        docker_images[image_key] for image_key in image_keys
-    ]
-    log.info(
-        f"building images: {[image.base.repo_name_tag + ' as ' + image.local.repo_name_tag for image in images]}"
-    )
-    built_image_tags: Iterable[str] = await build_images(config["docker_pull"], images)
-    log.info(f"successfully built and tagged images {built_image_tags}")

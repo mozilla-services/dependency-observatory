@@ -28,7 +28,6 @@ LOGGING = {
         "depobs.clients.npm_registry": {"handlers": ["console"], "level": "INFO",},
         "depobs.database.models": {"handlers": ["console"], "level": "INFO"},
         "depobs.database.serializers": {"handlers": ["console"], "level": "INFO"},
-        "depobs.docker.images": {"handlers": ["console"], "level": "INFO"},
         "depobs.docker.containers": {"handlers": ["console"], "level": "INFO"},
         "depobs.docker.log_reader": {"handlers": ["console"], "level": "WARN"},
         "depobs.website.views": {"handlers": ["console"], "level": "INFO"},
@@ -167,10 +166,6 @@ GITHUB_CLIENT = {
 
 # shared docker args for multiple tasks
 _docker_args = dict(
-    # pull base docker images before building them
-    docker_pull=True,
-    # build docker images
-    docker_build=True,
     # non-default docker images to use for the task
     docker_images=[],
     # Print commands we would run and their context, but don't run them
