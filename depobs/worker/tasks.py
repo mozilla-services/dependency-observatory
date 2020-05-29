@@ -64,12 +64,10 @@ from depobs.scanner.models.package_meta_result import Result
 from depobs.scanner.repo_tasks import (
     RunRepoTasksConfig,
     iter_task_envs,
-    build_images_for_envs,
     run_repo_task,
 )
 from depobs.scanner.models.language import (
     ContainerTask,
-    DockerImage,
     Language,
     PackageManager,
 )
@@ -96,15 +94,14 @@ async def scan_tarball_url(
     the run_repo_task result object (from running the repo tasks
     commands in a container).
     """
+    image_name = config["image_name"]
+
     task_envs: List[
-        Tuple[Language, PackageManager, DockerImage, ChainMap, List[ContainerTask]]
+        Tuple[Language, PackageManager, ChainMap, List[ContainerTask]]
     ] = list(iter_task_envs(config))
-    if config["docker_build"]:
-        await build_images_for_envs(config, task_envs)
 
     assert len(task_envs) == 1, "scan_tarball_url: No task envs found to run tasks"
-    for lang, pm, image, version_commands, container_tasks in task_envs:
-        # TODO: add as new command in depobs.scanner.models.language?
+    for lang, pm, version_commands, container_tasks in task_envs:
         # write a package.json file to so npm audit doesn't error out
         container_tasks = [
             ContainerTask(
@@ -113,32 +110,19 @@ async def scan_tarball_url(
                 command=f"""bash -c "cat <<EOF > /tmp/package.json\n{{\\"dependencies\\": {{\\"{package_name}\\": \\"{package_version}\\"}} }}\nEOF" """,
                 check=True,
             ),
-            ContainerTask(
-                name="check_package_json",
-                command="""cat /tmp/package.json""",
-                check=True,
-            ),
         ] + container_tasks
-        # TODO: handle this in depobs.scanner.models.language?
+
         # fixup install command to take the tarball URL
         for t in container_tasks:
             if t.name == "install" and t.command == "npm install --save=true":
                 t.command = f"npm install --save=true {tarball_url}"
-
-        if config["dry_run"]:
-            log.info(
-                f"for {lang.name} {pm.name} would run in {image.local.repo_name_tag}"
-                f" {list(version_commands.values())} concurrently then"
-                f" {[t.command for t in container_tasks]} "
-            )
-            continue
 
         # TODO: reuse flask request ID or celery task id
         # use a unique container names to avoid conflicts
         container_name = f"dependency-observatory-scanner-scan_tarball_url-{hex(randrange(1 << 32))[2:]}"
 
         async with containers.run(
-            image.local.repo_name_tag, name=container_name, cmd="/bin/bash",
+            image_name, name=container_name, cmd="/bin/bash",
         ) as c:
             # NB: running in /app will fail when /app is mounted for local
             version_results = await asyncio.gather(

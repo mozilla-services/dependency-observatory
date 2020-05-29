@@ -103,7 +103,8 @@ Run:
 
 ```console
 ./util/write_version_json.sh > depobs/version.json
-docker-compose up --build -d
+docker-compose build node-12 rust-1
+docker-compose up -d db api worker
 ```
 
 #### API
@@ -187,10 +188,10 @@ worker: Warm shutdown (MainProcess)
 
 ### Deployment
 
-1. fetch the relevant image e.g.
+1. fetch the relevant images e.g.
 
 ```console
-docker pull mozilla/dependency-observatory:latest
+docker pull mozilla/dependency-observatory:latest mozilla/dependency-observatory:rust-1 mozilla/dependency-observatory:node-12
 ```
 
 1. create a postgres database

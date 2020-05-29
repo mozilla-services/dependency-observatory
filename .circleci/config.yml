@@ -87,7 +87,7 @@ jobs:
           command: docker-compose build
       - run:
           name: save built image to cache
-          command: docker save "${DOCKERHUB_REPO}:latest" | gzip -c > /tmp/docker.tgz
+          command: docker save "${DOCKERHUB_REPO}:latest" "mozilla/dependency-observatory:node-12" "mozilla/dependency-observatory:rust-1" | gzip -c > /tmp/docker.tgz
       - save_cache:
           key: v1-{{ .Branch }}-{{ epoch }}
           paths:
@@ -154,10 +154,10 @@ jobs:
       - run:
           name: deploy to Dockerhub
           command: |
-            # deploy master
+            # deploy master and scan envs
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               docker login -u $DOCKER_USER -p $DOCKER_PASS
-              docker-compose push api
+              docker-compose push api node-12 rust-1
             elif  [ ! -z "${CIRCLE_TAG}" ]; then
               # deploy a release tag
               docker login -u $DOCKER_USER -p $DOCKER_PASS
