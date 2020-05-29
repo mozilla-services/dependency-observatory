@@ -64,7 +64,7 @@ services:
         - BASE_NAME=node
         - BASE_VERSION=12-buster-slim
     container_name: dependency-observatory-node-12
-    image: dep-obs/node-12
+    image: mozilla/dependency-observatory:node-12
     command: /bin/bash
 
   rust-1:
@@ -74,5 +74,5 @@ services:
         - BASE_NAME=rust
         - BASE_VERSION=1-slim-buster
     container_name: dependency-observatory-rust-1
-    image: dep-obs/rust-1
+    image: mozilla/dependency-observatory:rust-1
     command: /bin/bash
