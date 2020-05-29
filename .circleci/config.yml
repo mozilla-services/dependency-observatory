@@ -87,7 +87,7 @@ jobs:
           command: docker-compose build
       - run:
           name: save built image to cache
-          command: docker save "${DOCKERHUB_REPO}:latest" "dep-obs/node-10" "dep-obs/rust-1" | gzip -c > /tmp/docker.tgz
+          command: docker save "${DOCKERHUB_REPO}:latest" "dep-obs/node-12" "dep-obs/rust-1" | gzip -c > /tmp/docker.tgz
       - save_cache:
           key: v1-{{ .Branch }}-{{ epoch }}
           paths:

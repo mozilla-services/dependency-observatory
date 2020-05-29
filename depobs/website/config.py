@@ -166,7 +166,7 @@ GITHUB_CLIENT = {
 
 SCAN_NPM_TARBALL_ARGS = {
     **dict(
-        image_name="dep-obs/node-10",
+        image_name="dep-obs/node-12",
         languages=["nodejs"],
         package_managers=["npm"],
         repo_tasks=["install", "list_metadata", "audit"],
