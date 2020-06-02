@@ -271,14 +271,13 @@ def parse_cargo_task(task_name: str, task_result: Dict) -> Optional[Dict]:
 
 
 def parse_command(task_name: str, task_command: str, task_data: Dict) -> Optional[Dict]:
-    for package_manager_name, package_manager in package_managers.items():
-        if any(task_command == task.command for task in package_manager.tasks.values()):
-            if package_manager_name == "npm":
-                return parse_npm_task(task_name, task_data)
-            elif package_manager_name == "yarn":
-                return parse_yarn_task(task_name, task_data)
-            elif package_manager_name == "cargo":
-                return parse_cargo_task(task_name, task_data)
+    package_manager_name = get_in(task_data, ["envvar_args", "PACKAGE_MANAGER"])
+    if package_manager_name == "npm":
+        return parse_npm_task(task_name, task_data)
+    elif package_manager_name == "yarn":
+        return parse_yarn_task(task_name, task_data)
+    elif package_manager_name == "cargo":
+        return parse_cargo_task(task_name, task_data)
     log.warning(f"unrecognized command {task_command}")
     return None
 
