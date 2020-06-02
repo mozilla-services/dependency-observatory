@@ -34,16 +34,14 @@ __doc__ = """Runs tasks on a checked out git ref with dep. files"""
 
 
 class RunRepoTasksConfig(TypedDict):
-    # Languages to run commands for. Defaults to all of them.
-    # choices=language_names
-    languages: List[str]
+    # Language to run commands for
+    language: str
 
-    # Package managers to run commands for. Defaults to all of them.
-    # choices=package_manager_names,
-    package_managers: List[str]
+    # Package manager to run commands for
+    package_manager: str
 
     # Run install, list_metadata, or audit tasks in the order
-    # provided. Defaults to none of them
+    # provided
     repo_tasks: List[str]
 
     # Docker image to run

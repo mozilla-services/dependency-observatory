@@ -164,11 +164,9 @@ GITHUB_CLIENT = {
     ),
 }
 
-SCAN_NPM_TARBALL_ARGS = {
-    **dict(
-        image_name="mozilla/dependency-observatory:node-12",
-        languages=["nodejs"],
-        package_managers=["npm"],
-        repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
-    ),
-}
+SCAN_NPM_TARBALL_ARGS = dict(
+    image_name="mozilla/dependency-observatory:node-12",
+    language="nodejs",
+    package_manager="npm",
+    repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
+)

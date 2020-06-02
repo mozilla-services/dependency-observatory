@@ -85,8 +85,8 @@ async def scan_tarball_url(
     commands in a container).
     """
     image_name = config["image_name"]  # mozilla/dependency-observatory:node-12
-    language = config["languages"][0]  # e.g. nodejs
-    package_manager = config["package_managers"][0]  # e.g. npm
+    language = config["language"]  # e.g. nodejs
+    package_manager = config["package_manager"]  # e.g. npm
     args = config[
         "repo_tasks"
     ]  # e.g. ["write_manifest", "install", "list_metadata", "audit"]
