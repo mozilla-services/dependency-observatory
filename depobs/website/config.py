@@ -169,6 +169,6 @@ SCAN_NPM_TARBALL_ARGS = {
         image_name="mozilla/dependency-observatory:node-12",
         languages=["nodejs"],
         package_managers=["npm"],
-        repo_tasks=["install", "list_metadata", "audit"],
+        repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
     ),
 }
