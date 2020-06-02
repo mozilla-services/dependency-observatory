@@ -171,9 +171,31 @@ while (( $# )); do
     shift
 done
 
-# TODO: add git clone / ensure ref task
 # TODO: add find_git_refs task
+#   git fetch --tags origin # all tags
+#   then sort tags from newest to oldest tagging time https://git-scm.com/docs/git-for-each-ref/
+#   git for-each-ref --sort=-taggerdate --format="%(refname:short)\t%(taggerdate:unix)\t%(creatordate:unix)" refs/tags
+#   tag_name, tag_ts, commit_ts = [part.strip('",') for part in line.split("\t", 2)]
+
+# TODO: add git clone
+# TODO: look into partial clones and sparse checkouts
+# https://github.com/git/git/blob/master/Documentation/technical/partial-clone.txt
+# https://github.blog/2020-01-13-highlights-from-git-2-25/#sparse-checkouts
+# git clone --depth=1 --origin origin {repo_url} repo
+
+# TODO: ensure ref task
+#   git fetch origin {commit} # commit per https://stackoverflow.com/a/30701724
+#   or: git fetch origin -f tag {tag_name} --no-tags # tag
+#   or: git fetch {remote} {branch}  # branch
+#   then: git checkout {ref.value}
+#
+# get_commit: git rev-parse HEAD
+# get_branch: git rev-parse --abbrev-ref HEAD
+# get_tag: git tag -l --points-at HEAD
+# get_committer_timestamp: git show -s --format="%ct" HEAD
+#
 # TODO: add find_dep_files task with params:
+# rg --no-ignore --files --iglob {search_pattern}.. (prefix with ! to ignore)
 #
 # cargo
 # patterns
