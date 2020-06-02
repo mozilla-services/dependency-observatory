@@ -1,17 +1,5 @@
 import contextlib
-from typing import (
-    Any,
-    AsyncContextManager,
-    AsyncGenerator,
-    BinaryIO,
-    IO,
-    Sequence,
-    List,
-    Generator,
-    Union,
-    Dict,
-    Optional,
-)
+from typing import AsyncGenerator
 
 import aiodocker
 

@@ -19,9 +19,6 @@ from typing import (
 
 from depobs.database.models import Advisory, NPMRegistryEntry, NPMSIOScore
 from depobs.scanner.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
-from depobs.scanner.models.org_repo import OrgRepo
-from depobs.scanner.models.git_ref import GitRef
-from depobs.scanner.models.language import package_managers
 from depobs.scanner.models.nodejs import NPMPackage, flatten_deps
 from depobs.util.serialize_util import (
     get_in,
@@ -42,7 +39,7 @@ def parse_stdout_as_json(stdout: Optional[str]) -> Optional[Dict]:
         parsed_stdout = json.loads(stdout)
         return parsed_stdout
     except json.decoder.JSONDecodeError as e:
-        log.warn(f"error parsing stdout as JSON: {e}")
+        log.warning(f"error parsing stdout as JSON: {e}")
 
     return None
 
@@ -58,7 +55,7 @@ def parse_stdout_as_jsonlines(stdout: Optional[str]) -> Optional[Sequence[Dict]]
             if isinstance(line, dict)
         )
     except json.decoder.JSONDecodeError as e:
-        log.warn(f"error parsing stdout as JSON: {e}")
+        log.warning(f"error parsing stdout as JSON: {e}")
 
     return None
 
@@ -271,14 +268,13 @@ def parse_cargo_task(task_name: str, task_result: Dict) -> Optional[Dict]:
 
 
 def parse_command(task_name: str, task_command: str, task_data: Dict) -> Optional[Dict]:
-    for package_manager_name, package_manager in package_managers.items():
-        if any(task_command == task.command for task in package_manager.tasks.values()):
-            if package_manager_name == "npm":
-                return parse_npm_task(task_name, task_data)
-            elif package_manager_name == "yarn":
-                return parse_yarn_task(task_name, task_data)
-            elif package_manager_name == "cargo":
-                return parse_cargo_task(task_name, task_data)
+    package_manager_name = get_in(task_data, ["envvar_args", "PACKAGE_MANAGER"])
+    if package_manager_name == "npm":
+        return parse_npm_task(task_name, task_data)
+    elif package_manager_name == "yarn":
+        return parse_yarn_task(task_name, task_data)
+    elif package_manager_name == "cargo":
+        return parse_cargo_task(task_name, task_data)
     log.warning(f"unrecognized command {task_command}")
     return None
 

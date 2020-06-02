@@ -59,7 +59,7 @@ services:
   # images we build for the worker to run
   node-12:
     build:
-      context: depobs/scanner/
+      context: scan_envs/
       args:
         - BASE_NAME=node
         - BASE_VERSION=12-buster-slim
@@ -69,7 +69,7 @@ services:
 
   rust-1:
     build:
-      context: depobs/scanner/
+      context: scan_envs/
       args:
         - BASE_NAME=rust
         - BASE_VERSION=1-slim-buster

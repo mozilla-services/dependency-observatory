@@ -29,7 +29,6 @@ LOGGING = {
         "depobs.database.models": {"handlers": ["console"], "level": "INFO"},
         "depobs.database.serializers": {"handlers": ["console"], "level": "INFO"},
         "depobs.docker.containers": {"handlers": ["console"], "level": "INFO"},
-        "depobs.docker.log_reader": {"handlers": ["console"], "level": "WARN"},
         "depobs.website.views": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.scans": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.score_details.blueprint": {
@@ -164,11 +163,9 @@ GITHUB_CLIENT = {
     ),
 }
 
-SCAN_NPM_TARBALL_ARGS = {
-    **dict(
-        image_name="mozilla/dependency-observatory:node-12",
-        languages=["nodejs"],
-        package_managers=["npm"],
-        repo_tasks=["install", "list_metadata", "audit"],
-    ),
-}
+SCAN_NPM_TARBALL_ARGS = dict(
+    image_name="mozilla/dependency-observatory:node-12",
+    language="nodejs",
+    package_manager="npm",
+    repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
+)

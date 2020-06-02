@@ -1,7 +1,6 @@
 import asyncio
 from collections import ChainMap
 import datetime
-import json
 import os
 from random import randrange
 import sys
@@ -61,16 +60,7 @@ from depobs.database.models import (
 )
 import depobs.docker.containers as containers
 from depobs.scanner.models.package_meta_result import Result
-from depobs.scanner.repo_tasks import (
-    RunRepoTasksConfig,
-    iter_task_envs,
-    run_repo_task,
-)
-from depobs.scanner.models.language import (
-    ContainerTask,
-    Language,
-    PackageManager,
-)
+from depobs.scanner.repo_tasks import RunRepoTasksConfig
 
 log = get_task_logger(__name__)
 
@@ -94,65 +84,49 @@ async def scan_tarball_url(
     the run_repo_task result object (from running the repo tasks
     commands in a container).
     """
-    image_name = config["image_name"]
+    image_name = config["image_name"]  # mozilla/dependency-observatory:node-12
+    language = config["language"]  # e.g. nodejs
+    package_manager = config["package_manager"]  # e.g. npm
+    args = config[
+        "repo_tasks"
+    ]  # e.g. ["write_manifest", "install", "list_metadata", "audit"]
 
-    task_envs: List[
-        Tuple[Language, PackageManager, ChainMap, List[ContainerTask]]
-    ] = list(iter_task_envs(config))
+    # use a unique container name to avoid conflicts
+    container_name = (
+        f"dependency-observatory-scanner-scan_tarball_url-{hex(randrange(1 << 32))[2:]}"
+    )
+    async with containers.run(
+        image_name,
+        name=container_name,
+        cmd=args,
+        env=[
+            f"LANGUAGE={language}",
+            f"PACKAGE_MANAGER={package_manager}",
+            f"PACKAGE_NAME={package_name}",  # e.g. @hapi/bounce
+            f"PACKAGE_VERSION={package_version}",  # e.g. 2.0.0
+            f"INSTALL_TARGET={tarball_url}",  # e.g. https://registry.npmjs.org/@hapi/bounce/-/bounce-2.0.0.tgz
+        ],
+    ) as c:
+        log.info(f"running container id={c._id} name={container_name}")
+        await c.wait()
+        stderr = await c.log(stderr=True)
+        log.debug(f"stderr: {stderr}")
+        stdout = "".join(await c.log(stdout=True))
+        log.info(f"stdout: {stdout}")
 
-    assert len(task_envs) == 1, "scan_tarball_url: No task envs found to run tasks"
-    for lang, pm, version_commands, container_tasks in task_envs:
-        # write a package.json file to so npm audit doesn't error out
-        container_tasks = [
-            ContainerTask(
-                name="write_package_json",
-                # \\ before " so shlex doesn't strip the "
-                command=f"""bash -c "cat <<EOF > /tmp/package.json\n{{\\"dependencies\\": {{\\"{package_name}\\": \\"{package_version}\\"}} }}\nEOF" """,
-                check=True,
-            ),
-        ] + container_tasks
+    versions: Optional[Dict[str, str]] = None
+    task_results: List[Dict[str, Any]] = []
+    for stdout_line in stdout.split("\r\n"):
+        line = serializers.parse_stdout_as_json(stdout_line)
+        if not isinstance(line, dict):
+            continue
+        if line.get("type", None) != "task_result":
+            continue
+        versions = versions or line.get("versions", None)
+        line["container_name"] = container_name
+        task_results.append(line)
 
-        # fixup install command to take the tarball URL
-        for t in container_tasks:
-            if t.name == "install" and t.command == "npm install --save=true":
-                t.command = f"npm install --save=true {tarball_url}"
-
-        # TODO: reuse flask request ID or celery task id
-        # use a unique container names to avoid conflicts
-        container_name = f"dependency-observatory-scanner-scan_tarball_url-{hex(randrange(1 << 32))[2:]}"
-
-        async with containers.run(
-            image_name, name=container_name, cmd="/bin/bash",
-        ) as c:
-            # NB: running in /app will fail when /app is mounted for local
-            version_results = await asyncio.gather(
-                *[
-                    containers.run_container_cmd_no_args_return_first_line_or_none(
-                        command, c, working_dir="/tmp"
-                    )
-                    for command in version_commands.values()
-                ]
-            )
-            versions = {
-                command_name: version_results[i]
-                for (i, (command_name, command)) in enumerate(version_commands.items())
-            }
-
-            task_results = [
-                await run_repo_task(c, task, "/tmp", container_name)
-                for task in container_tasks
-            ]
-            for tr in task_results:
-                if isinstance(tr, Exception):
-                    log.error(f"error running container task: {tr}")
-
-            result: Dict[str, Any] = dict(
-                versions=versions,
-                task_results=[tr for tr in task_results if isinstance(tr, dict)],
-            )
-            return result
-    # dry run
-    return dict(task_results=[])
+    return dict(versions=versions, task_results=task_results)
 
 
 @app.task(bind=True)
