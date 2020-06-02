@@ -49,7 +49,13 @@ async def run(
             config["WorkingDir"] = working_dir
         log.info(f"starting image {repository_tag} as {name}")
         log.debug(f"container {name} starting {cmd} with config {config}")
-        container = await client.containers.run(config=config, name=name)
+        try:
+            container = await client.containers.run(config=config, name=name)
+        except DockerRunException as e:
+            log.error(
+                f"error running docker container {name} with {cmd}:\n{exc_to_str()}"
+            )
+            raise e
         # fetch container info so we can include container name in logs
         await container.show()
         try:
