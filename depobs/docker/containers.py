@@ -209,6 +209,7 @@ async def run(
     cmd: str = None,
     entrypoint: Optional[str] = None,
     working_dir: Optional[str] = None,
+    env: Optional[List[str]] = None,
 ) -> AsyncGenerator[aiodocker.docker.DockerContainer, None]:
     async with aiodocker_client() as client:
         config: Dict[str, Any] = dict(
@@ -225,6 +226,8 @@ async def run(
         )
         if entrypoint:
             config["Entrypoint"] = entrypoint
+        if env:
+            config["Env"] = env
         if working_dir:
             config["WorkingDir"] = working_dir
         log.info(f"starting image {repository_tag} as {name}")
