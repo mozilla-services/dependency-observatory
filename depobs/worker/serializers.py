@@ -42,7 +42,7 @@ def parse_stdout_as_json(stdout: Optional[str]) -> Optional[Dict]:
         parsed_stdout = json.loads(stdout)
         return parsed_stdout
     except json.decoder.JSONDecodeError as e:
-        log.warn(f"error parsing stdout as JSON: {e}")
+        log.warning(f"error parsing stdout as JSON: {e}")
 
     return None
 
@@ -58,7 +58,7 @@ def parse_stdout_as_jsonlines(stdout: Optional[str]) -> Optional[Sequence[Dict]]
             if isinstance(line, dict)
         )
     except json.decoder.JSONDecodeError as e:
-        log.warn(f"error parsing stdout as JSON: {e}")
+        log.warning(f"error parsing stdout as JSON: {e}")
 
     return None
 
