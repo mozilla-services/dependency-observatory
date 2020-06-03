@@ -37,7 +37,6 @@ LOGGING = {
         "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
         "depobs.worker.k8s": {"handlers": ["console"], "level": "INFO",},
         "depobs.worker.scoring": {"handlers": ["console"], "level": "INFO",},
-        "depobs.scanner.repo_tasks": {"handlers": ["console"], "level": "INFO",},
     },
 }
 
