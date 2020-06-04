@@ -4,22 +4,29 @@
 
 set -e
 
+# NB: requires tests/fixtures/ e.g. as copied from unit test scripts
 api_url=$1
 if [[ "$api_url" = "" ]]; then
     api_url="http://localhost:8000"
 fi
 
+fixture_dir=$2
+if [[ "$fixture_dir" = "" ]]; then
+    fixture_dir="."
+fi
+
+
 # check dockerflow
 echo "testing ${api_url}/__heartbeat__"
-diff -w tests/fixtures/__heartbeat__200.json <(curl -sS "${api_url}/__heartbeat__" | jq "")
+diff -w "${fixture_dir}/tests/fixtures/__heartbeat__200.json" <(curl -sS "${api_url}/__heartbeat__" | jq "")
 echo "/__heartbeat__ matched expected output? (should be 0)" "$?"
 
 echo "testing ${api_url}/__lbheartbeat__"
-diff -w tests/fixtures/__lbheartbeat__200.json <(curl -sS "${api_url}/__lbheartbeat__" | jq "")
+diff -w "${fixture_dir}/tests/fixtures/__lbheartbeat__200.json" <(curl -sS "${api_url}/__lbheartbeat__" | jq "")
 echo "/__lbheartbeat__ matched expected output? (should be 0)" "$?"
 
 echo "testing ${api_url}/__version__"
-diff -w tests/fixtures/__version__keys.json <(curl -sS "${api_url}/__version__" | jq 'keys')
+diff -w "${fixture_dir}/tests/fixtures/__version__keys.json" <(curl -sS "${api_url}/__version__" | jq 'keys')
 echo "/__version__ returns expected keys? (should be 0)" "$?"
 
 
