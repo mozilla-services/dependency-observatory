@@ -129,6 +129,7 @@ jobs:
             docker exec -u 0 dependency-observatory-api /app/bin/e2e_test.sh || (
                 docker logs dependency-observatory-worker;
                 docker logs dependency-observatory-api;
+                exit 1
             )
       - run:
           name: stop test DB
