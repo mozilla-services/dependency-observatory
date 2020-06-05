@@ -62,16 +62,22 @@ def run_job(job_config: KubeJobConfig,) -> Generator[k8s.client.V1Job, None, Non
     spec = k8s.client.V1JobSpec(template=template, backoff_limit=4)
 
     # Instantiate the job object
-    job = k8s.client.V1Job(
+    job_obj = k8s.client.V1Job(
         api_version="batch/v1",
         kind="Job",
         metadata=k8s.client.V1ObjectMeta(name=job_config["name"]),
         spec=spec,
     )
+    job = k8s.client.BatchV1Api().create_namespaced_job(
+        body=job_obj, namespace=job_config["namespace"]
+    )
     try:
-        yield k8s.client.BatchV1Api().create_namespaced_job(
-            body=job, namespace=job_config["namespace"]
-        )
+        yield job
     finally:
-        # TODO: delete the job
-        pass
+        k8s.client.BatchV1Api().delete_namespaced_job(
+            name=job_config["name"],
+            namespace=job_config["namespace"],
+            body=k8s.client.V1DeleteOptions(
+                propagation_policy="Foreground", grace_period_seconds=5
+            ),
+        )
