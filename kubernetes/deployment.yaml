@@ -13,7 +13,7 @@ metadata:
   name: job-admin
 rules:
 - apiGroups: [""] # resource for accessing Pod
-  resources: ["pods"]
+  resources: ["pods", "pods/log"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["batch", "extensions"]
   resources: ["jobs"]

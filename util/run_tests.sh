@@ -1,4 +1,7 @@
 #!/bin/bash
 
 # requires a running api container
-docker exec -it dependency-observatory-api pytest "$@"
+CONTAINER_NAME=${CONTAINER_NAME:-$(kubectl get pods -l io.kompose.service=api -o go-template --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')}
+
+kubectl cp tests/ "${CONTAINER_NAME}:/tmp/"
+kubectl exec -it "$CONTAINER_NAME" -- pytest /tmp/tests "$@"

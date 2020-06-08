@@ -1,9 +1,6 @@
 import asyncio
-from collections import ChainMap
-import datetime
-import os
+import logging
 from random import randrange
-import sys
 from typing import (
     AbstractSet,
     Any,
@@ -16,13 +13,14 @@ from typing import (
     Optional,
     Tuple,
     TypeVar,
+    TypedDict,
 )
-import logging
 
 import celery
 from celery.utils.log import get_task_logger
 import celery.result
 from flask import current_app
+import kubernetes
 
 from depobs.website.do import create_celery_app
 import depobs.database.models as models
@@ -58,9 +56,9 @@ from depobs.database.models import (
     PackageVersion,
     insert_package_graph,
 )
-import depobs.docker.containers as containers
 from depobs.scanner.models.package_meta_result import Result
-from depobs.scanner.repo_tasks import RunRepoTasksConfig
+from depobs.worker import k8s
+
 
 log = get_task_logger(__name__)
 
@@ -73,6 +71,24 @@ def add(x: int, y: int) -> int:
     return x + y
 
 
+class RunRepoTasksConfig(TypedDict):
+    # k8s namespace to create pods e.g. "default"
+    namespace: str
+
+    # Language to run commands for
+    language: str
+
+    # Package manager to run commands for
+    package_manager: str
+
+    # Run install, list_metadata, or audit tasks in the order
+    # provided
+    repo_tasks: List[str]
+
+    # Docker image to run
+    image_name: str
+
+
 async def scan_tarball_url(
     config: RunRepoTasksConfig,
     tarball_url: str,
@@ -80,50 +96,89 @@ async def scan_tarball_url(
     package_version: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Takes run_repo_tasks pipeline config and a tarball url and returns
-    the run_repo_task result object (from running the repo tasks
-    commands in a container).
-    """
-    image_name = config["image_name"]  # mozilla/dependency-observatory:node-12
-    language = config["language"]  # e.g. nodejs
-    package_manager = config["package_manager"]  # e.g. npm
-    args = config[
-        "repo_tasks"
-    ]  # e.g. ["write_manifest", "install", "list_metadata", "audit"]
+    Takes a run_repo_tasks config, tarball url, and optional package
+    name and version
 
-    # use a unique container name to avoid conflicts
-    container_name = (
-        f"dependency-observatory-scanner-scan_tarball_url-{hex(randrange(1 << 32))[2:]}"
-    )
-    async with containers.run(
-        image_name,
-        name=container_name,
-        cmd=args,
-        env=[
-            f"LANGUAGE={language}",
-            f"PACKAGE_MANAGER={package_manager}",
-            f"PACKAGE_NAME={package_name}",  # e.g. @hapi/bounce
-            f"PACKAGE_VERSION={package_version}",  # e.g. 2.0.0
-            f"INSTALL_TARGET={tarball_url}",  # e.g. https://registry.npmjs.org/@hapi/bounce/-/bounce-2.0.0.tgz
-        ],
-    ) as c:
-        log.info(f"running container id={c._id} name={container_name}")
-        await c.wait()
-        stderr = await c.log(stderr=True)
-        log.debug(f"stderr: {stderr}")
-        stdout = "".join(await c.log(stdout=True))
-        log.info(f"stdout: {stdout}")
+    returns
+    """
+    job_name = f"scan-tarball-url-{hex(randrange(1 << 32))[2:]}"
+    job_config: k8s.KubeJobConfig = {
+        "name": job_name,
+        "namespace": config["namespace"],
+        "image_name": config["image_name"],
+        "args": config["repo_tasks"],
+        "env": {
+            "LANGUAGE": config["language"],
+            "PACKAGE_MANAGER": config["package_manager"],
+            "PACKAGE_NAME": package_name or "unknown-package-name",
+            "PACKAGE_VERSION": package_version or "unknown-package-version",
+            "INSTALL_TARGET": tarball_url,
+        },
+    }
+
+    def read_status(
+        job_name: str, job_config: k8s.KubeJobConfig
+    ) -> kubernetes.client.models.v1_job_status.V1JobStatus:
+        # TODO: figure out status only perms for:
+        # .read_namespaced_job_status(name=job_name, namespace=job_config["namespace"])
+        return (
+            client.BatchV1Api()
+            .list_namespaced_job(
+                namespace=job_config["namespace"],
+                label_selector=f"job-name={job_name}",
+            )
+            .items[0]
+            .status
+        )
+
+    client = k8s.get_client()
+    with k8s.run_job(job_config) as job:
+        log.info(f"started job {job} {type(job)} {dir(job)}")
+        await asyncio.sleep(1)
+
+        status = read_status(job_name, job_config)
+        log.info(f"got job status {status}")
+        while True:
+            if status.failed:
+                log.error(f"k8s job {job_name} failed")
+                raise Exception(f"k8s job {job_name} failed")
+                break
+            if status.succeeded:
+                log.info(f"k8s job {job_name} succeeded")
+                job_pod_name = (
+                    client.CoreV1Api()
+                    .list_namespaced_pod(
+                        namespace=job_config["namespace"],
+                        label_selector=f"job-name={job_name}",
+                    )
+                    .items[0]
+                    .metadata.name
+                )
+                stdout = client.CoreV1Api().read_namespaced_pod_log(
+                    name=job_pod_name, namespace=job_config["namespace"]
+                )
+                break
+            if not status.active:
+                log.error(f"k8s job {job_name} stopped")
+                raise Exception(
+                    f"k8s job {job_name} not active (did not fail or succeed)"
+                )
+                break
+
+            await asyncio.sleep(1)
+            status = read_status(job_name, job_config)
+            log.info(f"got job status {status}")
 
     versions: Optional[Dict[str, str]] = None
     task_results: List[Dict[str, Any]] = []
-    for stdout_line in stdout.split("\r\n"):
-        line = serializers.parse_stdout_as_json(stdout_line)
+    for stdout_line in stdout.split("\n"):
+        line = serializers.parse_stdout_as_json(stdout_line.strip("\r"))
         if not isinstance(line, dict):
             continue
         if line.get("type", None) != "task_result":
             continue
         versions = versions or line.get("versions", None)
-        line["container_name"] = container_name
+        line["container_name"] = job_name
         task_results.append(line)
 
     return dict(versions=versions, task_results=task_results)

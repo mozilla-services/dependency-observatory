@@ -65,6 +65,7 @@ replicaset.apps/worker-79d8d6d75f   1         1         1       14s
 ```console
 $ eval $(minikube docker-env)  # use the docker on the minikube image (NB: docker-compose won't work)
 $ docker build -t mozilla/dependency-observatory:latest .
+$ kubectl set image deployments.app/api dependency-observatory-api=mozilla/dependency-observatory:latest
 ```
 
 1. To test CRUD opts on a k8s job run (the api container ID will vary):
@@ -85,3 +86,20 @@ Job updated. status='{'active': 1,
  'succeeded': None}'
 Job deleted. status='{'startTime': '2020-06-01T19:25:16Z', 'active': 1}'
 ```
+
+1. To access the web API (api container name will vary):
+
+```console
+kubectl -n default port-forward api-556fc8c577-d87f8 8000
+Forwarding from 127.0.0.1:8000 -> 8000
+Forwarding from [::1]:8000 -> 8000
+Handling connection for 8000
+...
+```
+
+1. visit API and start pages:
+
+  * http://localhost:8000/static/index.html
+  * http://localhost:8000/package/foo (should 404)
+
+1. run `curl -X POST 'http://localhost:8000/scan?package_name=eslint&package_manager=npm'` to kick off a scan

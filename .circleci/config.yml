@@ -5,6 +5,8 @@
 # DOCKER_PASS
 #
 version: 2.1
+# orbs:
+#   kube-orb: circleci/kubernetes@0.11.0
 jobs:
   check-format:
     docker:
@@ -93,52 +95,46 @@ jobs:
           paths:
             - /tmp/docker.tgz
 
-  test-images:
-    docker:
-      - image: circleci/python:buster
-    environment:
-      CELERY_BROKER_URL: sqla+postgresql://postgres:postgres@db/dependency_observatory
-      CELERY_RESULT_BACKEND: db+postgresql://postgres:postgres@db/dependency_observatory
-      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://postgres:postgres@db/dependency_observatory
-    steps:
-      - checkout
-      - setup_remote_docker
-      - restore_cache:
-          key: v1-{{.Branch}}
-      - run:
-          name: Restore Docker image cache
-          command: gunzip -c /tmp/docker.tgz | docker load
-      - run:
-          name: start test DB and create project_default network
-          command: docker-compose up -d db
-      - run:
-          name: start test api and worker (w/o volume mounts)
-          command: |
-            docker run -d --rm --name dependency-observatory-api --network project_default --link db -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" -e "INIT_DB=1" -e "HOST=0.0.0.0" -e "PORT=8000" -e "FLASK_ENV=production" -e "FLASK_APP=/app/depobs/website/do.py" -p 8000:8000 mozilla/dependency-observatory migrate web
-            docker run -d -u 0 --rm -v /var/run/docker.sock:/var/run/docker.sock  --network project_default --link db --name dependency-observatory-worker -e "FLASK_APP=/app/depobs/website/do.py" -e "SQLALCHEMY_DATABASE_URI=$SQLALCHEMY_DATABASE_URI" -e "CELERY_BROKER_URL=$CELERY_BROKER_URL" -e "CELERY_RESULT_BACKEND=$CELERY_RESULT_BACKEND" mozilla/dependency-observatory worker
-      - run:
-          name: show running containers
-          command: docker ps --no-trunc
-      - run:
-          name: run unit and integration tests with coverage
-          command: |
-            CI=1 ./util/run_tests_with_coverage.sh -v
-      - run:
-          name: run e2e test
-          command: |
-            docker exec -u 0 dependency-observatory-api /app/bin/e2e_test.sh || (
-                docker logs dependency-observatory-worker;
-                docker logs dependency-observatory-api;
-            )
-      - run:
-          name: stop test DB
-          command: docker-compose stop db
-      - run:
-          name: mv coverage reports
-          command: |
-            mv htmlcov/ test-images-htmlcov
-      - store_artifacts:
-          path: test-images-htmlcov
+  # test-images:
+  #   docker:
+  #     - image: circleci/python:buster
+  #   steps:
+  #     - kube-orb/install-kubectl
+  #     - checkout
+  #     - setup_remote_docker
+  #     - restore_cache:
+  #         key: v1-{{.Branch}}
+  #     - run:
+  #         name: Restore Docker image cache
+  #         command: gunzip -c /tmp/docker.tgz | docker load
+  #     - kube-orb/create-or-update-resource:
+  #         resource-file-path: kubernetes/deployment.yaml
+  #         show-kubectl-command: true
+  #     - run:
+  #         name: show k8s objs
+  #         command: kubectl get all
+  #     - run:
+  #         name: run unit and integration tests with coverage
+  #         command: |
+  #           CI=1 ./util/run_tests_with_coverage.sh -v
+  #     - run:
+  #         name: run e2e test
+  #         command: |
+  #           kubectl exec svc/api /app/bin/e2e_test.sh http://localhost:8000 /tmp || (
+  #               kubectl logs svc/worker;
+  #               kubectl logs svc/api;
+  #               exit 1
+  #           )
+  #     - kube-orb/delete-resource:
+  #         resource-file-path: kubernetes/deployment.yaml
+  #         now: true
+  #         wait: true
+  #     - run:
+  #         name: mv coverage reports
+  #         command: |
+  #           mv htmlcov/ test-images-htmlcov
+  #     - store_artifacts:
+  #         path: test-images-htmlcov
 
   deploy:
     docker:
@@ -190,19 +186,19 @@ workflows:
             tags:
               only: /.*/
 
-      - test-images:
-          requires:
-            - build-images
-          filters:
-            tags:
-              only: /.*/
+      # - test-images:
+      #     requires:
+      #       - build-images
+      #     filters:
+      #       tags:
+      #         only: /.*/
 
       - deploy:
           requires:
             - check-format
             - check-types
             - unit-test
-            - test-images
+            # - test-images
             - build-images
           filters:
             tags:

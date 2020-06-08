@@ -28,16 +28,15 @@ LOGGING = {
         "depobs.clients.npm_registry": {"handlers": ["console"], "level": "INFO",},
         "depobs.database.models": {"handlers": ["console"], "level": "INFO"},
         "depobs.database.serializers": {"handlers": ["console"], "level": "INFO"},
-        "depobs.docker.containers": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.views": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.scans": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.score_details.blueprint": {
             "handlers": ["console"],
             "level": "INFO",
         },
-        "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
+        "depobs.worker.k8s": {"handlers": ["console"], "level": "INFO",},
         "depobs.worker.scoring": {"handlers": ["console"], "level": "INFO",},
-        "depobs.scanner.repo_tasks": {"handlers": ["console"], "level": "INFO",},
+        "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
     },
 }
 
@@ -163,9 +162,11 @@ GITHUB_CLIENT = {
     ),
 }
 
+
 SCAN_NPM_TARBALL_ARGS = dict(
-    image_name="mozilla/dependency-observatory:node-12",
     language="nodejs",
     package_manager="npm",
+    namespace="default",
+    image_name="mozilla/dependency-observatory:node-12",
     repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
 )
