@@ -22,7 +22,16 @@ from depobs.website.celery_tasks import get_celery_tasks
 
 log = logging.getLogger(__name__)
 
-STANDARD_HEADERS = {"Access-Control-Allow-Origin": "*"}
+STANDARD_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Content-Security-Policy": (
+        "default-src 'self'; "
+        "base-uri 'none'; "
+        "form-action 'none'; "
+        "frame-ancestors 'none'; "
+        "connect-src https://depobs.dev.mozaws.net/; "
+    ),
+}
 
 views_blueprint = api = Blueprint("views_blueprint", __name__)
 
