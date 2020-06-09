@@ -18,7 +18,7 @@ from typing import (
 )
 
 from depobs.database.models import Advisory, NPMRegistryEntry, NPMSIOScore
-from depobs.scanner.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
+from depobs.util.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
 from depobs.scanner.models.nodejs import NPMPackage, flatten_deps
 from depobs.util.serialize_util import (
     get_in,
