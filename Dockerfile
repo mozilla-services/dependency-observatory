@@ -30,12 +30,13 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 
 WORKDIR /app
 
+COPY depobs/requirements.txt depobs/
+RUN pip install --upgrade --no-cache-dir -r depobs/requirements.txt
 COPY setup.cfg .
 COPY pyproject.toml .
-COPY depobs depobs
 COPY migrations migrations
 COPY bin bin
-RUN pip install --upgrade --no-cache-dir -r depobs/requirements.txt
+COPY depobs depobs
 
 USER app
 ENTRYPOINT [ "/app/bin/docker-entrypoint.sh" ]
