@@ -133,7 +133,7 @@ async def scan_tarball_url(
 
     client = k8s.get_client()
     with k8s.run_job(job_config) as job:
-        log.info(f"started job {job} {type(job)} {dir(job)}")
+        log.info(f"started job {job}")
         await asyncio.sleep(1)
 
         status = read_status(job_name, job_config)
