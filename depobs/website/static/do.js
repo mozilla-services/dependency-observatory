@@ -72,9 +72,17 @@ function gotPackageInfo(pkgInfo) {
     setElement(pkgInfo, 'version');
     let npmsio_score = pkgInfo['npmsio_score'];
     if (npmsio_score) {
-        setElementLink(pkgInfo, 'npmsio_score', 
-            'https://api.npms.io/v2/package/' + encodeURIComponent(pkgInfo['package']), 
+        setElementLink(pkgInfo, 'npmsio_score',
+            'https://api.npms.io/v2/package/' + encodeURIComponent(pkgInfo['package']),
             val=npmsio_score.toFixed(2), title='JSON output from NPM including the NPMS IO Score');
+    }
+    if (pkgInfo.hasOwnProperty('npmsio_scored_package_version')
+	&& pkgInfo['npmsio_scored_package_version'] !== pkgInfo["version"]) {
+	setElement(pkgInfo, 'npmsio_scored_package_version');
+        document.getElementById('outdated-npmsio-score-warning').classList.remove("d-none");
+    } else {
+	setElement(pkgInfo, 'npmsio_scored_package_version');
+        document.getElementById('outdated-npmsio-score-warning').classList.add("d-none");
     }
     setElement(pkgInfo, 'authors');
     setElement(pkgInfo, 'contributors');
@@ -148,7 +156,7 @@ function gotPackageInfo(pkgInfo) {
         cell = row.insertCell(8);
         cell.innerText = int_or_blank(depJson[i]['directVulnsLow_score'] + depJson[i]['indirectVulnsLow_score']);
     }
-    if (pkgInfo['directVulnsCritical_score'] + pkgInfo['directVulnsHigh_score'] + 
+    if (pkgInfo['directVulnsCritical_score'] + pkgInfo['directVulnsHigh_score'] +
             pkgInfo['directVulnsMedium_score'] + pkgInfo['directVulnsLow_score'] > 0) {
         // This package has some vulnerabilities, so show them
         fetch(getPrefixedURL(VULNERABILITIES_PREFIX, pkgInfo['package'], pkgInfo['version']))
@@ -163,6 +171,7 @@ function gotPackageInfo(pkgInfo) {
                 console.log(data);
              });
     }
+
 }
 
 function gotVulnerabilitiesInfo(vulnInfo) {
@@ -317,7 +326,7 @@ function gotParentsInfo(parInfo) {
         for(let i = 0; i < parentsJson.length; i++) {
             let pkg = parentsJson[i]['package'];
             let ver = parentsJson[i]['version'];
-    
+
             let row = table.insertRow(i);
             let cell = row.insertCell(0);
             let linkUrl = getLinkURL(pkg, ver);
@@ -327,7 +336,7 @@ function gotParentsInfo(parInfo) {
             a.title = "See package / version details";
             a.href = linkUrl;
             cell.appendChild(a);
-    
+
             cell = row.insertCell(1);
             a = document.createElement('a');
             linkText = document.createTextNode(ver);
