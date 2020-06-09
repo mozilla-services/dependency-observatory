@@ -108,7 +108,7 @@ _aiohttp_args = dict(
     # aiohttp total timeout in seconds
     total_timeout=300,
     # user agent to use to query third party APIs
-    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
+    user_agent="https://github.com/mozilla-services/dependency-observatory (foxsec+dependency+observatory@mozilla.com)",
 )
 
 
