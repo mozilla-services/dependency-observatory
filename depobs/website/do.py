@@ -31,7 +31,6 @@ class Customflow(Dockerflow):
 def create_app(test_config=None):
     # reimport to pick up changes for testing and autoreload
     import depobs.database.models as models
-    from depobs.website.scans import scans_blueprint
     from depobs.website.views import views_blueprint
     from depobs.website.score_details.blueprint import score_details_blueprint
 
@@ -50,7 +49,6 @@ def create_app(test_config=None):
 
     dockerflow = Customflow(app, db=models.db)
     dockerflow.init_app(app)
-    app.register_blueprint(scans_blueprint)
     app.register_blueprint(views_blueprint)
     app.register_blueprint(score_details_blueprint)
 
