@@ -108,7 +108,7 @@ _aiohttp_args = dict(
     # aiohttp total timeout in seconds
     total_timeout=300,
     # user agent to use to query third party APIs
-    user_agent="https://github.com/mozilla-services/dependency-observatory-scanner (foxsec+dependency+observatory@mozilla.com)",
+    user_agent="https://github.com/mozilla-services/dependency-observatory (foxsec+dependency+observatory@mozilla.com)",
 )
 
 
@@ -117,19 +117,28 @@ NPM_CLIENT = {
     # use second dict call to workaround update typerror with line above
     # refs: https://github.com/python/mypy/issues/1430
     **dict(
+        base_url=os.environ.get("NPM_BASE_URL", "https://registry.npmjs.com/"),
         package_batch_size=10,
         # an npm registry access token for fetch_npm_registry_metadata. Defaults NPM_PAT env var. Should be read-only.
         npm_auth_token=os.environ.get("NPM_PAT", None),
     ),
 }
 
-NPMSIO_CLIENT = {**_aiohttp_args, **dict(max_connections=1, package_batch_size=50,)}
+NPMSIO_CLIENT = {
+    **_aiohttp_args,
+    **dict(
+        base_url=os.environ.get("NPMSIO_BASE_URL", "https://api.npms.io/v2/"),
+        max_connections=1,
+        package_batch_size=50,
+    ),
+}
 
 GITHUB_CLIENT = {
     **_aiohttp_args,
     # use second dict call to workaround update typerror with line above
     # refs: https://github.com/python/mypy/issues/1430
     **dict(
+        base_url=os.environ.get("GITHUB_BASE_URL", "https://api.github.com/graphql"),
         # A github personal access token. Defaults GITHUB_PAT env var. It should
         # have most of the scopes from
         # https://developer.github.com/v4/guides/forming-calls/#authenticating-with-graphql

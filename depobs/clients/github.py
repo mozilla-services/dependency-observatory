@@ -41,6 +41,11 @@ log = logging.getLogger(__name__)
 
 
 class GithubClientConfig(TypedDict, total=True):  # require all keys
+    # scheme, host, port, and any base URI prefix
+    # should end with a slash
+    # should not include basic auth/userinfo
+    base_url: str
+
     # user agent to use
     user_agent: str
 
@@ -147,7 +152,7 @@ async def quiz_executor_and_schema(
     config: GithubClientConfig, session: aiohttp.ClientSession
 ) -> Tuple[quiz.execution.async_executor, quiz.Schema]:
     async_executor = quiz.async_executor(
-        url="https://api.github.com/graphql",
+        url=config["base_url"],
         auth=snug.header_adder(
             {"Authorization": f"Bearer {config['github_auth_token']}"}
         ),

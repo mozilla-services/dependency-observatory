@@ -31,9 +31,8 @@ def aiohttp_session(config: NPMSIOClientConfig) -> aiohttp.ClientSession:
 
 
 async def async_query(
-    session: aiohttp.ClientSession, json: Iterable[str], dry_run: bool
+    session: aiohttp.ClientSession, url: str, json: Iterable[str], dry_run: bool
 ) -> Optional[Dict]:
-    url = "https://api.npms.io/v2/package/mget"
     log.debug(f"posting {json} to {url}")
     response_json: Optional[Dict] = None
     if dry_run:
@@ -60,6 +59,7 @@ async def fetch_npmsio_scores(
             *[
                 async_query(
                     s,
+                    f"{config['base_url']}/package/mget",
                     [
                         package_name
                         for package_name in group
