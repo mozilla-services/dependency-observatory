@@ -4,7 +4,7 @@ from typing import List, Set, Tuple
 
 import pytest
 
-import depobs.scanner.graph_traversal as m
+import depobs.util.graph_traversal as m
 
 
 outer_in_dag_iter_failing_testcases = {

@@ -14,7 +14,7 @@ import networkx as nx
 from werkzeug.exceptions import BadRequest, NotFound
 
 from depobs.database import models
-from depobs.scanner import graph_traversal
+from depobs.util import graph_traversal
 from depobs.util import graph_util
 from depobs.website.celery_tasks import get_celery_tasks
 from depobs.worker import scoring
