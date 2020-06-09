@@ -47,7 +47,7 @@ class ResourceKind(enum.Enum):
     REPO_VULN_ALERT_VULNS = enum.auto()
 
 
-QueryDiff = SelectionUpdate
+QueryDiff: SelectionUpdate
 # i.e. a tuple of (path in selection to update kwargs at, relevant
 # update_kwargs key to read from the query context (args, input line (org and
 # repo), or previous query response json))
