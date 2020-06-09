@@ -95,15 +95,11 @@ def check_package_name_registered(package_name: str) -> bool:
     npm_registry_entries: List[
         Optional[Dict]
     ] = get_celery_tasks().fetch_and_save_registry_entries([package_name])
-    if (
-        npm_registry_entries is None
-        or len(npm_registry_entries) < 1
-        or npm_registry_entries[0] is not None
-    ):
-        log.info(f"package registry entry for {package_name} not found")
-        return False
-    log.info(f"package registry entry for {package_name} found on npm")
-    return True
+    if npm_registry_entries and len(npm_registry_entries) > 0:
+        log.info(f"package registry entry for {package_name} found on npm")
+        return True
+    log.info(f"package registry entry for {package_name} not found")
+    return False
 
 
 def check_package_version_registered(package_name: str, package_version: str) -> bool:
@@ -125,20 +121,16 @@ def check_package_version_registered(package_name: str, package_version: str) ->
     npm_registry_entries: List[
         Optional[Dict]
     ] = get_celery_tasks().fetch_and_save_registry_entries([package_name])
-    if (
-        npm_registry_entries is None
-        or len(npm_registry_entries) < 1
-        or npm_registry_entries[0] is not None
-    ):
-        log.info(f"failed to find new versions in registry for {package_name}")
-        return False
-
-    npm_registry_entry = npm_registry_entries[0]
-    if npm_registry_entry and npm_registry_entry.get("versions", package_version, None):
-        log.info(
-            f"package registry entry for {package_name}@{package_version} found on npm"
-        )
-        return True
+    if npm_registry_entries and len(npm_registry_entries) > 0:
+        npm_registry_entry = npm_registry_entries[0]
+        assert isinstance(npm_registry_entry, dict) and "versions" in npm_registry_entry
+        if npm_registry_entry and npm_registry_entry["versions"].get(
+            package_version, None
+        ):
+            log.info(
+                f"package registry entry for {package_name}@{package_version} found on npm"
+            )
+            return True
 
     log.info(
         f"package registry entry for {package_name}@{package_version} not found on npm"

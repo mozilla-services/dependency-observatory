@@ -59,7 +59,7 @@ async def fetch_npmsio_scores(
             *[
                 async_query(
                     s,
-                    f"{config['base_url']}/package/mget",
+                    f"{config['base_url']}package/mget",
                     [
                         package_name
                         for package_name in group
