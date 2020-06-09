@@ -20,7 +20,7 @@ from uuid import uuid4, UUID
 
 import quiz
 
-from depobs.scanner.quiz_util import (
+from depobs.util.quiz_util import (
     get_kwargs_in,
     SelectionPath,
     SelectionUpdate,
