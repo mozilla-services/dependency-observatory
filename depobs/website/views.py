@@ -31,6 +31,10 @@ STANDARD_HEADERS = {
         "frame-ancestors 'none'; "
         "connect-src https://depobs.dev.mozaws.net/; "
     ),
+    "Referrer-Policy": "no-referrer",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "X-XSS-Protection": "1; mode=block",
 }
 
 views_blueprint = api = Blueprint("views_blueprint", __name__)
