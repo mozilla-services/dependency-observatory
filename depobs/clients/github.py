@@ -152,7 +152,7 @@ async def quiz_executor_and_schema(
     config: GithubClientConfig, session: aiohttp.ClientSession
 ) -> Tuple[quiz.execution.async_executor, quiz.Schema]:
     async_executor = quiz.async_executor(
-        url="https://api.github.com/graphql",
+        url=config["base_url"],
         auth=snug.header_adder(
             {"Authorization": f"Bearer {config['github_auth_token']}"}
         ),

@@ -50,10 +50,8 @@ def aiohttp_session(config: NPMRegistryClientConfig) -> aiohttp.ClientSession:
 
 
 async def async_query(
-    session: aiohttp.ClientSession, package_name: str, dry_run: bool
+    session: aiohttp.ClientSession, url: str, dry_run: bool
 ) -> Optional[Dict]:
-    # NB: scoped packages OK e.g. https://registry.npmjs.com/@babel/core
-    url = f"https://registry.npmjs.com/{package_name}"
     response_json: Optional[Dict] = None
     if dry_run:
         log.warn(f"in dry run mode: skipping GET {url}")
@@ -66,7 +64,7 @@ async def async_query(
         return response_json
     except aiohttp.ClientResponseError as err:
         if is_not_found_exception(err):
-            log.info(f"got 404 for package {package_name}")
+            log.info(f"got 404 for {url}")
             log.debug(f"{url} not found: {err}")
             return None
         raise err
@@ -100,9 +98,12 @@ async def fetch_npm_registry_metadata(
         for i, group in enumerate(grouper(package_names, config["package_batch_size"])):
             log.info(f"fetching group {i} of {total_groups}")
             try:
+                # NB: scoped packages OK e.g. https://registry.npmjs.com/@babel/core
                 group_results = await asyncio.gather(
                     *[
-                        async_query_with_backoff(s, package_name, config["dry_run"])
+                        async_query_with_backoff(
+                            s, f"{config['base_url']}{package_name}", config["dry_run"]
+                        )
                         for package_name in group
                         if package_name is not None
                     ]
