@@ -87,7 +87,7 @@ CELERYD_TASK_SOFT_TIME_LIMIT = 1800
 CELERYD_TASK_TIME_LIMIT = 3600
 
 
-# depobs.scanner config
+# depobs http client config
 
 _aiohttp_args = dict(
     # time to sleep between requests in seconds
