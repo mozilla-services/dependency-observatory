@@ -258,11 +258,6 @@ def get_vulnerabilities_by_name_and_version() -> Dict:
     return models.get_vulnerabilities_report(package_name, package_version)
 
 
-@api.route("/graphs/<int:graph_id>", methods=["GET"])
-def get_graph(graph_id):
-    return redirect(url_for("get_graph", graph_id=graph_id))
-
-
 @api.route("/statistics", methods=["GET"])
 def get_statistics() -> Dict:
     return models.get_statistics()
