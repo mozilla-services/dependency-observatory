@@ -56,7 +56,7 @@ from depobs.database.models import (
     PackageVersion,
     insert_package_graph,
 )
-from depobs.scanner.models.package_meta_result import Result
+from depobs.util.type_util import Result
 from depobs.worker import k8s
 
 

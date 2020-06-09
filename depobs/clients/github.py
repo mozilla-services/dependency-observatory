@@ -25,8 +25,8 @@ import snug
 import quiz
 
 from depobs.clients.aiohttp_client_config import AIOHTTPClientConfig
-from depobs.scanner.models.org_repo import OrgRepo
-from depobs.scanner.models.github import (
+from depobs.models.org_repo import OrgRepo
+from depobs.models.github import (
     ResourceKind,
     Request,
     Response,
@@ -34,7 +34,7 @@ from depobs.scanner.models.github import (
     get_next_requests,
     MISSING,
 )
-from depobs.scanner.quiz_util import raw_result_to_dict
+from depobs.util.quiz_util import raw_result_to_dict
 from depobs.util.traceback_util import exc_to_str
 
 log = logging.getLogger(__name__)

@@ -5,11 +5,11 @@ from typing import AbstractSet, Dict, AsyncGenerator, Generator, Optional
 import aiohttp
 
 from depobs.clients.aiohttp_client_config import AIOHTTPClientConfig
-from depobs.scanner.models.rust import (
+from depobs.models.rust import (
     RustPackageID,
     cargo_metadata_to_rust_crates,
 )
-from depobs.scanner.models.package_meta_result import Result
+from depobs.util.type_util import Result
 
 
 log = logging.getLogger(__name__)

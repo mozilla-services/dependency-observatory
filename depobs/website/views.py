@@ -7,6 +7,7 @@ from flask import (
     jsonify,
     redirect,
     request,
+    send_from_directory,
     url_for,
 )
 import graphviz
@@ -14,8 +15,8 @@ import networkx as nx
 from werkzeug.exceptions import BadRequest, NotFound
 
 from depobs.database import models
-from depobs.scanner import graph_traversal
-from depobs.scanner import graph_util
+from depobs.util import graph_traversal
+from depobs.util import graph_util
 from depobs.website.celery_tasks import get_celery_tasks
 from depobs.worker import scoring
 from depobs.worker import validators
@@ -26,11 +27,15 @@ log = logging.getLogger(__name__)
 STANDARD_HEADERS = {
     "Access-Control-Allow-Origin": "*",
     "Content-Security-Policy": (
-        "default-src 'self'; "
+        "default-src 'none'; "
         "base-uri 'none'; "
         "form-action 'none'; "
         "frame-ancestors 'none'; "
-        "connect-src https://depobs.dev.mozaws.net/; "
+        "font-src 'self'; "
+        "img-src 'self'; "
+        "style-src 'self'; "
+        "script-src 'self'; "
+        "connect-src 'self'; "
     ),
     "Referrer-Policy": "no-referrer",
     "X-Content-Type-Options": "nosniff",

@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List, Tuple, Union
 
 import pytest
 
-import depobs.scanner.models.github as m
+import depobs.models.github as m
 
 
 @pytest.fixture(scope="module")
@@ -210,7 +210,7 @@ def test_get_first_page_selection_against_fixtures(
 
 @pytest.fixture(scope="module")
 def logger():
-    return m.logging.getLogger("depobs.scanner.pipelines.github_model_test")
+    return m.logging.getLogger("depobs.models.github_model_test")
 
 
 @pytest.fixture(scope="module")

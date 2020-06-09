@@ -15,8 +15,8 @@ from depobs.database.models import (
     PackageReport,
     PackageVersion,
 )
-from depobs.scanner.graph_traversal import node_dep_ids_iter
-import depobs.scanner.graph_util as graph_util
+from depobs.util.graph_traversal import node_dep_ids_iter
+from depobs.util import graph_util
 
 
 log = logging.getLogger(__name__)

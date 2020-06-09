@@ -5,7 +5,7 @@ import functools
 
 import pytest
 
-import depobs.scanner.quiz_util as m
+import depobs.util.quiz_util as m
 
 
 @pytest.fixture(scope="module")

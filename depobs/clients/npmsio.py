@@ -6,7 +6,7 @@ import aiohttp
 
 from depobs.clients.aiohttp_client_config import AIOHTTPClientConfig
 from depobs.util.serialize_util import grouper
-from depobs.scanner.models.package_meta_result import Result
+from depobs.util.type_util import Result
 
 log = logging.getLogger(__name__)
 
