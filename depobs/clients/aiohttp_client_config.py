@@ -6,6 +6,11 @@ class AIOHTTPClientConfig(TypedDict, total=True):  # require keys defined below
     Shared base AIOHTTPClient config.
     """
 
+    # scheme, host, port, and any base URI prefix
+    # should end with a slash
+    # should not include basic auth/userinfo
+    base_url: str
+
     # time to sleep between requests in seconds
     delay: int
 

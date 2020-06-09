@@ -41,6 +41,11 @@ log = logging.getLogger(__name__)
 
 
 class GithubClientConfig(TypedDict, total=True):  # require all keys
+    # scheme, host, port, and any base URI prefix
+    # should end with a slash
+    # should not include basic auth/userinfo
+    base_url: str
+
     # user agent to use
     user_agent: str
 
