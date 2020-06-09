@@ -25,8 +25,8 @@ import snug
 import quiz
 
 from depobs.clients.aiohttp_client_config import AIOHTTPClientConfig
-from depobs.scanner.models.org_repo import OrgRepo
-from depobs.scanner.models.github import (
+from depobs.models.org_repo import OrgRepo
+from depobs.models.github import (
     ResourceKind,
     Request,
     Response,

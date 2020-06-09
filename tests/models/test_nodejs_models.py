@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, List, Sequence, Tuple, Union, Optional
 
 import pytest
 
-import depobs.scanner.models.nodejs as m
+import depobs.models.nodejs as m
 
 
 def load_json_fixture(path: str) -> Dict[str, Any]:

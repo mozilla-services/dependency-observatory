@@ -16,8 +16,8 @@ import graphviz
 import networkx as nx
 
 from depobs.database import models
-from depobs.scanner.models.nodejs import NPMPackage
-from depobs.scanner.models.rust import RustCrate, RustPackageID, RustPackage
+from depobs.models.nodejs import NPMPackage
+from depobs.models.rust import RustCrate, RustPackageID, RustPackage
 
 T = TypeVar("T")
 
