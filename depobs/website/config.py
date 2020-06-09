@@ -29,10 +29,6 @@ LOGGING = {
         "depobs.database.models": {"handlers": ["console"], "level": "INFO"},
         "depobs.database.serializers": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.views": {"handlers": ["console"], "level": "INFO"},
-        "depobs.website.score_details.blueprint": {
-            "handlers": ["console"],
-            "level": "INFO",
-        },
         "depobs.worker.k8s": {"handlers": ["console"], "level": "INFO",},
         "depobs.worker.scoring": {"handlers": ["console"], "level": "INFO",},
         "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
