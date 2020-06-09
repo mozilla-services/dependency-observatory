@@ -47,7 +47,7 @@ class ResourceKind(enum.Enum):
     REPO_VULN_ALERT_VULNS = enum.auto()
 
 
-QueryDiff: SelectionUpdate
+# SelectionUpdate: SelectionUpdate
 # i.e. a tuple of (path in selection to update kwargs at, relevant
 # update_kwargs key to read from the query context (args, input line (org and
 # repo), or previous query response json))
@@ -65,7 +65,7 @@ class Resource:
     page_path: JSONPath
 
     # diffs to apply to base_graphql to get a first page selection
-    first_page_diffs: List[QueryDiff] = field(default_factory=list)
+    first_page_diffs: List[SelectionUpdate] = field(default_factory=list)
 
     @property
     def children(self: "Resource") -> List["Resource"]:
@@ -256,7 +256,7 @@ class Response:
         return f"{self.num_results} of {self.total_results}"
 
 
-def is_page_update(resource: Resource, update: QueryDiff) -> bool:
+def is_page_update(resource: Resource, update: SelectionUpdate) -> bool:
     path, kwargs = update
     return path == resource.next_page_selection_path and "after" in kwargs
 
@@ -452,31 +452,31 @@ repo_vuln_alert_vulns_gql = _.repository(owner=MISSING, name=MISSING)[
 ]
 
 
-SetRepositoryOwnerAndName: QueryDiff = (
+SetRepositoryOwnerAndName: SelectionUpdate = (
     ["repository"],  # Repo.page_path
     dict(owner="owner", name="name"),
 )
-SetRepositoryLanguagesFirst: QueryDiff = (
+SetRepositoryLanguagesFirst: SelectionUpdate = (
     ["repository", "languages"],  # RepoLangs.page_path
     dict(first="github_repo_langs_page_size"),
 )
-SetRepositoryManifestsFirst: QueryDiff = (
+SetRepositoryManifestsFirst: SelectionUpdate = (
     ["repository", "dependencyGraphManifests"],  # RepoManifests.page_path
     dict(first="github_repo_dep_manifests_page_size"),
 )
-SetRepositoryManifestsAfter: QueryDiff = (
+SetRepositoryManifestsAfter: SelectionUpdate = (
     ["repository", "dependencyGraphManifests"],  # RepoManifests.page_path
     dict(after="parent_after"),
 )
-SetRepositoryVulnAlertsFirst: QueryDiff = (
+SetRepositoryVulnAlertsFirst: SelectionUpdate = (
     ["repository", "vulnerabilityAlerts"],  # RepoVulnAlertVulns.page_path
     dict(first="github_repo_vuln_alerts_page_size"),
 )
-SetRepositoryVulnAlertsAfter: QueryDiff = (
+SetRepositoryVulnAlertsAfter: SelectionUpdate = (
     ["repository", "vulnerabilityAlerts"],  # RepoVulnAlertVulns.page_path
     dict(after="parent_after"),
 )
-SetRepositoryManifestDepsFirst: QueryDiff = (
+SetRepositoryManifestDepsFirst: SelectionUpdate = (
     [
         "repository",
         "dependencyGraphManifests",
@@ -486,7 +486,7 @@ SetRepositoryManifestDepsFirst: QueryDiff = (
     ],  # RepoManifestDeps.page_path,
     dict(first="github_repo_dep_manifest_deps_page_size"),
 )
-SetRepositoryVulnAlertVulnsFirst: QueryDiff = (
+SetRepositoryVulnAlertVulnsFirst: SelectionUpdate = (
     [
         "repository",
         "vulnerabilityAlerts",
@@ -592,7 +592,7 @@ _resource_edges: Sequence[ResourceEdge] = [
 ]
 
 
-def get_diff_kwargs(diff: QueryDiff, context: ChainMap) -> SelectionUpdate:
+def get_diff_kwargs(diff: SelectionUpdate, context: ChainMap) -> SelectionUpdate:
     path, kwargs = diff
     return (
         path,
