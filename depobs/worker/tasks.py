@@ -112,7 +112,8 @@ async def scan_tarball_url(
             "PACKAGE_MANAGER": config["package_manager"],
             "PACKAGE_NAME": package_name or "unknown-package-name",
             "PACKAGE_VERSION": package_version or "unknown-package-version",
-            "INSTALL_TARGET": tarball_url,
+            # see: https://github.com/mozilla-services/dependency-observatory/issues/280#issuecomment-641588717
+            "INSTALL_TARGET": ".",
         },
     }
 
