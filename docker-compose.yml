@@ -57,6 +57,16 @@ services:
     command: "worker-dev"
 
   # images we build for the worker to run
+  node-10:
+    build:
+      context: scan_envs/
+      args:
+        - BASE_NAME=node
+        - BASE_VERSION=10-buster-slim
+    container_name: dependency-observatory-node-10
+    image: mozilla/dependency-observatory:node-10
+    command: /bin/bash
+
   node-12:
     build:
       context: scan_envs/
