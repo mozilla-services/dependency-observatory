@@ -29,7 +29,7 @@ STANDARD_HEADERS = {
     "Content-Security-Policy": (
         "default-src 'none'; "
         "base-uri 'none'; "
-        "form-action 'none'; "
+        "form-action 'self'; "
         "frame-ancestors 'none'; "
         "font-src 'self'; "
         "img-src 'self'; "
