@@ -25,7 +25,8 @@ window.onload = function() {
     } else {
         getPackageInfo(pkg, ver);
     }
-}
+    document.getElementById('parents').onclick = toggleParents;
+};
 
 function getPackageInfo(pkg, ver) {
     fetch(getPrefixedURL(PACKAGE_PREFIX, pkg, ver))
