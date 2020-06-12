@@ -14,7 +14,7 @@ import depobs.worker.validators as validators
         (
             "#!/usr/bin/env",
             Exception(
-                r"Invalid NPM package name. Must match '[@a-zA-Z0-9][\\.-_@/a-zA-Z0-9]{0,213}'"
+                r"Invalid NPM package name. Did not match regex: '[@a-zA-Z0-9][\\.-_@/a-zA-Z0-9]{0,213}'"
             ),
         ),
     ],
@@ -43,7 +43,7 @@ def test_get_npm_package_name_validation_error(
         (
             "#!/usr/bin/env",
             Exception(
-                r"Invalid NPM package version. Must match '(=v)?           # strip leading = and v\n[0-9]+\\.[0-9]+\\.[0-9]+  # major minor and patch versions (TODO: check if positive ints)\n[-]?[-\\.0-9A-Za-z]*       # optional pre-release version e.g. -alpha.1 (TODO: split out identifiers)\n[+]?[-\\.0-9A-Za-z]*       # optional build metadata e.g. +exp.sha.5114f85\n'"
+                r"Invalid NPM package version. Did not match regex: '(=v)?           # strip leading = and v\n[0-9]+\\.[0-9]+\\.[0-9]+  # major minor and patch versions (TODO: check if positive ints)\n[-]?[-\\.0-9A-Za-z]*       # optional pre-release version e.g. -alpha.1 (TODO: split out identifiers)\n[+]?[-\\.0-9A-Za-z]*       # optional build metadata e.g. +exp.sha.5114f85\n'"
             ),
         ),
     ],
