@@ -4,7 +4,7 @@ from typing import AbstractSet, Dict, AsyncGenerator, Generator, Optional
 
 import aiohttp
 
-from depobs.clients.aiohttp_client_config import AIOHTTPClientConfig
+from depobs.clients.aiohttp_client import AIOHTTPClientConfig
 from depobs.models.rust import (
     RustPackageID,
     cargo_metadata_to_rust_crates,
