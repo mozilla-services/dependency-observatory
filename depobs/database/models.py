@@ -1,7 +1,7 @@
 from datetime import datetime
 from functools import cached_property
 import logging
-from typing import Any, Dict, List, Optional, Set, Tuple, Iterable
+from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 import flask
 from flask_migrate import Migrate
@@ -1053,7 +1053,26 @@ def get_vulnerabilities(package: str, version: str) -> sqlalchemy.orm.query.Quer
     )
 
 
-def get_statistics() -> Dict[str, int]:
+def get_score_code_counts() -> sqlalchemy.orm.query.Query:
+    """
+    Returns a query returning score codes to their counts from the
+    scored reports view.
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     query = str(get_score_code_counts())
+
+    >>> query
+    'SELECT report_score_view.score_code AS report_score_view_score_code, count(%(count_2)s) AS count_1 \\nFROM report_score_view GROUP BY report_score_view.score_code'
+
+    """
+    # NB: try pulling from pg_stats if we materialize the view later
+    return db.session.query(PackageScoreReport.score_code, func.count("1")).group_by(
+        PackageScoreReport.score_code
+    )
+
+
+def get_statistics() -> Dict[str, Union[int, Dict[str, int]]]:
     pkg_version_count = (
         db.session.query(PackageVersion.name, PackageVersion.version,)
         .distinct()
@@ -1065,6 +1084,10 @@ def get_statistics() -> Dict[str, int]:
         package_versions=pkg_version_count,
         advisories=advisories_count,
         reports=reports_count,
+        score_codes_histogram={
+            score_code: score_code_count
+            for (score_code, score_code_count) in get_score_code_counts().all()
+        },
     )
 
 
