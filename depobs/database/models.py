@@ -743,6 +743,21 @@ class NPMRegistryEntry(db.Model):
         )
 
 
+class JSONResult(db.Model):
+    """
+    A table to cache or sample results from HTTP clients and scan jobs
+    for debugging without rerunning jobs.
+    """
+
+    __tablename__ = "json_results"
+
+    id = Column(Integer, primary_key=True)
+    # track when it was inserted
+    inserted_at = deferred(Column(DateTime(timezone=False), server_default=utcnow()))
+
+    data = Column("data", JSONB)
+
+
 def get_package_report(
     package: str, version: Optional[str] = None
 ) -> Optional[PackageReport]:
