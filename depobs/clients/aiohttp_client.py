@@ -1,7 +1,9 @@
-from typing import TypedDict
+from typing import TypedDict, Optional
+
+import aiohttp
 
 
-class AIOHTTPClientConfig(TypedDict, total=True):  # require keys defined below
+class AIOHTTPClientConfig(TypedDict, total=True):  # require all keys defined below
     """
     Shared base AIOHTTPClient config.
     """
@@ -31,3 +33,23 @@ class AIOHTTPClientConfig(TypedDict, total=True):  # require keys defined below
 
     # User agent to use to query third party APIs
     user_agent: str
+
+    # optional API token
+    bearer_auth_token: Optional[str]
+
+
+def aiohttp_session(config: AIOHTTPClientConfig) -> aiohttp.ClientSession:
+    headers = {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "User-Agent": config["user_agent"],
+    }
+    if config.get("bearer_auth_token", None):
+        headers["Authorization"] = f"Bearer {config['bearer_auth_token']}"
+
+    return aiohttp.ClientSession(
+        headers=headers,
+        timeout=aiohttp.ClientTimeout(total=config["total_timeout"]),
+        connector=aiohttp.TCPConnector(limit=config["max_connections"]),
+        raise_for_status=True,
+    )

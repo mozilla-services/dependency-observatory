@@ -4,30 +4,11 @@ from typing import Any, AsyncGenerator, Dict, Iterable, Optional
 
 import aiohttp
 
-from depobs.clients.aiohttp_client import AIOHTTPClientConfig
+from depobs.clients.aiohttp_client import AIOHTTPClientConfig, aiohttp_session
 from depobs.util.serialize_util import grouper
 from depobs.util.type_util import Result
 
 log = logging.getLogger(__name__)
-
-
-class NPMSIOClientConfig(
-    AIOHTTPClientConfig, total=False
-):  # don't require keys defined below
-    pass
-
-
-def aiohttp_session(config: NPMSIOClientConfig) -> aiohttp.ClientSession:
-    return aiohttp.ClientSession(
-        headers={
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "User-Agent": config["user_agent"],
-        },
-        timeout=aiohttp.ClientTimeout(total=config["total_timeout"]),
-        connector=aiohttp.TCPConnector(limit=config["max_connections"]),
-        raise_for_status=True,
-    )
 
 
 async def async_query(
@@ -45,7 +26,7 @@ async def async_query(
 
 
 async def fetch_npmsio_scores(
-    config: NPMSIOClientConfig,
+    config: AIOHTTPClientConfig,
     package_names: Iterable[str],
     total_packages: Optional[int] = None,
 ) -> AsyncGenerator[Result[Dict[str, Dict]], None]:
