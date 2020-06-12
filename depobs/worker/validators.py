@@ -20,7 +20,7 @@ def get_npm_package_name_validation_error(package_name: str) -> Optional[Excepti
 
     if not re.match(NPM_PACKAGE_NAME_RE, package_name):
         return Exception(
-            f"Invalid NPM package name. Must match {NPM_PACKAGE_NAME_RE.pattern!r}"
+            f"Invalid NPM package name. Did not match regex: {NPM_PACKAGE_NAME_RE.pattern!r}"
         )
 
     return None
@@ -48,7 +48,7 @@ def get_npm_package_version_validation_error(package_name: str) -> Optional[Exce
 
     if not re.match(NPM_PACKAGE_NAME_RE, package_name):
         return Exception(
-            f"Invalid NPM package version. Must match {NPM_PACKAGE_VERSION_RE.pattern!r}"
+            f"Invalid NPM package version. Did not match regex: {NPM_PACKAGE_VERSION_RE.pattern!r}"
         )
 
     return None
