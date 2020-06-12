@@ -12,15 +12,12 @@ log = logging.getLogger(__name__)
 
 
 async def async_query(
-    session: aiohttp.ClientSession, url: str, json: Iterable[str], dry_run: bool
+    session: aiohttp.ClientSession, url: str, json: Iterable[str]
 ) -> Optional[Dict]:
     log.debug(f"posting {json} to {url}")
     response_json: Optional[Dict] = None
-    if dry_run:
-        log.warn(f"in dry run mode: skipping POST")
-    else:
-        response = await session.post(url, json=json)
-        response_json = await response.json()
+    response = await session.post(url, json=json)
+    response_json = await response.json()
     log.debug(f"got response json {response_json!r}")
     return response_json
 
@@ -46,7 +43,6 @@ async def fetch_npmsio_scores(
                         for package_name in group
                         if package_name is not None
                     ],
-                    config["dry_run"],
                 )
                 for group in grouper(package_names, config["package_batch_size"])
                 if group is not None

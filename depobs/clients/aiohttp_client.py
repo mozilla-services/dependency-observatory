@@ -16,9 +16,6 @@ class AIOHTTPClientConfig(TypedDict, total=True):  # require all keys defined be
     # time to sleep between requests in seconds
     delay: int
 
-    # don't hit the third part API just print intended actions
-    dry_run: bool
-
     # number of simultaneous connections to open
     max_connections: int
 

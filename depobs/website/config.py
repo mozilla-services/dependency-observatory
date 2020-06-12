@@ -67,8 +67,6 @@ WEB_JOB_CONFIGS = {
 _aiohttp_args = dict(
     # time to sleep between requests in seconds
     delay=0.5,
-    # don't hit the third part API just print intended actions
-    dry_run=False,
     # number of simultaneous connections to open
     max_connections=10,
     # number of times to retry requests

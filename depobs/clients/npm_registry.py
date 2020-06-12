@@ -35,14 +35,8 @@ https://replicate.npmjs.com/ (flattened scopes) seems to be busted
 """
 
 
-async def async_query(
-    session: aiohttp.ClientSession, url: str, dry_run: bool
-) -> Optional[Dict]:
+async def async_query(session: aiohttp.ClientSession, url: str) -> Optional[Dict]:
     response_json: Optional[Dict] = None
-    if dry_run:
-        log.warn(f"in dry run mode: skipping GET {url}")
-        return response_json
-
     log.debug(f"GET {url}")
     try:
         response = await session.get(url)
@@ -92,7 +86,7 @@ async def fetch_npm_registry_metadata(
                 group_results = await asyncio.gather(
                     *[
                         async_query_with_backoff(
-                            s, f"{config['base_url']}{package_name}", config["dry_run"]
+                            s, f"{config['base_url']}{package_name}"
                         )
                         for package_name in group
                         if package_name is not None
