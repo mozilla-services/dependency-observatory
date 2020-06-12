@@ -1,6 +1,12 @@
-from typing import TypedDict, Optional
+import logging
+from typing import Any, Dict, TypedDict, Optional
 
 import aiohttp
+
+from depobs.util.type_util import Result
+
+
+log = logging.getLogger(__name__)
 
 
 class AIOHTTPClientConfig(TypedDict, total=True):  # require all keys defined below
@@ -50,3 +56,25 @@ def aiohttp_session(config: AIOHTTPClientConfig) -> aiohttp.ClientSession:
         connector=aiohttp.TCPConnector(limit=config["max_connections"]),
         raise_for_status=True,
     )
+
+
+def is_not_found_exception(err: Exception) -> bool:
+    is_aiohttp_404 = isinstance(err, aiohttp.ClientResponseError) and err.status == 404
+    return is_aiohttp_404
+
+
+async def request_json(
+    session: aiohttp.ClientSession, method: str, url: str, **kwargs: Any
+) -> Result[Dict]:
+    log.debug(f"{method} {url}")
+    try:
+        response = await session.request(method, url, **kwargs)
+        response_json = await response.json()
+    except Exception as err:
+        if is_not_found_exception(err):
+            log.info(f"got 404 for {url}")
+            log.debug(f"{url} not found: {err}")
+            return err
+        raise err
+    log.debug(f"got response json {response_json!r}")
+    return response_json

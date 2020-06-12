@@ -1,11 +1,17 @@
 import asyncio
+
 import aiohttp
 import backoff
 import math
 from typing import Any, AsyncGenerator, Dict, Iterable, Optional, TypedDict
 import logging
 
-from depobs.clients.aiohttp_client import AIOHTTPClientConfig, aiohttp_session
+from depobs.clients.aiohttp_client import (
+    AIOHTTPClientConfig,
+    aiohttp_session,
+    is_not_found_exception,
+    request_json,
+)
 from depobs.util.type_util import Result
 from depobs.util.serialize_util import grouper
 from depobs.util.traceback_util import exc_to_str
@@ -35,26 +41,6 @@ https://replicate.npmjs.com/ (flattened scopes) seems to be busted
 """
 
 
-async def async_query(session: aiohttp.ClientSession, url: str) -> Optional[Dict]:
-    response_json: Optional[Dict] = None
-    log.debug(f"GET {url}")
-    try:
-        response = await session.get(url)
-        response_json = await response.json()
-        return response_json
-    except aiohttp.ClientResponseError as err:
-        if is_not_found_exception(err):
-            log.info(f"got 404 for {url}")
-            log.debug(f"{url} not found: {err}")
-            return None
-        raise err
-
-
-def is_not_found_exception(err: Exception) -> bool:
-    is_aiohttp_404 = isinstance(err, aiohttp.ClientResponseError) and err.status == 404
-    return is_aiohttp_404
-
-
 async def fetch_npm_registry_metadata(
     config: AIOHTTPClientConfig,
     package_names: Iterable[str],
@@ -77,7 +63,7 @@ async def fetch_npm_registry_metadata(
             max_tries=config["max_retries"],
             giveup=is_not_found_exception,
             logger=log,
-        )(async_query)
+        )(request_json)
 
         for i, group in enumerate(grouper(package_names, config["package_batch_size"])):
             log.info(f"fetching group {i} of {total_groups}")
@@ -86,7 +72,7 @@ async def fetch_npm_registry_metadata(
                 group_results = await asyncio.gather(
                     *[
                         async_query_with_backoff(
-                            s, f"{config['base_url']}{package_name}"
+                            s, "GET", f"{config['base_url']}{package_name}",
                         )
                         for package_name in group
                         if package_name is not None
