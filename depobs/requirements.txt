@@ -14,7 +14,7 @@ chardet==3.0.4
 click==7.1.2
 coverage==5.1
 decorator==4.4.2
-dockerflow==2019.10.0
+dockerflow==2020.6.0
 gentools==1.1.0
 graphviz==0.14
 hashin==0.14.6
