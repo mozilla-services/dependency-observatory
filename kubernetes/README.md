@@ -66,6 +66,9 @@ replicaset.apps/worker-79d8d6d75f   1         1         1       14s
 $ eval $(minikube docker-env)  # use the docker on the minikube image (NB: docker-compose won't work)
 $ docker build -t mozilla/dependency-observatory:latest .
 $ kubectl set image deployments.app/api dependency-observatory-api=mozilla/dependency-observatory:latest
+$ kubectl set image deployments.app/worker dependency-observatory-worker=mozilla/dependency-observatory:latest
+$ kubectl rollout restart deployment api worker
+$ kubectl rollout status deployment api  # to wait for the rollout to complete
 ```
 
 1. To test CRUD opts on a k8s job run (the api container ID will vary):

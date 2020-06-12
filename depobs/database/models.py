@@ -1195,8 +1195,8 @@ def get_package_version_link_id_query(
     )
 
 
-def get_node_advisory_id_query(advisory: Dict) -> sqlalchemy.orm.query.Query:
-    return db.session.query(Advisory.id).filter_by(language="node", url=advisory["url"])
+def get_node_advisory_id_query(advisory: Advisory) -> sqlalchemy.orm.query.Query:
+    return db.session.query(Advisory.id).filter_by(language="node", url=advisory.url)
 
 
 def insert_package_graph(task_data: Dict) -> None:
