@@ -243,11 +243,14 @@ def scan_npm_package(
                 elif task_name == "audit":
 
                     for (
-                        advisory,
+                        advisory_fields,
                         impacted_versions,
                     ) in serializers.node_repo_task_audit_output_to_advisories_and_impacted_versions(
                         task_data
                     ):
+                        advisory: models.Advisory = list(
+                            serializers.serialize_advisories([advisory_fields])
+                        )[0]
                         models.insert_advisories([advisory])
                         models.update_advisory_vulnerable_package_versions(
                             advisory, set(impacted_versions)

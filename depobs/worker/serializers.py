@@ -451,12 +451,14 @@ def node_repo_task_audit_output_to_advisories_and_impacted_versions(
 
     # the same advisory JSON (from the npm DB) is
     # at .advisories{k, v} for npm and .advisories[].advisory for yarn
-    advisories = (
+    advisory_fields = (
         (item.get("advisory", None) for item in task_data.get("advisories", []))
         if is_yarn_cmd
         else task_data.get("advisories", dict()).values()
     )
-    return ((adv, get_advisory_impacted_versions(adv)) for adv in advisories if adv)
+    return (
+        (adv, get_advisory_impacted_versions(adv)) for adv in advisory_fields if adv
+    )
 
 
 def serialize_advisories(advisories_data: Iterable[Dict]) -> Iterable[Advisory]:
