@@ -170,6 +170,7 @@ def handle_package_report_not_found(e):
     package_report = models.get_placeholder_entry(package_name, package_version)
     if package_report:
         if package_report.status == "error":
+            log.error(f"previous scan failed for pkg {package_name}@{package_version}")
             return package_report.report_json, 502
         return package_report.report_json, 202
 
