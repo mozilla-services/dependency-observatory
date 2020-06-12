@@ -60,10 +60,10 @@ replicaset.apps/db-66c96f6c94       1         1         1       14s
 replicaset.apps/worker-79d8d6d75f   1         1         1       14s
 ```
 
-1. To update images on the k8s cluster (requires linux and minikube running with the docker driver) run:
+1. To update images on the k8s cluster (requires linux and minikube running with the docker driver) run the `util/build_and_redeploy_image.sh` script which runs:
 
 ```console
-$ eval $(minikube docker-env)  # use the docker on the minikube image (NB: docker-compose won't work)
+$ eval $(minikube -p minikube docker-env) # use the docker on the minikube image (NB: docker-compose won't work)
 $ docker build -t mozilla/dependency-observatory:latest .
 $ kubectl set image deployments.app/api dependency-observatory-api=mozilla/dependency-observatory:latest
 $ kubectl set image deployments.app/worker dependency-observatory-worker=mozilla/dependency-observatory:latest
