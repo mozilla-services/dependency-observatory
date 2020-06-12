@@ -93,7 +93,7 @@ Job deleted. status='{'startTime': '2020-06-01T19:25:16Z', 'active': 1}'
 1. To access the web API (api container name will vary):
 
 ```console
-kubectl -n default port-forward api-556fc8c577-d87f8 8000
+kubectl -n default port-forward svc/api 8000
 Forwarding from 127.0.0.1:8000 -> 8000
 Forwarding from [::1]:8000 -> 8000
 Handling connection for 8000
