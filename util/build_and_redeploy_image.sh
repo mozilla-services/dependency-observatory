@@ -15,3 +15,4 @@ kubectl set image deployments.app/worker dependency-observatory-worker=mozilla/d
 # redeploy
 kubectl rollout restart deployment api worker
 kubectl rollout status deployment api
+kubectl rollout status deployment worker
