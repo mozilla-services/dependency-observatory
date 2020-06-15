@@ -289,7 +289,7 @@ def validate_scored_after_ts_query_param() -> datetime:
     return (
         datetime.utcfromtimestamp(param_value)
         if param_value
-        else (datetime.now() - timedelta(days=90))
+        else (datetime.now() - timedelta(days=(365 * 10)))
     )
 
 
