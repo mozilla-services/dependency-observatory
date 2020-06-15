@@ -242,8 +242,8 @@ def handle_package_report_not_found(e):
     return package_report.report_json, 202
 
 
-@api.route("/api/package", methods=["GET"])
-def show_package_by_name_and_version_if_available() -> Dict:
+@api.route("/api/package_report", methods=["GET"])
+def show_package_report_by_name_and_version_if_available() -> Dict:
     scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
     # TODO: fetch all package versions
