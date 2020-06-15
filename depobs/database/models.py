@@ -691,15 +691,19 @@ class NPMRegistryEntry(db.Model):
     inserted_at = deferred(Column(DateTime(timezone=False), server_default=utcnow()))
     updated_at = deferred(Column(DateTime(timezone=False), onupdate=utcnow()))
 
-    # TODO: add the following fields?
-    #
-    # main: the package's entry point (e.g., index.js or main.js)
-    # deprecated: the deprecation warnings message of this version
     # dependencies: a mapping of other packages this version depends on to the required semver ranges
     # optionalDependencies: an object mapping package names to the required semver ranges of optional dependencies
     # devDependencies: a mapping of package names to the required semver ranges of development dependencies
     # bundleDependencies: an array of dependencies bundled with this version
     # peerDependencies: a mapping of package names to the required semver ranges of peer dependencies
+
+    # saved as: {name: <dependent_pkg_name>, version_range: <version range>, type_prefix: (optional, dev, bundle, peer, "")}
+    constraints = deferred(Column(JSONB, nullable=True))
+
+    # TODO: add the following fields?
+    #
+    # main: the package's entry point (e.g., index.js or main.js)
+    # deprecated: the deprecation warnings message of this version
     # bin: a mapping of bin commands to set up for this version
     # directories: an array of directories included by this version
     # engines: the node engines required for this version to run, if specified e.g. {'node': '>= 0.6'}

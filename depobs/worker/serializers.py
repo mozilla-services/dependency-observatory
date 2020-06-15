@@ -309,6 +309,28 @@ def serialize_repo_task(
     return task_result
 
 
+def serialize_npm_registry_constraints(
+    version_data: Dict[str, Any]
+) -> List[Dict[str, str]]:
+    constraints = []
+    for prefix, constraint_field in (
+        ("", "dependencies"),
+        ("optional", "optionalDependencies"),
+        ("dev", "devDependencies"),
+        ("bundle", "bundleDependencies"),
+        ("peer", "peerDependencies"),
+    ):
+        field_data = get_in(version_data, [constraint_field])
+        if field_data is None:
+            continue
+
+        for name, version_range in field_data.items():
+            constraints.append(
+                dict(name=name, version_range=version_range, type_prefix=prefix)
+            )
+    return constraints
+
+
 def serialize_npm_registry_entries(
     npm_registry_entries: Iterable[Dict[str, Any]]
 ) -> Iterable[NPMRegistryEntry]:
@@ -343,6 +365,11 @@ def serialize_npm_registry_entries(
                     "publisher_npm_version": ["_npmVersion"],
                 },
             )
+            fields["constraints"] = serialize_npm_registry_constraints(version_data)
+            log.debug(
+                f"serialized npm registry constraints for {fields['package_name']}@{fields['package_version']} : {fields['constraints']}"
+            )
+
             # license can we a string e.g. 'MIT'
             # or dict e.g. {'type': 'MIT', 'url': 'https://github.com/jonschlinkert/micromatch/blob/master/LICENSE'}
             fields["license_url"] = None
