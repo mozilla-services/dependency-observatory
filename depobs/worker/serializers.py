@@ -363,6 +363,7 @@ def serialize_npm_registry_entries(
                     "publisher_email": ["_npmUser", "email"],
                     "publisher_node_version": ["_nodeVersion"],
                     "publisher_npm_version": ["_npmVersion"],
+                    "scripts": ["scripts"],
                 },
             )
             fields["constraints"] = serialize_npm_registry_constraints(version_data)

@@ -700,6 +700,11 @@ class NPMRegistryEntry(db.Model):
     # saved as: {name: <dependent_pkg_name>, version_range: <version range>, type_prefix: (optional, dev, bundle, peer, "")}
     constraints = deferred(Column(JSONB, nullable=True))
 
+    # scripts e.g. {'docco': 'docco lib/*.js lib/strategy/* index.js',
+    #               'pretest': 'jshint lib/ tests/ examples/ index.js',
+    #               'test': 'node_modules/nodeunit/bin/nodeunit tests/'}
+    scripts = deferred(Column(JSONB, nullable=True))
+
     # TODO: add the following fields?
     #
     # main: the package's entry point (e.g., index.js or main.js)
@@ -710,9 +715,6 @@ class NPMRegistryEntry(db.Model):
     # readme: the first 64K of the README data for the most-recently published version of the package
     # readmeFilename: The name of the file from which the readme data was taken.
     #
-    # scripts e.g. {'docco': 'docco lib/*.js lib/strategy/* index.js',
-    #               'pretest': 'jshint lib/ tests/ examples/ index.js',
-    #               'test': 'node_modules/nodeunit/bin/nodeunit tests/'}
     # files e.g. ['index.js', 'lib', 'tests']
 
     @declared_attr
