@@ -344,16 +344,6 @@ function setElement(json, elem) {
     return val;
 }
 
-function setElementValue(json, elem, val) {
-    const el = document.getElementById(elem);
-    if (el) {
-        el.innerText = val;
-    } else {
-        console.log('No element for id: ' + elem);
-    }
-    return val;
-}
-
 function setElementLink(json, elem, link, val='', title='') {
     const el = document.getElementById(elem);
     if (val === '') {
