@@ -13,6 +13,8 @@ fi
 flask db show
 
 if [ "$1" = 'web' ]; then
+    gunicorn -w 4 "depobs.website.do:create_app()"
+elif [ "$1" = 'web-dev' ]; then
     python depobs/website/do.py
 elif [ "$1" = 'worker' ]; then
     celery --task-events -A depobs.worker.tasks worker --loglevel=info
