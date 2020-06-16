@@ -65,7 +65,7 @@ function gotPackageInfo(pkgInfo) {
     document.getElementById('scan-results').className = "";
     let fail = 0;
     let warn = 0;
-    let info = 0
+    let info = 0;
 
     let pkgLink = 'https://www.npmjs.com/package/' + pkgInfo['package'] +'/v/' + pkgInfo['version'];
 
@@ -236,38 +236,38 @@ function calculate_score(json, scoringElem) {
     let i = 0;
     let row;
     let cell;
-    let total = calculate_element_score(json, 0, parseInt(json["npmsio_score"] * 100), scoringElem, i++, 'NPMSIO Score x 100')
+    let total = calculate_element_score(json, 0, parseInt(json["npmsio_score"] * 100), scoringElem, i++, 'NPMSIO Score x 100');
     let all_deps = json["all_deps"];
     if (all_deps <= 5) {
-        total = calculate_element_score(json, total, 20, scoringElem, i++, 'All dependencies <= 5')
+        total = calculate_element_score(json, total, 20, scoringElem, i++, 'All dependencies <= 5');
     } else if (all_deps <= 20) {
-        total = calculate_element_score(json, total, 10, scoringElem, i++, 'All dependencies <= 20')
+        total = calculate_element_score(json, total, 10, scoringElem, i++, 'All dependencies <= 20');
     } else if (all_deps >= 500) {
-        total = calculate_element_score(json, total, -20, scoringElem, i++, 'All dependencies >= 500')
+        total = calculate_element_score(json, total, -20, scoringElem, i++, 'All dependencies >= 500');
     } else if (all_deps >= 100) {
-        total = calculate_element_score(json, total, -10, scoringElem, i++, 'All dependencies >= 100')
+        total = calculate_element_score(json, total, -10, scoringElem, i++, 'All dependencies >= 100');
     }
 
     if (json["directVulnsCritical_score"] > 0) {
-        total = calculate_element_score(json, total, -20, scoringElem, i++, 'Critical vulnerability in package')
+        total = calculate_element_score(json, total, -20, scoringElem, i++, 'Critical vulnerability in package');
     }
     if (json["directVulnsHigh_score"] > 0) {
-        total = calculate_element_score(json, total, -10, scoringElem, i++, 'High vulnerability in package')
+        total = calculate_element_score(json, total, -10, scoringElem, i++, 'High vulnerability in package');
     }
     if (json["directVulnsMedium_score"] > 0) {
-        total = calculate_element_score(json, total, -5, scoringElem, i++, 'Medium vulnerability in package')
+        total = calculate_element_score(json, total, -5, scoringElem, i++, 'Medium vulnerability in package');
     }
     if (json["indirectVulnsCritical_score"] > 0) {
-        total = calculate_element_score(json, total, -10, scoringElem, i++, 'Critical vulnerability in dependency')
+        total = calculate_element_score(json, total, -10, scoringElem, i++, 'Critical vulnerability in dependency');
     }
     if (json["indirectVulnsHigh_score"] > 0) {
-        total = calculate_element_score(json, total, -7, scoringElem, i++, 'High vulnerability in dependency')
+        total = calculate_element_score(json, total, -7, scoringElem, i++, 'High vulnerability in dependency');
     }
     if (json["indirectVulnsMedium_score"] > 0) {
-        total = calculate_element_score(json, total, -3, scoringElem, i++, 'Medium vulnerability in dependency')
+        total = calculate_element_score(json, total, -3, scoringElem, i++, 'Medium vulnerability in dependency');
     }
     if (scoringElem) {
-        calculate_element_score(json, 0, total, scoringElem, i++, 'Total')
+        calculate_element_score(json, 0, total, scoringElem, i++, 'Total');
     }
     return total;
 }
