@@ -63,9 +63,8 @@ function gotPackageInfo(pkgInfo) {
     let warn = 0;
     let info = 0;
 
-    let pkgLink = 'https://www.npmjs.com/package/' + pkgInfo['package'] +'/v/' + pkgInfo['version'];
-
-    setElementLink(pkgInfo, 'package', pkgLink);
+    setElementLink(pkgInfo, 'package',
+		   'https://www.npmjs.com/package/' + pkgInfo['package'] +'/v/' + pkgInfo['version']);
     setElement(pkgInfo, 'version');
     let npmsio_score = pkgInfo['npmsio_score'];
     if (npmsio_score) {
