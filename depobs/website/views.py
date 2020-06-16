@@ -254,7 +254,7 @@ def show_package_report_by_name_and_version_if_available() -> Dict:
     return package_report.json_with_dependencies()
 
 
-@api.route("/api/parents", methods=["GET"])
+@api.route("/api/package_report_parents", methods=["GET"])
 def get_parents_by_name_and_version() -> Dict:
     scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
