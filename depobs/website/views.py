@@ -1,14 +1,14 @@
 from datetime import datetime, timedelta
 import logging
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from flask import (
     Blueprint,
     jsonify,
     redirect,
     request,
-    send_from_directory,
     url_for,
+    render_template,
 )
 import graphviz
 import networkx as nx
@@ -43,7 +43,9 @@ STANDARD_HEADERS = {
     "X-XSS-Protection": "1; mode=block",
 }
 
-views_blueprint = api = Blueprint("views_blueprint", __name__)
+views_blueprint = api = Blueprint(
+    "views_blueprint", __name__, template_folder="templates"
+)
 
 
 class PackageReportNotFound(NotFound):
@@ -258,6 +260,21 @@ def get_parents_by_name_and_version() -> Dict:
     return package_report.json_with_parents()
 
 
+@api.route("/package_report", methods=["GET"])
+def show_package_report() -> Any:
+    scored_after = validate_scored_after_ts_query_param()
+    package_name, package_version, _ = validate_npm_package_version_query_params()
+
+    package_report = get_most_recently_scored_package_report_or_raise(
+        package_name, package_version, scored_after
+    )
+    return render_template(
+        "package_report.html",
+        package_report=package_report,
+        get_direct_vulns=models.get_vulnerabilities_report,
+    )
+
+
 @api.route("/vulnerabilities", methods=["GET"])
 def get_vulnerabilities_by_name_and_version() -> Dict:
     package_name, package_version, _ = validate_npm_package_version_query_params()
@@ -275,9 +292,14 @@ def add_standard_headers_to_static_routes(response):
     return response
 
 
+@api.route("/faq")
+def faq_page() -> Any:
+    return render_template("faq.html")
+
+
 @api.route("/")
-def index_page():
-    return send_from_directory("static/", "index.html")
+def index_page() -> Any:
+    return render_template("search_index.html")
 
 
 def validate_scored_after_ts_query_param() -> datetime:
