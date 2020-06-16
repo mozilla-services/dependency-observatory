@@ -17,7 +17,7 @@ decorator==4.4.2
 dockerflow==2020.6.0
 gentools==1.1.0
 graphviz==0.14
-hashin==0.14.6
+hashin==0.15.0
 idna==2.9
 kubernetes==11.0.0
 more-itertools==8.4.0
