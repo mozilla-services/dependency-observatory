@@ -1,7 +1,3 @@
-const PACKAGE_PREFIX = '/package';
-const PARENTS_PREFIX = '/parents';
-const VULNERABILITIES_PREFIX = '/vulnerabilities';
-
 function getLinkURL(name, version) {
     return '/?manager=npm&package=' + encodeURIComponent(name) + '&version=' + encodeURIComponent(version);
 }
@@ -29,7 +25,7 @@ window.onload = function() {
 };
 
 function getPackageInfo(pkg, ver) {
-    fetch(getPrefixedURL(PACKAGE_PREFIX, pkg, ver))
+    fetch(getPrefixedURL('/package_report', pkg, ver))
         .then((response) => {
             if (response.status == 200) {
                 document.getElementById('scan-started').className = "d-none";
@@ -160,7 +156,7 @@ function gotPackageInfo(pkgInfo) {
     if (pkgInfo['directVulnsCritical_score'] + pkgInfo['directVulnsHigh_score'] +
             pkgInfo['directVulnsMedium_score'] + pkgInfo['directVulnsLow_score'] > 0) {
         // This package has some vulnerabilities, so show them
-        fetch(getPrefixedURL(VULNERABILITIES_PREFIX, pkgInfo['package'], pkgInfo['version']))
+        fetch(getPrefixedURL('/vulnerabilities', pkgInfo['package'], pkgInfo['version']))
             .then((response) => {
                 if (response.status == 200) {
                     response.json().then(function(vulnInfo) {
@@ -280,7 +276,7 @@ function toggleParents() {
         let urlParams = new URLSearchParams(window.location.search);
         let pkg = urlParams.get('package');
         let ver = urlParams.get('version');
-        fetch(getPrefixedURL(PARENTS_PREFIX, pkg, ver))
+        fetch(getPrefixedURL('/package_report_parents', pkg, ver))
             .then((response) => {
                 if (response.status == 200) {
                     console.log(response);
