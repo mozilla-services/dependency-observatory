@@ -100,146 +100,15 @@ def get_most_recently_scored_package_report_or_raise(
     return package_report
 
 
-def check_package_name_registered(package_name: str) -> bool:
-    """
-    Returns a bool representing whether the package name was found on
-    the npm registry or in the debobs DB.
-
-    Hits the npm registry and saves registry entries for each version
-    found when the package name isn't found in the debobs DB
-    """
-    # try npm_registry_entries in our db first since npm registry entries can be big and slow to fetch
-    if models.get_package_name_in_npm_registry_data(package_name):
-        log.info(f"package registry entry for {package_name} found in depobs db")
-        return True
-
-    npm_registry_entries: List[
-        Optional[Dict]
-    ] = get_celery_tasks().fetch_and_save_registry_entries([package_name])
-    if npm_registry_entries and len(npm_registry_entries) > 0:
-        log.info(f"package registry entry for {package_name} found on npm")
-        return True
-    log.info(f"package registry entry for {package_name} not found")
-    return False
-
-
-def check_package_version_registered(package_name: str, package_version: str) -> bool:
-    """
-    Returns bool representing whether the package version was found
-    on the npm registry or in the debobs DB.
-
-    Hits the npm registry and saves registry entries for each version
-    found when the package version isn't found in the debobs DB.
-    """
-    if models.get_npm_registry_data(package_name, package_version).one_or_none():
-        log.info(
-            f"package registry entry for {package_name}@{package_version} found in depobs db"
-        )
-        return True
-
-    # TODO: don't call if we already hit it for the name check
-    # TODO: if the NPM API supports it, only fetch changes from our registry entry version
-    npm_registry_entries: List[
-        Optional[Dict]
-    ] = get_celery_tasks().fetch_and_save_registry_entries([package_name])
-    if npm_registry_entries and len(npm_registry_entries) > 0:
-        npm_registry_entry = npm_registry_entries[0]
-        assert isinstance(npm_registry_entry, dict) and "versions" in npm_registry_entry
-        if npm_registry_entry and npm_registry_entry["versions"].get(
-            package_version, None
-        ):
-            log.info(
-                f"package registry entry for {package_name}@{package_version} found on npm"
-            )
-            return True
-
-    log.info(
-        f"package registry entry for {package_name}@{package_version} not found on npm"
-    )
-    return False
-
 
 @api.after_request
 def add_standard_headers_to_static_routes(response):
     response.headers.update(STANDARD_HEADERS)
     return response
 
-
 @api.errorhandler(BadRequest)
 def handle_bad_request(e):
     return dict(description=e.description), 400
-
-
-@api.errorhandler(PackageReportNotFound)
-def handle_package_report_not_found(e):
-    package_name, package_version = e.package_name, e.package_version
-
-    # Is there a placeholder entry?
-    package_report = models.get_placeholder_entry(package_name, package_version)
-    if package_report:
-        if package_report.status == "error":
-            log.error(f"previous scan failed for pkg {package_name}@{package_version}")
-            return package_report.report_json, 502
-        return package_report.report_json, 202
-
-    if not check_package_name_registered(package_name):
-        return (
-            dict(
-                description=f"Unable to find package named {package_name!r} on the npm registry."
-            ),
-            404,
-        )
-    if package_version and not check_package_version_registered(
-        package_name, package_version
-    ):
-        log.info(
-            f"package version: {package_name}@{package_version!r} not found in depobs db"
-        )
-        return (
-            dict(
-                description=f"Unable to find version "
-                f"{package_version!r} of package {package_name!r} on the npm registry."
-            ),
-            404,
-        )
-    # save any registry entries we fetch checking for package name and version
-    models.db.session.commit()
-
-    # start a task to scan the package
-    scan_task: celery.result.AsyncResult = get_celery_tasks().scan_npm_package_then_build_report_tree.delay(
-        package_name, package_version
-    )
-
-    # TODO: make sure concurrent API calls don't introduce a data race
-    if package_version is not None:
-        package_report = models.insert_package_report_placeholder_or_update_task_id(
-            package_name, package_version, scan_task.id
-        )
-    else:
-        # a version wasn't specified, so scan_npm_package will scan all versions
-        # update or insert placeholders for all the versions referencing the same scan task
-        package_reports = [
-            models.insert_package_report_placeholder_or_update_task_id(
-                package_name, entry.package_version, scan_task.id
-            )
-            for entry in models.get_NPMRegistryEntry(package_name)
-        ]
-        log.info(
-            f"inserted placeholder PackageReports for {package_name} at versions {[(pr.id, pr.version) for pr in package_reports]}"
-        )
-
-        if not len(package_reports):
-            return (
-                dict(
-                    description=f"Unable to find any versions "
-                    f"of package {package_name!r} on the npm registry."
-                ),
-                404,
-            )
-        # return the report for the alphabetically highest version number (likely most recently published package)
-        package_report = package_reports[-1]
-
-    return package_report.report_json, 202
 
 
 @api.route("/api/package_report", methods=["GET"])
