@@ -74,6 +74,8 @@ spec:
           value: "1"
         - name: SQLALCHEMY_DATABASE_URI
           value: postgresql+psycopg2://postgres:postgres@db/dependency_observatory
+        - name: ADMIN_TOKEN
+          value: c383e25e1f55dc41823b43d642e096855810c179d3f9fb4e58092ed6108c88d6
         image: mozilla/dependency-observatory
         imagePullPolicy: IfNotPresent
         name: dependency-observatory-api
