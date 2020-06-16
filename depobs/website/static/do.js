@@ -112,7 +112,7 @@ function gotPackageInfo(pkgInfo) {
 
     let score = calculate_score(pkgInfo, document.getElementById("scoring"));
     document.getElementById('top_score').innerText = score;
-    let grade = get_grade(score);
+    let grade = pkgInfo["score_code"];
     document.getElementById("scan-grade-letter").innerText = grade;
     document.getElementById("scan-grade-container").className += " grade-" + grade.toLowerCase();
 
@@ -122,7 +122,7 @@ function gotPackageInfo(pkgInfo) {
         let pkg = depJson[i]['package'];
         let ver = depJson[i]['version'];
         let score = calculate_score(depJson[i]);
-        let grade = get_grade(score);
+        let grade = depJson[i]['score_code'];
 
         let row = table.insertRow(i+2);
         let cell = row.insertCell(0);
@@ -270,22 +270,6 @@ function calculate_score(json, scoringElem) {
         calculate_element_score(json, 0, total, scoringElem, i++, 'Total')
     }
     return total;
-}
-
-function get_grade(score) {
-    let grade;
-    if (score >= 80) {
-        grade = "A";
-    } else if (score >= 60) {
-        grade = "B";
-    } else if (score >= 40) {
-        grade = "C";
-    } else if (score >= 20) {
-        grade = "D";
-    } else {
-        grade = "E";
-    }
-    return grade;
 }
 
 function toggleParents() {
