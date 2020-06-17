@@ -48,63 +48,25 @@ views_blueprint = api = Blueprint(
 )
 
 
-class PackageReportNotFound(NotFound):
-    package_name: str
-    package_version: Optional[str] = None
-    scored_after: Optional[datetime] = None
-
-    def __init__(
-        self,
-        package_name: str,
-        package_version: Optional[str] = None,
-        scored_after: Optional[datetime] = None,
-    ):
-        self.package_name = package_name
-        self.package_version = package_version
-        self.scored_after = scored_after
-
-    @staticmethod
-    def format_description(
-        package_name: str,
-        package_version: Optional[str] = None,
-        scored_after: Optional[datetime] = None,
-    ):
-        msg = f"PackageReport {package_name}"
-        if package_version is not None:
-            msg += f"@{package_version}"
-        if scored_after is not None:
-            msg += f" scored after {scored_after}"
-        return msg + " not found."
-
-
 def get_most_recently_scored_package_report_or_raise(
     package_name: str, package_version: str, scored_after: datetime
 ) -> models.PackageReport:
-    "Returns a PackageReport or raises a PackageReportNotFound exception"
+    "Returns a PackageReport or raises werkzeug 404 NotFound exception"
     package_report = models.get_most_recently_scored_package_report(
         package_name, package_version, scored_after
     )
     if package_report is None:
-        not_found = PackageReportNotFound(
-            package_name=package_name,
-            package_version=package_version,
-            scored_after=scored_after,
+        raise NotFound(
+            description=f"PackageReport {package_name}@{package_version} scored after {scored_after} not found."
         )
-        not_found.description = PackageReportNotFound.format_description(
-            package_name=package_name,
-            package_version=package_version,
-            scored_after=scored_after,
-        )
-        raise not_found
-
     return package_report
-
 
 
 @api.after_request
 def add_standard_headers_to_static_routes(response):
     response.headers.update(STANDARD_HEADERS)
     return response
+
 
 @api.errorhandler(BadRequest)
 def handle_bad_request(e):
