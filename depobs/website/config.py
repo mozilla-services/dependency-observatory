@@ -43,10 +43,6 @@ SQLALCHEMY_TRACK_MODIFICATIONS = bool(
 
 # Task names the web/flask app can register and run
 WEB_TASK_NAMES = [
-    "add",
-    "build_report_tree",
-    "fetch_and_save_registry_entries",
-    "scan_npm_package",
     "scan_npm_package_then_build_report_tree",
 ]
 
