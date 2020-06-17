@@ -73,30 +73,6 @@ def handle_bad_request(e):
     return dict(description=e.description), 400
 
 
-@api.route("/api/package_report", methods=["GET"])
-def show_package_report_by_name_and_version_if_available() -> Dict:
-    scored_after = validate_scored_after_ts_query_param()
-    package_name, package_version, _ = validate_npm_package_version_query_params()
-    # TODO: fetch all package versions
-
-    package_report = get_most_recently_scored_package_report_or_raise(
-        package_name, package_version, scored_after
-    )
-    return package_report.json_with_dependencies()
-
-
-@api.route("/api/package_report_parents", methods=["GET"])
-def get_parents_by_name_and_version() -> Dict:
-    scored_after = validate_scored_after_ts_query_param()
-    package_name, package_version, _ = validate_npm_package_version_query_params()
-    # TODO: fetch all package versions
-
-    package_report = get_most_recently_scored_package_report_or_raise(
-        package_name, package_version, scored_after
-    )
-    return package_report.json_with_parents()
-
-
 @api.route("/package_report", methods=["GET"])
 def show_package_report() -> Any:
     scored_after = validate_scored_after_ts_query_param()
@@ -110,12 +86,6 @@ def show_package_report() -> Any:
         package_report=package_report,
         get_direct_vulns=models.get_vulnerabilities_report,
     )
-
-
-@api.route("/api/vulnerabilities", methods=["GET"])
-def get_vulnerabilities_by_name_and_version() -> Dict:
-    package_name, package_version, _ = validate_npm_package_version_query_params()
-    return models.get_vulnerabilities_report(package_name, package_version)
 
 
 @api.route("/statistics", methods=["GET"])
