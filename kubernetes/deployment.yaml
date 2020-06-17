@@ -65,7 +65,7 @@ spec:
       containers:
       - args:
         - "migrate"
-        - "web"
+        - "web-dev"
         env:
         - name: CELERY_BROKER_URL
           value: sqla+postgresql://postgres:postgres@db/dependency_observatory
