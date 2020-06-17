@@ -4,11 +4,8 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 
 from flask import (
     Blueprint,
-    jsonify,
-    redirect,
-    request,
-    url_for,
     render_template,
+    request,
 )
 import graphviz
 import networkx as nx
