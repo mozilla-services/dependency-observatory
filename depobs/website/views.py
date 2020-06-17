@@ -236,7 +236,7 @@ def handle_package_report_not_found(e):
     return package_report.report_json, 202
 
 
-@api.route("/package", methods=["GET"])
+@api.route("/api/package", methods=["GET"])
 def show_package_by_name_and_version_if_available() -> Dict:
     scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
@@ -248,7 +248,7 @@ def show_package_by_name_and_version_if_available() -> Dict:
     return package_report.json_with_dependencies()
 
 
-@api.route("/parents", methods=["GET"])
+@api.route("/api/parents", methods=["GET"])
 def get_parents_by_name_and_version() -> Dict:
     scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
@@ -275,7 +275,7 @@ def show_package_report() -> Any:
     )
 
 
-@api.route("/vulnerabilities", methods=["GET"])
+@api.route("/api/vulnerabilities", methods=["GET"])
 def get_vulnerabilities_by_name_and_version() -> Dict:
     package_name, package_version, _ = validate_npm_package_version_query_params()
     return models.get_vulnerabilities_report(package_name, package_version)
@@ -353,7 +353,7 @@ def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
     return package_name, package_version, package_manager
 
 
-@api.route("/scan", methods=["POST"])
+@api.route("/api/scan", methods=["POST"])
 def scan():
     package_name, package_version, _ = validate_npm_package_version_query_params()
     result: celery.result.AsyncResult = get_celery_tasks().scan_npm_package.delay(
@@ -362,7 +362,7 @@ def scan():
     return dict(task_id=result.id)
 
 
-@api.route("/build_report_tree", methods=["POST"])
+@api.route("/api/build_report_tree", methods=["POST"])
 def build_report_tree():
     package_name, package_version, _ = validate_npm_package_version_query_params()
     result: celery.result.AsyncResult = get_celery_tasks().build_report_tree.delay(
@@ -371,7 +371,7 @@ def build_report_tree():
     return dict(task_id=result.id)
 
 
-@api.route("/scan_then_build_report_tree", methods=["POST"])
+@api.route("/api/scan_then_build_report_tree", methods=["POST"])
 def scan_npm_package_then_build_report_tree():
     package_name, package_version, _ = validate_npm_package_version_query_params()
     result: celery.result.AsyncResult = get_celery_tasks().scan_npm_package_then_build_report_tree.delay(
