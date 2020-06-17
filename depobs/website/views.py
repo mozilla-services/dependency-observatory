@@ -159,6 +159,12 @@ def check_package_version_registered(package_name: str, package_version: str) ->
     return False
 
 
+@api.after_request
+def add_standard_headers_to_static_routes(response):
+    response.headers.update(STANDARD_HEADERS)
+    return response
+
+
 @api.errorhandler(BadRequest)
 def handle_bad_request(e):
     return dict(description=e.description), 400
@@ -284,12 +290,6 @@ def get_vulnerabilities_by_name_and_version() -> Dict:
 @api.route("/statistics", methods=["GET"])
 def get_statistics() -> Dict:
     return models.get_statistics()
-
-
-@api.after_request
-def add_standard_headers_to_static_routes(response):
-    response.headers.update(STANDARD_HEADERS)
-    return response
 
 
 @api.route("/faq")
