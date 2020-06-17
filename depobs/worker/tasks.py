@@ -66,11 +66,6 @@ log = get_task_logger(__name__)
 app = create_celery_app()
 
 
-@app.task()
-def add(x: int, y: int) -> int:
-    return x + y
-
-
 class RunRepoTasksConfig(TypedDict):
     # k8s namespace to create pods e.g. "default"
     namespace: str
@@ -278,7 +273,6 @@ def scan_npm_package(
     return (package_name, package_version)
 
 
-@app.task()
 def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
     package_name, package_version = package_version_tuple
 
@@ -340,7 +334,6 @@ async def fetch_package_data(
     return package_results
 
 
-@app.task()
 def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
     package_names = list(package_names)
     log.info(f"fetching npmsio scores for {len(package_names)} package names")
@@ -367,7 +360,6 @@ def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
     return npmsio_scores
 
 
-@app.task()
 def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
     package_names = list(package_names)
     log.info(f"fetching registry entries for {len(package_names)} package names")
