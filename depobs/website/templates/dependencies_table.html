@@ -1,0 +1,56 @@
+<table class="table table-striped table-sm scan-summary-table">
+    <tr>
+        <th>Package</th>
+        <th>Version</th>
+        <th>Score</th>
+        <th>Direct deps</th>
+        <th>All deps</th>
+        <th colspan="4" class="text-center">Vulnerabilities</th>
+    </tr>
+    <tr>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th>Critical</th>
+        <th>High</th>
+        <th>Medium</th>
+        <th>Low</th>
+    </tr>
+    {% for dep in deps %}
+    <tr>
+        <td>
+            <a href="{{url_for('views_blueprint.show_package_report', package_manager='npm', package_name=dep['package'], package_version=dep['version'])}}" title="See package / version details">
+                {{dep['package']}}
+            </a>
+        </td>
+        <td>
+            <a href="{{url_for('views_blueprint.show_package_report', package_manager='npm', package_name=dep['package'], package_version=dep['version'])}}" title="See package / version details">
+                {{dep['version']}}
+            </a>
+        </td>
+        <td>
+            {{dep['score_code']}} ({{dep['score'] | round(0) | int}})
+        </td>
+        <td>
+            {{dep['immediate_deps']}}
+        </td>
+        <td>
+            {{dep['all_deps']}}
+        </td>
+        <td>
+            {{dep['directVulnsCritical_score'] + dep['indirectVulnsCritical_score']}}
+        </td>
+        <td>
+            {{dep['directVulnsHigh_score'] + dep['indirectVulnsHigh_score']}}
+        </td>
+        <td>
+            {{dep['directVulnsMedium_score'] + dep['indirectVulnsMedium_score']}}
+        </td>
+        <td>
+            {{dep['directVulnsLow_score'] + dep['indirectVulnsLow_score']}}
+        </td>
+    </tr>
+    {% endfor %}
+</table>

@@ -1,14 +1,14 @@
 from datetime import datetime, timedelta
 import logging
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from flask import (
     Blueprint,
     jsonify,
     redirect,
     request,
-    send_from_directory,
     url_for,
+    render_template,
 )
 import graphviz
 import networkx as nx
@@ -43,7 +43,9 @@ STANDARD_HEADERS = {
     "X-XSS-Protection": "1; mode=block",
 }
 
-views_blueprint = api = Blueprint("views_blueprint", __name__)
+views_blueprint = api = Blueprint(
+    "views_blueprint", __name__, template_folder="templates"
+)
 
 
 class PackageReportNotFound(NotFound):
@@ -157,6 +159,12 @@ def check_package_version_registered(package_name: str, package_version: str) ->
     return False
 
 
+@api.after_request
+def add_standard_headers_to_static_routes(response):
+    response.headers.update(STANDARD_HEADERS)
+    return response
+
+
 @api.errorhandler(BadRequest)
 def handle_bad_request(e):
     return dict(description=e.description), 400
@@ -234,7 +242,7 @@ def handle_package_report_not_found(e):
     return package_report.report_json, 202
 
 
-@api.route("/package", methods=["GET"])
+@api.route("/api/package", methods=["GET"])
 def show_package_by_name_and_version_if_available() -> Dict:
     scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
@@ -246,7 +254,7 @@ def show_package_by_name_and_version_if_available() -> Dict:
     return package_report.json_with_dependencies()
 
 
-@api.route("/parents", methods=["GET"])
+@api.route("/api/parents", methods=["GET"])
 def get_parents_by_name_and_version() -> Dict:
     scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
@@ -258,7 +266,22 @@ def get_parents_by_name_and_version() -> Dict:
     return package_report.json_with_parents()
 
 
-@api.route("/vulnerabilities", methods=["GET"])
+@api.route("/package_report", methods=["GET"])
+def show_package_report() -> Any:
+    scored_after = validate_scored_after_ts_query_param()
+    package_name, package_version, _ = validate_npm_package_version_query_params()
+
+    package_report = get_most_recently_scored_package_report_or_raise(
+        package_name, package_version, scored_after
+    )
+    return render_template(
+        "package_report.html",
+        package_report=package_report,
+        get_direct_vulns=models.get_vulnerabilities_report,
+    )
+
+
+@api.route("/api/vulnerabilities", methods=["GET"])
 def get_vulnerabilities_by_name_and_version() -> Dict:
     package_name, package_version, _ = validate_npm_package_version_query_params()
     return models.get_vulnerabilities_report(package_name, package_version)
@@ -269,15 +292,14 @@ def get_statistics() -> Dict:
     return models.get_statistics()
 
 
-@api.after_request
-def add_standard_headers_to_static_routes(response):
-    response.headers.update(STANDARD_HEADERS)
-    return response
+@api.route("/faq")
+def faq_page() -> Any:
+    return render_template("faq.html")
 
 
 @api.route("/")
-def index_page():
-    return send_from_directory("static/", "index.html")
+def index_page() -> Any:
+    return render_template("search_index.html")
 
 
 def validate_scored_after_ts_query_param() -> datetime:
@@ -298,7 +320,7 @@ def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
     package_versions = request.args.getlist("package_version", str)
     package_managers = request.args.getlist("package_manager", str)
     if len(package_names) != 1:
-        raise BadRequest(description="only one package name supported")
+        raise BadRequest(description="Exactly one package name required")
     if len(package_versions) > 1:
         raise BadRequest(description="only zero or one package version supported")
     if len(package_managers) > 1:
@@ -331,7 +353,7 @@ def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
     return package_name, package_version, package_manager
 
 
-@api.route("/scan", methods=["POST"])
+@api.route("/api/scan", methods=["POST"])
 def scan():
     package_name, package_version, _ = validate_npm_package_version_query_params()
     result: celery.result.AsyncResult = get_celery_tasks().scan_npm_package.delay(
@@ -340,7 +362,7 @@ def scan():
     return dict(task_id=result.id)
 
 
-@api.route("/build_report_tree", methods=["POST"])
+@api.route("/api/build_report_tree", methods=["POST"])
 def build_report_tree():
     package_name, package_version, _ = validate_npm_package_version_query_params()
     result: celery.result.AsyncResult = get_celery_tasks().build_report_tree.delay(
@@ -349,7 +371,7 @@ def build_report_tree():
     return dict(task_id=result.id)
 
 
-@api.route("/scan_then_build_report_tree", methods=["POST"])
+@api.route("/api/scan_then_build_report_tree", methods=["POST"])
 def scan_npm_package_then_build_report_tree():
     package_name, package_version, _ = validate_npm_package_version_query_params()
     result: celery.result.AsyncResult = get_celery_tasks().scan_npm_package_then_build_report_tree.delay(
