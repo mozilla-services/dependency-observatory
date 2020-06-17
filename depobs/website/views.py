@@ -154,24 +154,6 @@ def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
     return package_name, package_version, package_manager
 
 
-@api.route("/api/scan", methods=["POST"])
-def scan():
-    package_name, package_version, _ = validate_npm_package_version_query_params()
-    result: celery.result.AsyncResult = get_celery_tasks().scan_npm_package.delay(
-        package_name, package_version
-    )
-    return dict(task_id=result.id)
-
-
-@api.route("/api/build_report_tree", methods=["POST"])
-def build_report_tree():
-    package_name, package_version, _ = validate_npm_package_version_query_params()
-    result: celery.result.AsyncResult = get_celery_tasks().build_report_tree.delay(
-        (package_name, package_version)
-    )
-    return dict(task_id=result.id)
-
-
 @api.route("/api/scan_then_build_report_tree", methods=["POST"])
 def scan_npm_package_then_build_report_tree():
     package_name, package_version, _ = validate_npm_package_version_query_params()
