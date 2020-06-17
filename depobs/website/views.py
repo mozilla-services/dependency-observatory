@@ -298,7 +298,7 @@ def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
     package_versions = request.args.getlist("package_version", str)
     package_managers = request.args.getlist("package_manager", str)
     if len(package_names) != 1:
-        raise BadRequest(description="only one package name supported")
+        raise BadRequest(description="Exactly one package name required")
     if len(package_versions) > 1:
         raise BadRequest(description="only zero or one package version supported")
     if len(package_managers) > 1:
