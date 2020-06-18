@@ -37,7 +37,6 @@ from depobs.database.models import (
     store_package_reports,
     get_most_recently_inserted_package_from_name_and_version,
     get_latest_graph_including_package_as_parent,
-    get_placeholder_entry,
 )
 
 import depobs.worker.scoring as scoring

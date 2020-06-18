@@ -785,17 +785,6 @@ def get_most_recently_scored_package_report(
     return query.order_by(PackageScoreReport.scoring_date.desc()).limit(1).one_or_none()
 
 
-def get_placeholder_entry(
-    package_name: str, package_version: str
-) -> Optional[PackageReport]:
-    "Get the placeholder entry, if it exists"
-    query = db.session.query(PackageReport).filter_by(package=package_name)
-    query = query.filter_by(version=package_version)
-    query = query.filter(PackageReport.scoring_date == None)
-    log.debug(f"Query is {query}")
-    return query.one_or_none()
-
-
 def get_most_recently_inserted_package_from_name_and_version(
     package_name: str,
     package_version: Optional[str] = None,
@@ -1110,26 +1099,6 @@ def get_statistics() -> Dict[str, Union[int, Dict[str, int]]]:
             for (score_code, score_code_count) in get_score_code_counts().all()
         },
     )
-
-
-def insert_package_report_placeholder_or_update_task_id(
-    package_name: str, package_version: str, task_id: str
-) -> PackageReport:
-    # if the package version was scored at any time
-    pr: Optional[PackageReport] = get_most_recently_scored_package_report(
-        package_name, package_version
-    )
-    if pr is not None:
-        # update its scan task id
-        pr.task_id = task_id
-    else:
-        pr = PackageReport()
-        pr.package = package_name
-        pr.version = package_version
-        pr.status = "scanning"
-        pr.task_id = task_id
-    store_package_report(pr)
-    return pr
 
 
 def store_package_report(pr: PackageReport) -> None:
