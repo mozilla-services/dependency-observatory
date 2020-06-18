@@ -1,26 +1,26 @@
 {% extends 'base.html' %}
 
 {% block content %}
-     <div id="no-scan">
-        <div class="row">
-           <div class="col-12 col-md-10 offset-md-1 col-xl-8 offset-xl-2">
-              <h1 class="h6 margin-bottom">Welcome to Mozilla's Dependency Observatory. This service is in <strong>alpha</strong> state and may contain inaccurate results.</h1>
-              <div class="card mt-3">
-                 <div class="card-header bg-primary text-white"><span class="h3">Find a package</span></div>
-                 <div class="card-body no-popover-mobile pb-4">
+<div id="no-scan">
+    <div class="row">
+        <div class="col-12 col-md-10 offset-md-1 col-xl-8 offset-xl-2">
+            <h1 class="h6 margin-bottom">Welcome to Mozilla's Dependency Observatory. This service is in <strong>alpha</strong> state and may contain inaccurate results.</h1>
+            <div class="card mt-3">
+                <div class="card-header bg-primary text-white"><span class="h3">Find a package</span></div>
+                <div class="card-body no-popover-mobile pb-4">
                     <form method="GET" action="/package_report">
-                       <div class="input-group mt-2 mb-3">
-                          <select id="manager" name="package_manager">
-                             <option value="npm">NPM</option>
-                          </select>
-                          <input type="text" class="form-control" id="packageName" name="package_name" placeholder="enter package name here" aria-label="package name" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
-                          <input type="text" class="form-control" id="versionName" name="package_version" placeholder="enter optional package version here" aria-label="package version" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
-                          <button class="btn btn-primary" type="submit">Find Now</button>
-                       </div>
+                        <div class="input-group mt-2 mb-3">
+                            <select id="manager" name="package_manager">
+                                <option value="npm">NPM</option>
+                            </select>
+                            <input type="text" class="form-control" id="packageName" name="package_name" placeholder="enter package name here" aria-label="package name" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                            <input type="text" class="form-control" id="versionName" name="package_version" placeholder="enter optional package version here" aria-label="package version" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                            <button class="btn btn-primary" type="submit">Find Now</button>
+                        </div>
                     </form>
-                 </div>
-              </div>
-           </div>
+                </div>
+            </div>
         </div>
-     </div>
+    </div>
+</div>
 {% endblock %}
