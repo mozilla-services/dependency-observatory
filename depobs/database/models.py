@@ -33,7 +33,7 @@ from sqlalchemy.types import DateTime
 from sqlalchemy.schema import Table
 from sqlalchemy import func
 
-from depobs.database.mixins import PackageReportColumnsMixin, TaskIDMixin
+from depobs.database.mixins import PackageReportColumnsMixin
 
 
 log = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class Dependency(db.Model):
     used_by_id = Column(Integer, ForeignKey("reports.id"), primary_key=True)
 
 
-class PackageReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
+class PackageReport(PackageReportColumnsMixin, db.Model):
     __tablename__ = "reports"
 
     id = Column("id", Integer, primary_key=True)
@@ -87,8 +87,6 @@ class PackageReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
         return dict(
             id=self.id,
             task_id=self.task_id,
-            # from database.mixins.TaskIDMixin
-            task_status=self.task_status,
             package=self.package,
             version=self.version,
             status=self.status,
@@ -130,7 +128,7 @@ class PackageReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
         }
 
 
-class PackageScoreReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
+class PackageScoreReport(PackageReportColumnsMixin, db.Model):
     __tablename__ = "report_score_view"
 
     # flag as view for Flask-Migrate running alembic doesn't try to create a table
@@ -158,8 +156,6 @@ class PackageScoreReport(PackageReportColumnsMixin, TaskIDMixin, db.Model):
             score_code=self.score_code,
             id=self.id,
             task_id=self.task_id,
-            # from database.mixins.TaskIDMixin
-            task_status=self.task_status,
             package=self.package,
             version=self.version,
             status=self.status,
