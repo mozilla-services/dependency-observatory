@@ -35,15 +35,8 @@ def get_client() -> k8s.client:
     return k8s.client
 
 
-@contextlib.contextmanager
-def run_job(job_config: KubeJobConfig,) -> Generator[k8s.client.V1Job, None, None]:
-    """
-    Starts a k8s job with provided config and yields the job api response
-
-    Deletes the job when then context manager exits
-    """
+def start_job(job_config: KubeJobConfig,) -> k8s.client.V1Job:
     get_client()
-
     # Configureate Pod template container
     container = k8s.client.V1Container(
         name=job_config["name"],
@@ -71,6 +64,17 @@ def run_job(job_config: KubeJobConfig,) -> Generator[k8s.client.V1Job, None, Non
     job = k8s.client.BatchV1Api().create_namespaced_job(
         body=job_obj, namespace=job_config["namespace"]
     )
+    return job
+
+
+@contextlib.contextmanager
+def run_job(job_config: KubeJobConfig,) -> Generator[k8s.client.V1Job, None, None]:
+    """
+    Starts a k8s job with provided config and yields the job api response
+
+    Deletes the job when then context manager exits
+    """
+    job = start_job(job_config)
     try:
         yield job
     finally:
