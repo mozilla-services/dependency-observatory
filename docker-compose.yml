@@ -29,8 +29,8 @@ services:
       - db
     links:
       - db
-    ports:
-      - "8000:8000"
+    # ports:
+    #   - "8000:8000"
     command: "migrate web"
 
   # celery worker for scanner
