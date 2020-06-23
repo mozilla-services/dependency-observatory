@@ -41,10 +41,22 @@ SQLALCHEMY_TRACK_MODIFICATIONS = bool(
     os.environ.get("SQLALCHEMY_TRACK_MODIFICATIONS", False)
 )
 
-# Task names the web/flask app can register and run
-WEB_TASK_NAMES = [
-    "scan_npm_package_then_build_report_tree",
-]
+DEFAULT_APP_NAMESPACE = "default"
+
+# k8s job configs the flask app can run
+WEB_JOB_CONFIGS = {
+    "scan_score_npm_package": dict(
+        namespace=DEFAULT_APP_NAMESPACE,
+        image_name="mozilla/dependency-observatory:latest",
+        base_args=["worker", "npm", "scan"],
+        env={
+            k: os.environ[k]
+            for k in ["FLASK_APP", "FLASK_ENV", "SQLALCHEMY_DATABASE_URI"]
+            if k in os.environ
+        },
+    )
+}
+
 
 # depobs http client config
 

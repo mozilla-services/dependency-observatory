@@ -1,7 +1,11 @@
 import contextlib
+import logging
 from typing import Dict, Generator, List, Optional, TypedDict
 
-import kubernetes as k8s
+import kubernetes
+
+
+log = logging.getLogger(__name__)
 
 
 class KubeJobConfig(TypedDict):
@@ -30,15 +34,15 @@ class KubeJobConfig(TypedDict):
     env: Dict[str, str]
 
 
-def get_client() -> k8s.client:
-    k8s.config.load_incluster_config()
-    return k8s.client
+def get_client() -> kubernetes.client:
+    kubernetes.config.load_incluster_config()
+    return kubernetes.client
 
 
-def start_job(job_config: KubeJobConfig,) -> k8s.client.V1Job:
+def create_job(job_config: KubeJobConfig,) -> kubernetes.client.V1Job:
     get_client()
     # Configureate Pod template container
-    container = k8s.client.V1Container(
+    container = kubernetes.client.V1Container(
         name=job_config["name"],
         image=job_config["image_name"],
         image_pull_policy="IfNotPresent",
@@ -46,42 +50,127 @@ def start_job(job_config: KubeJobConfig,) -> k8s.client.V1Job:
         env=[dict(name=k, value=v) for (k, v) in job_config["env"].items()],
     )
     # Create and configurate a spec section
-    template = k8s.client.V1PodTemplateSpec(
-        metadata=k8s.client.V1ObjectMeta(labels={}),
-        spec=k8s.client.V1PodSpec(restart_policy="Never", containers=[container]),
+    template = kubernetes.client.V1PodTemplateSpec(
+        metadata=kubernetes.client.V1ObjectMeta(labels={}),
+        spec=kubernetes.client.V1PodSpec(
+            restart_policy="Never", containers=[container]
+        ),
     )
 
     # Create the specification of deployment
-    spec = k8s.client.V1JobSpec(template=template, backoff_limit=4)
+    spec = kubernetes.client.V1JobSpec(template=template, backoff_limit=4)
 
     # Instantiate the job object
-    job_obj = k8s.client.V1Job(
+    job_obj = kubernetes.client.V1Job(
         api_version="batch/v1",
         kind="Job",
-        metadata=k8s.client.V1ObjectMeta(name=job_config["name"]),
+        metadata=kubernetes.client.V1ObjectMeta(name=job_config["name"]),
         spec=spec,
     )
-    job = k8s.client.BatchV1Api().create_namespaced_job(
+    job = kubernetes.client.BatchV1Api().create_namespaced_job(
         body=job_obj, namespace=job_config["namespace"]
     )
     return job
 
 
+def read_job(namespace: str, name: str) -> kubernetes.client.models.v1_job.V1Job:
+    return (
+        kubernetes.client.BatchV1Api()
+        .list_namespaced_job(namespace=namespace, label_selector=f"job-name={name}",)
+        .items[0]
+    )
+
+
+def read_job_status(
+    namespace: str, name: str
+) -> kubernetes.client.models.v1_job_status.V1JobStatus:
+    # TODO: figure out status only perms for:
+    # .read_namespaced_job_status(name=job_name, namespace=job_config["namespace"])
+    return read_job(namespace, name).status
+
+
+def delete_job(namespace: str, name: str):
+    return kubernetes.client.BatchV1Api().delete_namespaced_job(
+        name=name,
+        namespace=namespace,
+        body=kubernetes.client.V1DeleteOptions(
+            propagation_policy="Foreground", grace_period_seconds=5
+        ),
+    )
+
+
+def get_job_pod(namespace: str, name: str) -> kubernetes.client.V1Pod:
+    return (
+        kubernetes.client.CoreV1Api()
+        .list_namespaced_pod(namespace=namespace, label_selector=f"job-name={name}",)
+        .items[0]
+    )
+
+
+def read_job_logs(
+    namespace: str, name: str, read_logs_kwargs: Optional[Dict] = None
+) -> str:
+    read_logs_kwargs = dict() if read_logs_kwargs is None else read_logs_kwargs
+    job_pod_name = get_job_pod(namespace, name).metadata.name
+
+    log.info(f"reading logs from pod {job_pod_name} for job {namespace} {name}")
+    return kubernetes.client.CoreV1Api().read_namespaced_pod_log(
+        name=job_pod_name, namespace=namespace, **read_logs_kwargs
+    )
+
+
+def watch_job(
+    namespace: str, name: str
+) -> Generator[kubernetes.client.V1WatchEvent, None, None]:
+    log.info(f"watching job pod for job {namespace} {name}")
+    for event in kubernetes.watch.Watch().stream(
+        kubernetes.client.BatchV1Api().list_namespaced_job,
+        namespace=namespace,
+        label_selector=f"job-name={name}",
+    ):
+        yield event
+
+
+def watch_job_pods(
+    namespace: str, name: str
+) -> Generator[kubernetes.client.V1WatchEvent, None, None]:
+    log.info(f"watching job pod for job {namespace} {name}")
+    for event in kubernetes.watch.Watch().stream(
+        kubernetes.client.CoreV1Api().list_namespaced_pod,
+        namespace=namespace,
+        label_selector=f"job-name={name}",
+    ):
+        yield event
+
+
+def tail_job_logs(namespace: str, name: str) -> Generator[str, None, None]:
+    job_pod_name = get_job_pod(namespace, name).metadata.name
+    log.info(f"tailing logs from pod {job_pod_name} for job {namespace} {name}")
+    for line in kubernetes.watch.Watch().stream(
+        kubernetes.client.CoreV1Api().read_namespaced_pod_log,
+        namespace=namespace,
+        name=job_pod_name,
+    ):
+        yield line
+
+
 @contextlib.contextmanager
-def run_job(job_config: KubeJobConfig,) -> Generator[k8s.client.V1Job, None, None]:
+def run_job(
+    job_config: KubeJobConfig,
+) -> Generator[kubernetes.client.V1Job, None, None]:
     """
-    Starts a k8s job with provided config and yields the job api response
+    Creates and runs a k8s job with provided config and yields the job api response
 
     Deletes the job when then context manager exits
     """
-    job = start_job(job_config)
+    job = create_job(job_config)
     try:
         yield job
     finally:
-        k8s.client.BatchV1Api().delete_namespaced_job(
+        kubernetes.client.BatchV1Api().delete_namespaced_job(
             name=job_config["name"],
             namespace=job_config["namespace"],
-            body=k8s.client.V1DeleteOptions(
+            body=kubernetes.client.V1DeleteOptions(
                 propagation_policy="Foreground", grace_period_seconds=5
             ),
         )
