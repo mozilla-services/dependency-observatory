@@ -17,9 +17,9 @@ if [ "$1" = 'web' ]; then
 elif [ "$1" = 'web-dev' ]; then
     python depobs/website/do.py
 elif [ "$1" = 'worker' ]; then
-    celery --task-events -A depobs.worker.tasks worker --loglevel=info
+    python depobs/worker/main.py
 elif [ "$1" = 'worker-dev' ]; then
-    celery --task-events --purge -c 1 -A depobs.worker.tasks worker --loglevel=debug
+    python depobs/worker/main.py
 else
     echo "got unrecognized command:" "$1"
     exit 1
