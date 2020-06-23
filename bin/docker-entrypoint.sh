@@ -20,8 +20,6 @@ elif [ "$1" = 'web-dev' ]; then
     python depobs/website/do.py
 elif [ "$1" = 'worker' ]; then
     python depobs/worker/main.py
-elif [ "$1" = 'worker-dev' ]; then
-    python depobs/worker/main.py
 else
     echo "got unrecognized command:" "$1"
     exit 1
