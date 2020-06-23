@@ -67,10 +67,6 @@ spec:
         - "migrate"
         - "web-dev"
         env:
-        - name: CELERY_BROKER_URL
-          value: sqla+postgresql://postgres:postgres@db/dependency_observatory
-        - name: CELERY_RESULT_BACKEND
-          value: db+postgresql://postgres:postgres@db/dependency_observatory
         - name: FLASK_APP
           value: /app/depobs/website/do.py
         - name: FLASK_ENV
@@ -181,52 +177,4 @@ spec:
     io.kompose.service: db
 status:
   loadBalancer: {}
-
----
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.21.0 (HEAD)
-  creationTimestamp: null
-  labels:
-    io.kompose.service: worker
-  name: worker
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      io.kompose.service: worker
-  strategy:
-    type: Recreate
-  template:
-    metadata:
-      annotations:
-        kompose.cmd: kompose convert
-        kompose.version: 1.21.0 (HEAD)
-      creationTimestamp: null
-      labels:
-        io.kompose.service: worker
-    spec:
-      containers:
-      - args:
-        - worker-dev
-        env:
-        - name: CELERY_BROKER_URL
-          value: sqla+postgresql://postgres:postgres@db/dependency_observatory
-        - name: CELERY_RESULT_BACKEND
-          value: db+postgresql://postgres:postgres@db/dependency_observatory
-        - name: FLASK_APP
-          value: /app/depobs/website/do.py
-        - name: SQLALCHEMY_DATABASE_URI
-          value: postgresql+psycopg2://postgres:postgres@db/dependency_observatory
-        image: mozilla/dependency-observatory
-        imagePullPolicy: IfNotPresent
-        name: dependency-observatory-worker
-        resources: {}
-      restartPolicy: Always
-      serviceAccountName: job-runner
-      volumes: null
 status: {}
