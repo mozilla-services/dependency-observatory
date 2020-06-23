@@ -29,8 +29,8 @@ services:
       - db
     links:
       - db
-    ports:
-      - "8000:8000"
+    # ports:
+    #   - "8000:8000"
     command: "migrate web"
 
   # celery worker for scanner
@@ -55,6 +55,15 @@ services:
       - ./:/app
     user: "root"
     command: "worker-dev"
+
+  js-dev-env:
+    build:
+      context: js-dev-env/
+    container_name: dependency-observatory-js-dev-env
+    image: mozilla/dependency-observatory-js-dev-env
+    volumes:
+      - ./depobs/website/static:/app/static
+    command: " --write /app/static/do.js /app/static/do.css"
 
   # images we build for the worker to run
   node-10:

@@ -8,7 +8,9 @@ See `README.md` in `kubernetes/`
 
 ### Local Development
 
-See `README.md` in `kubernetes/`
+Run `docker-compose build js-dev-env` then `docker-compose run js-dev-env` to format web resources.
+
+See `README.md` in `kubernetes/` to run the service.
 
 ### Database migrations
 
