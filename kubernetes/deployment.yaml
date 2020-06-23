@@ -39,10 +39,6 @@ subjects:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.21.0 (HEAD)
-  creationTimestamp: null
   labels:
     io.kompose.service: api
   name: api
@@ -58,7 +54,6 @@ spec:
       annotations:
         kompose.cmd: kompose convert
         kompose.version: 1.21.0 (HEAD)
-      creationTimestamp: null
       labels:
         io.kompose.service: api
     spec:
@@ -93,10 +88,6 @@ status: {}
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.21.0 (HEAD)
-  creationTimestamp: null
   labels:
     io.kompose.service: api
   name: api
@@ -115,10 +106,6 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.21.0 (HEAD)
-  creationTimestamp: null
   labels:
     io.kompose.service: db
   name: db
@@ -133,7 +120,6 @@ spec:
       annotations:
         kompose.cmd: kompose convert
         kompose.version: 1.21.0 (HEAD)
-      creationTimestamp: null
       labels:
         io.kompose.service: db
     spec:
@@ -161,10 +147,6 @@ status: {}
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    kompose.cmd: kompose convert
-    kompose.version: 1.21.0 (HEAD)
-  creationTimestamp: null
   labels:
     io.kompose.service: db
   name: db
@@ -177,4 +159,3 @@ spec:
     io.kompose.service: db
 status:
   loadBalancer: {}
-status: {}
