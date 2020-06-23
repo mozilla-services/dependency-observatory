@@ -33,29 +33,6 @@ services:
     #   - "8000:8000"
     command: "migrate web"
 
-  # celery worker for scanner
-  worker:
-    build:
-      context: .
-    container_name: dependency-observatory-worker
-    image: mozilla/dependency-observatory
-    depends_on:
-      - db
-    environment:
-      - CELERY_BROKER_URL=sqla+postgresql://postgres:postgres@db/dependency_observatory
-      - CELERY_RESULT_BACKEND=db+postgresql://postgres:postgres@db/dependency_observatory
-      - FLASK_APP=/app/depobs/website/do.py
-      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
-    links:
-      - db
-    # let the worker spin up new sibling docker containers
-    # NB: exposes the docker daemon to those containers
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./:/app
-    user: "root"
-    command: "worker-dev"
-
   js-dev-env:
     build:
       context: js-dev-env/
