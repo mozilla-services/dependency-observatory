@@ -9,8 +9,10 @@ if [ "$1" = 'migrate' ]; then
     flask db upgrade "$DB_REVISION"
     shift
 fi
-
-flask db show
+if [ "$1" = 'print-db-revision' ]; then
+    flask db show
+    shift
+fi
 
 if [ "$1" = 'web' ]; then
     gunicorn -w 4 "depobs.website.do:create_app()"

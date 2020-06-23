@@ -60,6 +60,7 @@ spec:
       containers:
       - args:
         - "migrate"
+        - "print-db-revision"
         - "web-dev"
         env:
         - name: FLASK_APP
