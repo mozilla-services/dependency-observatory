@@ -2,7 +2,6 @@ import os
 import logging
 import logging.config
 
-import celery
 from flask import Flask, request
 from dockerflow.flask import Dockerflow
 from dockerflow.logging import JsonLogFormatter
@@ -51,41 +50,6 @@ def create_app(test_config=None):
     app.register_blueprint(views_blueprint)
 
     return app
-
-
-def create_celery_app(flask_app=None, test_config=None, tasks=None):
-    """Returns a celery app that gives tasks access to a Flask
-    application's context (e.g. the db variable).
-
-    Uses the Flask app's config (e.g. when started in the web container)
-    or creates a default Flask app (e.g. when started in the worker
-    container).
-
-    To avoid import cycles web views should use the
-    depobs.website.get_celery_tasks to kick off celery tasks.
-    """
-    flask_app = flask_app if flask_app else create_app()
-    if tasks is None:
-        tasks = []
-
-    celery_app = celery.Celery(
-        flask_app.import_name,
-        broker=flask_app.config["CELERY_BROKER_URL"],
-        result_backend=flask_app.config["CELERY_RESULT_BACKEND"],
-    )
-    celery_app.conf.update(flask_app.config)
-    celery_app.config_from_object(test_config)
-
-    class ContextTask(celery.Task):
-        def __call__(self, *args, **kwargs):
-            with flask_app.app_context():
-                return self.run(*args, **kwargs)
-
-    celery_app.Task = ContextTask
-    log.info(f"registering additional tasks: {tasks}")
-    for task in tasks:
-        celery_app.task(task)
-    return celery_app
 
 
 def main():
