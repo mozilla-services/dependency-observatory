@@ -8,23 +8,44 @@
 <div id="no-scan">
     <div class="row">
         <div class="col-12 col-md-10 offset-md-1 col-xl-8 offset-xl-2">
-            <h1 class="h6 margin-bottom">Welcome to Mozilla's Dependency Observatory. This service is in <strong>alpha</strong> state and may contain inaccurate results.</h1>
+            <h1 class="h6 margin-bottom">
+                Welcome to Mozilla's Dependency Observatory. This service is in <strong>alpha</strong> state and may contain inaccurate results.
+            </h1>
             <div class="card mt-3">
                 <div class="card-header bg-primary text-white"><span class="h3">Find a package</span></div>
                 <div class="card-body no-popover-mobile pb-4">
-                    <form method="GET" action="/package_report">
-                        <div class="input-group mt-2 mb-3">
-                            <select id="manager" name="package_manager">
-                                <option value="npm">NPM</option>
-                            </select>
-                            <input type="text" class="form-control" id="packageName" name="package_name" placeholder="enter package name here" aria-label="package name" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
-                            <input type="text" class="form-control" id="versionName" name="package_version" placeholder="enter optional package version here" aria-label="package version" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
-                            <button class="btn btn-primary" type="submit">Find Now</button>
-                        </div>
+                    <form id="search-form" method="GET" action="/package_report">
+                        <fieldset class="form-group">
+                            <div class="input-group mt-2 mb-3">
+                                <select id="manager" name="package_manager">
+                                    <option value="npm">NPM</option>
+                                </select>
+                                <input type="text" class="form-control" id="packageName" name="package_name" placeholder="enter package name here" aria-label="package name" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                                <input type="text" class="form-control" id="versionName" name="package_version" placeholder="enter optional package version here" aria-label="package version" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                                <button class="btn btn-primary" type="submit">Find Now</button>
+                            </div>
+
+                            <div class="form-check" title="" data-toggle="popover" data-content="By default, any reports from the last {{ scored_after_days }} will be returned." data-original-title="Published a new version?">
+                                <input class="form-check-input" type="checkbox" name="force_rescan" id="scan-btn-rescan">
+                                <label class="form-check-label" for="scan-btn-rescan">
+                                    Force a rescan instead of returning cached results
+                                </label>
+                            </div>
+
+                        </fieldset>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<div class="d-none" id="scan-error">
+    <div class="alert alert-danger">
+        An unexpected error occured. We're looking into it - please try again later.
+	TODO: add request ID and bug template
+    </div>
+</div>
+
+<script src="/static/do.js"></script>
 {% endblock %}
