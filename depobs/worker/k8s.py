@@ -33,6 +33,9 @@ class KubeJobConfig(TypedDict):
     # env vars
     env: Dict[str, str]
 
+    # service account name to run the job pod with
+    service_account_name: str
+
 
 def get_client() -> kubernetes.client:
     kubernetes.config.load_incluster_config()
@@ -49,12 +52,16 @@ def create_job(job_config: KubeJobConfig,) -> kubernetes.client.V1Job:
         args=job_config["args"],
         env=[dict(name=k, value=v) for (k, v) in job_config["env"].items()],
     )
+    pod_spec_kwargs = dict(
+        restart_policy="Never",
+        containers=[container],
+        service_account_name=job_config["service_account_name"],
+    )
+
     # Create and configurate a spec section
     template = kubernetes.client.V1PodTemplateSpec(
         metadata=kubernetes.client.V1ObjectMeta(labels={}),
-        spec=kubernetes.client.V1PodSpec(
-            restart_policy="Never", containers=[container]
-        ),
+        spec=kubernetes.client.V1PodSpec(**pod_spec_kwargs),
     )
 
     # Create the specification of deployment

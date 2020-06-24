@@ -54,6 +54,7 @@ WEB_JOB_CONFIGS = {
             for k in ["FLASK_APP", "FLASK_ENV", "SQLALCHEMY_DATABASE_URI"]
             if k in os.environ
         },
+        service_account_name="job-runner",
     )
 }
 
@@ -143,4 +144,5 @@ SCAN_NPM_TARBALL_ARGS = dict(
     namespace="default",
     image_name="mozilla/dependency-observatory:node-12",
     repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
+    service_account_name="default",
 )

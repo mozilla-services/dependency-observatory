@@ -74,6 +74,9 @@ class RunRepoTasksConfig(TypedDict):
     # Docker image to run
     image_name: str
 
+    # k8s service account name to run the job pod with
+    service_account_name: str
+
 
 async def scan_tarball_url(
     config: RunRepoTasksConfig,
@@ -101,6 +104,7 @@ async def scan_tarball_url(
             # see: https://github.com/mozilla-services/dependency-observatory/issues/280#issuecomment-641588717
             "INSTALL_TARGET": ".",
         },
+        "service_account_name": config["service_account_name"],
     }
 
     client = k8s.get_client()
