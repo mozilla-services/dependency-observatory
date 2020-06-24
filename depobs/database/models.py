@@ -86,7 +86,6 @@ class PackageReport(PackageReportColumnsMixin, db.Model):
     def report_json(self) -> Dict:
         return dict(
             id=self.id,
-            task_id=self.task_id,
             package=self.package,
             version=self.version,
             status=self.status,
@@ -155,7 +154,6 @@ class PackageScoreReport(PackageReportColumnsMixin, db.Model):
             score=self.score,
             score_code=self.score_code,
             id=self.id,
-            task_id=self.task_id,
             package=self.package,
             version=self.version,
             status=self.status,

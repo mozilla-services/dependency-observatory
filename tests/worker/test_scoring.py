@@ -25,8 +25,6 @@ _default_report_advisories = {
 _default_report_json = {
     **_default_report_advisories,
     "id": None,
-    "task_id": None,
-    "task_status": None,
     "authors": None,
     "contributors": None,
     "all_deps": 0,
