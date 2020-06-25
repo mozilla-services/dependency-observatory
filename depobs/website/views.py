@@ -117,7 +117,10 @@ def faq_page() -> Any:
 
 @api.route("/")
 def index_page() -> Any:
-    return render_template("search_index.html")
+    return render_template(
+        "search_index.html",
+        scored_after_days=current_app.config["DEFAULT_SCORED_AFTER_DAYS"],
+    )
 
 
 def validate_scored_after_ts_query_param() -> datetime:
@@ -129,7 +132,10 @@ def validate_scored_after_ts_query_param() -> datetime:
     return (
         datetime.utcfromtimestamp(param_value)
         if param_value
-        else (datetime.now() - timedelta(days=(365 * 10)))
+        else (
+            datetime.now()
+            - timedelta(days=current_app.config["DEFAULT_SCORED_AFTER_DAYS"])
+        )
     )
 
 

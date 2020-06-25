@@ -41,6 +41,8 @@ SQLALCHEMY_TRACK_MODIFICATIONS = bool(
     os.environ.get("SQLALCHEMY_TRACK_MODIFICATIONS", False)
 )
 
+DEFAULT_SCORED_AFTER_DAYS = 365 * 10
+
 DEFAULT_APP_NAMESPACE = "default"
 
 # k8s job configs the flask app can run
