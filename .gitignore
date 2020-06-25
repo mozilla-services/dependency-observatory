@@ -103,5 +103,4 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-depobs/version.json
 version.json

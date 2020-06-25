@@ -36,6 +36,7 @@ COPY pyproject.toml .
 COPY migrations migrations
 COPY bin bin
 COPY depobs depobs
+COPY version.json .
 
 USER app
 ENTRYPOINT [ "/app/bin/docker-entrypoint.sh" ]

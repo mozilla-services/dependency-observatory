@@ -13,7 +13,7 @@ def test_heartbeat(client):
     assert response.status == "200 OK"
 
 
-@pytest.mark.unit
+# uses a hardcoded path in the container so it isn't a unit test
 def test_version_json(client):
     response = client.get("/__version__")
     assert response.status == "200 OK"

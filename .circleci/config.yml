@@ -51,9 +51,9 @@ jobs:
     steps:
       - checkout
       - run:
-          name: write a version.json in depobs/
+          name: write a version.json to CWD
           command: |
-            CI=1 ./util/write_version_json.sh > depobs/version.json
+            CI=1 ./util/write_version_json.sh > version.json
       - run:
           name: install python deps
           command: |
@@ -81,9 +81,9 @@ jobs:
       - checkout
       - setup_remote_docker
       - run:
-          name: write a version.json in depobs/
+          name: write a version.json to CWD
           command: |
-            CI=1 ./util/write_version_json.sh > depobs/version.json
+            CI=1 ./util/write_version_json.sh > version.json
       - run:
           name: docker-compose build
           command: docker-compose build
