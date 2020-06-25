@@ -332,7 +332,7 @@ def score_package(
 ) -> PackageReport:
     """Scores a package node on a PackageGraph using the provided components"""
     # get package report fields for each component
-    report_kwargs = dict(scoring_date=datetime.now(), status="scanned",)
+    report_kwargs = dict(scoring_date=datetime.now())
     for component in score_components:
         updates = component.get_package_report_updates(
             component,

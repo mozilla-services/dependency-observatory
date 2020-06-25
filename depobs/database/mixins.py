@@ -15,7 +15,6 @@ class PackageReportColumnsMixin:
 
     package = Column(String(200))
     version = Column(String(200))
-    status = Column(String(200))
     release_date = Column(DateTime)
     scoring_date = Column(DateTime)
     top_score = Column(Integer)

@@ -33,7 +33,6 @@ _default_report_json = {
     "npmsio_score": 0,
     "npmsio_scored_package_version": None,
     "release_date": None,
-    "status": "scanned",
     "top_score": None,
 }
 
@@ -83,7 +82,7 @@ score_package_component_testcases = {
         create_single_node_digraph_with_attrs({}),
         0,
         [],
-        {"status": "scanned", "scoring_date": "replace_with_mocked_value",},
+        {"scoring_date": "replace_with_mocked_value",},
     ],
     "null_package_version": [
         create_single_node_digraph_with_attrs({"package_version": None}),
@@ -390,7 +389,6 @@ score_package_graph_testcases = {
             m.PackageReport(
                 package="test-solo-pkg",
                 version="0.1.0",
-                status="scanned",
                 all_deps=0,
                 directVulnsCritical_score=0,
                 directVulnsHigh_score=0,
