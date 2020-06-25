@@ -16,13 +16,9 @@ from typing import (
     TypedDict,
 )
 
-import celery
-from celery.utils.log import get_task_logger
-import celery.result
 from flask import current_app
 import kubernetes
 
-from depobs.website.do import create_celery_app
 import depobs.database.models as models
 from depobs.database.models import (
     NPMRegistryEntry,
@@ -37,9 +33,7 @@ from depobs.database.models import (
     store_package_reports,
     get_most_recently_inserted_package_from_name_and_version,
     get_latest_graph_including_package_as_parent,
-    get_placeholder_entry,
 )
-
 import depobs.worker.scoring as scoring
 import depobs.worker.serializers as serializers
 import depobs.worker.validators as validators
@@ -60,15 +54,7 @@ from depobs.util.type_util import Result
 from depobs.worker import k8s
 
 
-log = get_task_logger(__name__)
-
-
-app = create_celery_app()
-
-
-@app.task()
-def add(x: int, y: int) -> int:
-    return x + y
+log = logging.getLogger(__name__)
 
 
 class RunRepoTasksConfig(TypedDict):
@@ -87,6 +73,9 @@ class RunRepoTasksConfig(TypedDict):
 
     # Docker image to run
     image_name: str
+
+    # k8s service account name to run the job pod with
+    service_account_name: str
 
 
 async def scan_tarball_url(
@@ -115,29 +104,15 @@ async def scan_tarball_url(
             # see: https://github.com/mozilla-services/dependency-observatory/issues/280#issuecomment-641588717
             "INSTALL_TARGET": ".",
         },
+        "service_account_name": config["service_account_name"],
     }
-
-    def read_status(
-        job_name: str, job_config: k8s.KubeJobConfig
-    ) -> kubernetes.client.models.v1_job_status.V1JobStatus:
-        # TODO: figure out status only perms for:
-        # .read_namespaced_job_status(name=job_name, namespace=job_config["namespace"])
-        return (
-            client.BatchV1Api()
-            .list_namespaced_job(
-                namespace=job_config["namespace"],
-                label_selector=f"job-name={job_name}",
-            )
-            .items[0]
-            .status
-        )
 
     client = k8s.get_client()
     with k8s.run_job(job_config) as job:
         log.info(f"started job {job}")
         await asyncio.sleep(1)
 
-        status = read_status(job_name, job_config)
+        status = k8s.read_job_status(job_config["namespace"], job_name)
         log.info(f"got job status {status}")
         while True:
             if status.failed:
@@ -146,18 +121,7 @@ async def scan_tarball_url(
                 break
             if status.succeeded:
                 log.info(f"k8s job {job_name} succeeded")
-                job_pod_name = (
-                    client.CoreV1Api()
-                    .list_namespaced_pod(
-                        namespace=job_config["namespace"],
-                        label_selector=f"job-name={job_name}",
-                    )
-                    .items[0]
-                    .metadata.name
-                )
-                stdout = client.CoreV1Api().read_namespaced_pod_log(
-                    name=job_pod_name, namespace=job_config["namespace"]
-                )
+                stdout = k8s.read_job_logs(job_config["namespace"], job_name)
                 break
             if not status.active:
                 log.error(f"k8s job {job_name} stopped")
@@ -167,7 +131,7 @@ async def scan_tarball_url(
                 break
 
             await asyncio.sleep(1)
-            status = read_status(job_name, job_config)
+            status = k8s.read_job_status(job_config["namespace"], job_name)
             log.info(f"got job status {status}")
 
     versions: Optional[Dict[str, str]] = None
@@ -185,10 +149,9 @@ async def scan_tarball_url(
     return dict(versions=versions, task_results=task_results)
 
 
-@app.task(bind=True)
-def scan_npm_package(
-    self: celery.Task, package_name: str, package_version: Optional[str] = None
-) -> Tuple[str, Optional[str]]:
+def scan_npm_package_then_build_report_tree(
+    package_name: str, package_version: Optional[str] = None, **kwargs,
+) -> None:
     package_name_validation_error = validators.get_npm_package_name_validation_error(
         package_name
     )
@@ -202,19 +165,32 @@ def scan_npm_package(
         if package_version_validation_error is not None:
             raise package_version_validation_error
 
-    # fetch npm registry entry from DB
+    # TODO: use asyncio.gather to run these concurrently
+    fetch_and_save_registry_entries([package_name])
+
+    fetch_and_save_npmsio_scores([package_name])
+
+    scanned_package_name_and_versions: List[Tuple[str, str]] = []
+
+    log.info(f"scanning {package_name}")
+
+    # fetch npm registry entries from DB
     for (
         package_version,
         source_url,
         git_head,
         tarball_url,
     ) in models.get_npm_registry_entries_to_scan(package_name, package_version):
-        log.info(
-            f"scanning {package_name}@{package_version} with {source_url}#{git_head} or {tarball_url}"
-        )
+        if package_version is None:
+            log.warn(f"skipping npm registry entry with null version {package_name}")
+            continue
+
+        log.info(f"scanning {package_name}@{package_version}")
 
         # we need a source_url and git_head or a tarball url to install
         if tarball_url:
+            log.info(f"scanning {package_name}@{package_version} with {tarball_url}")
+
             # start an npm container, install the tarball, run list and audit
             # assert tarball_url == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{package_version}.tgz
             container_task_results: Dict[str, Any] = asyncio.run(
@@ -241,7 +217,6 @@ def scan_npm_package(
                 if task_name == "list_metadata":
                     insert_package_graph(task_data)
                 elif task_name == "audit":
-
                     for (
                         advisory_fields,
                         impacted_versions,
@@ -258,62 +233,56 @@ def scan_npm_package(
                 else:
                     log.warning(f"skipping unrecognized task {task_name}")
 
-                # TODO: use asyncio.gather to run these concurrently
-                fetch_and_save_npmsio_scores(
-                    row[0]
-                    for row in models.get_package_names_with_missing_npms_io_scores()
-                    if row is not None
-                )
-                fetch_and_save_registry_entries(
-                    row[0]
-                    for row in models.get_package_names_with_missing_npm_entries()
-                    if row is not None
-                )
+            scanned_package_name_and_versions.append((package_name, package_version))
         elif source_url and git_head:
             # TODO: port scanner find_dep_files and run_repo_tasks pipelines as used in analyze_package.sh
-            raise NotImplementedError(
+            log.info(
+                f"scanning {package_name}@{package_version} from {source_url}#{git_head} not implemented"
+            )
+            log.error(
                 f"Installing from VCS source and ref not implemented to scan {package_name}@{package_version}"
             )
 
-    return (package_name, package_version)
-
-
-@app.task()
-def build_report_tree(package_version_tuple: Tuple[str, str]) -> None:
-    package_name, package_version = package_version_tuple
-
-    package: Optional[
-        PackageVersion
-    ] = get_most_recently_inserted_package_from_name_and_version(
-        package_name, package_version
+    # fetch missing registry entries and scores
+    # TODO: use asyncio.gather to run these concurrently
+    log.info(f"fetching missing npms.io scores")
+    fetch_and_save_npmsio_scores(
+        row[0]
+        for row in models.get_package_names_with_missing_npms_io_scores()
+        if row is not None
     )
-    if package is None:
-        pr = get_placeholder_entry(package_name, package_version)
-        if pr:
-            pr.status = "error"
-            store_package_report(pr)
-        raise Exception(
-            f"PackageVersion not found for {package_name} {package_version}."
+    log.info(f"fetching missing npm registry entries")
+    fetch_and_save_registry_entries(
+        row[0]
+        for row in models.get_package_names_with_missing_npm_entries()
+        if row is not None
+    )
+
+    log.info(f"scoring package versions")
+    for package_name, package_version in scanned_package_name_and_versions:
+        log.info(f"scoring package version {package_name}@{package_version}")
+
+        # build_report_tree(package_name, package_version)
+        package: Optional[
+            PackageVersion
+        ] = get_most_recently_inserted_package_from_name_and_version(
+            package_name, package_version
         )
+        if package is None:
+            log.error(
+                f"PackageVersion not found for {package_name} {package_version}. Skipping scoring."
+            )
+            continue
 
-    db_graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(
-        package
-    )
-    if db_graph is None:
-        log.info(f"{package.name} {package.version} has no children")
-        db_graph = PackageGraph(id=None, link_ids=[])
-        db_graph.distinct_package_ids = set([package.id])
+        db_graph: Optional[PackageGraph] = get_latest_graph_including_package_as_parent(
+            package
+        )
+        if db_graph is None:
+            log.info(f"{package.name} {package.version} has no children")
+            db_graph = PackageGraph(id=None, link_ids=[])
+            db_graph.distinct_package_ids = set([package.id])
 
-    store_package_reports(list(scoring.score_package_graph(db_graph).values()))
-
-
-@app.task()
-def scan_npm_package_then_build_report_tree(
-    package_name: str, package_version: Optional[str] = None
-) -> celery.result.AsyncResult:
-    return scan_npm_package.apply_async(
-        args=(package_name, package_version), link=build_report_tree.signature()
-    )
+        store_package_reports(list(scoring.score_package_graph(db_graph).values()))
 
 
 # fetch_package_data should take fetcher and config params with matching config
@@ -340,7 +309,6 @@ async def fetch_package_data(
     return package_results
 
 
-@app.task()
 def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
     package_names = list(package_names)
     log.info(f"fetching npmsio scores for {len(package_names)} package names")
@@ -367,7 +335,6 @@ def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
     return npmsio_scores
 
 
-@app.task()
 def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
     package_names = list(package_names)
     log.info(f"fetching registry entries for {len(package_names)} package names")

@@ -11,7 +11,6 @@ ENV HOST 0.0.0.0
 ENV PORT 8000
 ENV FLASK_ENV "production"
 ENV SQLALCHEMY_DATABASE_URI postgresql+psycopg2://pguser:pgpass@pghost/dbname
-ENV CELERY_BROKER_URL sqla+postgresql://pguser:pgpass@pghost/dbname
 
 RUN groupadd --gid 10001 app && \
     useradd --uid 10001 --gid 10001 --shell /usr/sbin/nologin app

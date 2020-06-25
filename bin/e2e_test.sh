@@ -31,12 +31,12 @@ echo "/__version__ returns expected keys? (should be 0)" "$?"
 
 
 # test scanning
-echo "testing ${api_url}/package?package_name=%40hapi%2Fbounce&package_version=2.0.0 runs and scores a scan"
+echo "testing ${api_url}/package_report?package_name=%40hapi%2Fbounce&package_version=2.0.0 runs and scores a scan"
 echo "sleeping for one second"
 while :
 do
     sleep 1
-    response=$(curl -sSw '\n' "${api_url}/package?package_name=%40hapi%2Fbounce&package_version=2.0.0" | jq '')
+    response=$(curl -sSw '\n' "${api_url}/package_report?package_name=%40hapi%2Fbounce&package_version=2.0.0" | jq '')
     task_status=$(echo -n "$response" | jq -rc '.task_status')
     status=$(echo -n "$response" | jq -rc '.status')
     echo ".task_status: ${task_status} .status: ${status}"

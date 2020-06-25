@@ -10,9 +10,7 @@ docker build -t mozilla/dependency-observatory:latest .
 
 # update deployments
 kubectl set image deployments.app/api dependency-observatory-api=mozilla/dependency-observatory:latest
-kubectl set image deployments.app/worker dependency-observatory-worker=mozilla/dependency-observatory:latest
 
 # redeploy
-kubectl rollout restart deployment api worker
+kubectl rollout restart deployment api
 kubectl rollout status deployment api
-kubectl rollout status deployment worker

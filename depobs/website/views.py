@@ -1,23 +1,31 @@
 from datetime import datetime, timedelta
 import logging
+from random import randrange
+import time
 from typing import Any, Dict, List, Optional, Tuple, Type
+
 
 from flask import (
     Blueprint,
-    jsonify,
-    redirect,
-    request,
-    url_for,
+    Response,
+    current_app,
+    g,
     render_template,
+    request,
+    stream_with_context,
+    url_for,
 )
 import graphviz
+from marshmallow import ValidationError
 import networkx as nx
-from werkzeug.exceptions import BadRequest, NotFound
+from werkzeug.exceptions import BadGateway, BadRequest, NotFound
 
+from depobs.website.schemas import JobSchema
 from depobs.database import models
 from depobs.util import graph_traversal
 from depobs.util import graph_util
-from depobs.website.celery_tasks import get_celery_tasks
+from depobs.worker import k8s
+from depobs.worker import tasks
 from depobs.worker import scoring
 from depobs.worker import validators
 
@@ -48,120 +56,32 @@ views_blueprint = api = Blueprint(
 )
 
 
-class PackageReportNotFound(NotFound):
-    package_name: str
-    package_version: Optional[str] = None
-    scored_after: Optional[datetime] = None
-
-    def __init__(
-        self,
-        package_name: str,
-        package_version: Optional[str] = None,
-        scored_after: Optional[datetime] = None,
-    ):
-        self.package_name = package_name
-        self.package_version = package_version
-        self.scored_after = scored_after
-
-    @staticmethod
-    def format_description(
-        package_name: str,
-        package_version: Optional[str] = None,
-        scored_after: Optional[datetime] = None,
-    ):
-        msg = f"PackageReport {package_name}"
-        if package_version is not None:
-            msg += f"@{package_version}"
-        if scored_after is not None:
-            msg += f" scored after {scored_after}"
-        return msg + " not found."
+def stream_template(template_name, **context):
+    current_app.update_template_context(context)
+    t = current_app.jinja_env.get_template(template_name)
+    rv = t.stream(context)
+    rv.enable_buffering(5)
+    return rv
 
 
 def get_most_recently_scored_package_report_or_raise(
     package_name: str, package_version: str, scored_after: datetime
 ) -> models.PackageReport:
-    "Returns a PackageReport or raises a PackageReportNotFound exception"
+    "Returns a PackageReport or raises werkzeug 404 NotFound exception"
     package_report = models.get_most_recently_scored_package_report(
         package_name, package_version, scored_after
     )
     if package_report is None:
-        not_found = PackageReportNotFound(
-            package_name=package_name,
-            package_version=package_version,
-            scored_after=scored_after,
+        raise NotFound(
+            description=f"PackageReport {package_name}@{package_version} scored after {scored_after} not found."
         )
-        not_found.description = PackageReportNotFound.format_description(
-            package_name=package_name,
-            package_version=package_version,
-            scored_after=scored_after,
-        )
-        raise not_found
-
     return package_report
-
-
-def check_package_name_registered(package_name: str) -> bool:
-    """
-    Returns a bool representing whether the package name was found on
-    the npm registry or in the debobs DB.
-
-    Hits the npm registry and saves registry entries for each version
-    found when the package name isn't found in the debobs DB
-    """
-    # try npm_registry_entries in our db first since npm registry entries can be big and slow to fetch
-    if models.get_package_name_in_npm_registry_data(package_name):
-        log.info(f"package registry entry for {package_name} found in depobs db")
-        return True
-
-    npm_registry_entries: List[
-        Optional[Dict]
-    ] = get_celery_tasks().fetch_and_save_registry_entries([package_name])
-    if npm_registry_entries and len(npm_registry_entries) > 0:
-        log.info(f"package registry entry for {package_name} found on npm")
-        return True
-    log.info(f"package registry entry for {package_name} not found")
-    return False
-
-
-def check_package_version_registered(package_name: str, package_version: str) -> bool:
-    """
-    Returns bool representing whether the package version was found
-    on the npm registry or in the debobs DB.
-
-    Hits the npm registry and saves registry entries for each version
-    found when the package version isn't found in the debobs DB.
-    """
-    if models.get_npm_registry_data(package_name, package_version).one_or_none():
-        log.info(
-            f"package registry entry for {package_name}@{package_version} found in depobs db"
-        )
-        return True
-
-    # TODO: don't call if we already hit it for the name check
-    # TODO: if the NPM API supports it, only fetch changes from our registry entry version
-    npm_registry_entries: List[
-        Optional[Dict]
-    ] = get_celery_tasks().fetch_and_save_registry_entries([package_name])
-    if npm_registry_entries and len(npm_registry_entries) > 0:
-        npm_registry_entry = npm_registry_entries[0]
-        assert isinstance(npm_registry_entry, dict) and "versions" in npm_registry_entry
-        if npm_registry_entry and npm_registry_entry["versions"].get(
-            package_version, None
-        ):
-            log.info(
-                f"package registry entry for {package_name}@{package_version} found on npm"
-            )
-            return True
-
-    log.info(
-        f"package registry entry for {package_name}@{package_version} not found on npm"
-    )
-    return False
 
 
 @api.after_request
 def add_standard_headers_to_static_routes(response):
     response.headers.update(STANDARD_HEADERS)
+    response.headers["X-REQUEST-ID"] = g.get("_request_id", None)
     return response
 
 
@@ -170,103 +90,7 @@ def handle_bad_request(e):
     return dict(description=e.description), 400
 
 
-@api.errorhandler(PackageReportNotFound)
-def handle_package_report_not_found(e):
-    package_name, package_version = e.package_name, e.package_version
-
-    # Is there a placeholder entry?
-    package_report = models.get_placeholder_entry(package_name, package_version)
-    if package_report:
-        if package_report.status == "error":
-            log.error(f"previous scan failed for pkg {package_name}@{package_version}")
-            return package_report.report_json, 502
-        return package_report.report_json, 202
-
-    if not check_package_name_registered(package_name):
-        return (
-            dict(
-                description=f"Unable to find package named {package_name!r} on the npm registry."
-            ),
-            404,
-        )
-    if package_version and not check_package_version_registered(
-        package_name, package_version
-    ):
-        log.info(
-            f"package version: {package_name}@{package_version!r} not found in depobs db"
-        )
-        return (
-            dict(
-                description=f"Unable to find version "
-                f"{package_version!r} of package {package_name!r} on the npm registry."
-            ),
-            404,
-        )
-    # save any registry entries we fetch checking for package name and version
-    models.db.session.commit()
-
-    # start a task to scan the package
-    scan_task: celery.result.AsyncResult = get_celery_tasks().scan_npm_package_then_build_report_tree.delay(
-        package_name, package_version
-    )
-
-    # TODO: make sure concurrent API calls don't introduce a data race
-    if package_version is not None:
-        package_report = models.insert_package_report_placeholder_or_update_task_id(
-            package_name, package_version, scan_task.id
-        )
-    else:
-        # a version wasn't specified, so scan_npm_package will scan all versions
-        # update or insert placeholders for all the versions referencing the same scan task
-        package_reports = [
-            models.insert_package_report_placeholder_or_update_task_id(
-                package_name, entry.package_version, scan_task.id
-            )
-            for entry in models.get_NPMRegistryEntry(package_name)
-        ]
-        log.info(
-            f"inserted placeholder PackageReports for {package_name} at versions {[(pr.id, pr.version) for pr in package_reports]}"
-        )
-
-        if not len(package_reports):
-            return (
-                dict(
-                    description=f"Unable to find any versions "
-                    f"of package {package_name!r} on the npm registry."
-                ),
-                404,
-            )
-        # return the report for the alphabetically highest version number (likely most recently published package)
-        package_report = package_reports[-1]
-
-    return package_report.report_json, 202
-
-
-@api.route("/api/package", methods=["GET"])
-def show_package_by_name_and_version_if_available() -> Dict:
-    scored_after = validate_scored_after_ts_query_param()
-    package_name, package_version, _ = validate_npm_package_version_query_params()
-    # TODO: fetch all package versions
-
-    package_report = get_most_recently_scored_package_report_or_raise(
-        package_name, package_version, scored_after
-    )
-    return package_report.json_with_dependencies()
-
-
-@api.route("/api/parents", methods=["GET"])
-def get_parents_by_name_and_version() -> Dict:
-    scored_after = validate_scored_after_ts_query_param()
-    package_name, package_version, _ = validate_npm_package_version_query_params()
-    # TODO: fetch all package versions
-
-    package_report = get_most_recently_scored_package_report_or_raise(
-        package_name, package_version, scored_after
-    )
-    return package_report.json_with_parents()
-
-
-@api.route("/package_report", methods=["GET"])
+@api.route("/package_report", methods=["GET", "HEAD"])
 def show_package_report() -> Any:
     scored_after = validate_scored_after_ts_query_param()
     package_name, package_version, _ = validate_npm_package_version_query_params()
@@ -281,12 +105,6 @@ def show_package_report() -> Any:
     )
 
 
-@api.route("/api/vulnerabilities", methods=["GET"])
-def get_vulnerabilities_by_name_and_version() -> Dict:
-    package_name, package_version, _ = validate_npm_package_version_query_params()
-    return models.get_vulnerabilities_report(package_name, package_version)
-
-
 @api.route("/statistics", methods=["GET"])
 def get_statistics() -> Dict:
     return models.get_statistics()
@@ -299,7 +117,10 @@ def faq_page() -> Any:
 
 @api.route("/")
 def index_page() -> Any:
-    return render_template("search_index.html")
+    return render_template(
+        "search_index.html",
+        scored_after_days=current_app.config["DEFAULT_SCORED_AFTER_DAYS"],
+    )
 
 
 def validate_scored_after_ts_query_param() -> datetime:
@@ -311,7 +132,10 @@ def validate_scored_after_ts_query_param() -> datetime:
     return (
         datetime.utcfromtimestamp(param_value)
         if param_value
-        else (datetime.now() - timedelta(days=(365 * 10)))
+        else (
+            datetime.now()
+            - timedelta(days=current_app.config["DEFAULT_SCORED_AFTER_DAYS"])
+        )
     )
 
 
@@ -353,31 +177,163 @@ def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
     return package_name, package_version, package_manager
 
 
-@api.route("/api/scan", methods=["POST"])
-def scan():
-    package_name, package_version, _ = validate_npm_package_version_query_params()
-    result: celery.result.AsyncResult = get_celery_tasks().scan_npm_package.delay(
-        package_name, package_version
+@api.route("/api/v1/jobs", methods=["POST"])
+def create_job():
+    """
+    Creates a k8s job for a package and returns the k8s job object
+    """
+    job_body = request.get_json()
+    if not job_body:
+        raise BadRequest(description="received missing or invalid JSON in POST body")
+    log.debug(f"received job JSON body: {job_body}")
+    try:
+        web_job_config = JobSchema().load(data=job_body)
+    except ValidationError as err:
+        return err.messages, 422
+
+    app_job_config = current_app.config["WEB_JOB_CONFIGS"].get(
+        web_job_config.name, None
     )
-    return dict(task_id=result.id)
+    log.info(f"deserialized job JSON to {web_job_config.name}: {web_job_config}")
+    if app_job_config is None:
+        raise BadRequest(description="job not allowed or does not exist for app")
 
-
-@api.route("/api/build_report_tree", methods=["POST"])
-def build_report_tree():
-    package_name, package_version, _ = validate_npm_package_version_query_params()
-    result: celery.result.AsyncResult = get_celery_tasks().build_report_tree.delay(
-        (package_name, package_version)
+    # NB: name must be shorter than 64 chars
+    k8s_job_config: k8s.KubeJobConfig = dict(
+        **app_job_config,
+        name=f"{web_job_config.name.lower().replace('_', '-')}-{hex(randrange(1 << 32))[2:]}",
+        args=app_job_config["base_args"] + web_job_config.args,
     )
-    return dict(task_id=result.id)
+    client = k8s.get_client()
+    log.info(f"creating k8s job {k8s_job_config} with k8s job config: {k8s_job_config}")
+    return k8s.create_job(k8s_job_config).to_dict()
 
 
-@api.route("/api/scan_then_build_report_tree", methods=["POST"])
-def scan_npm_package_then_build_report_tree():
-    package_name, package_version, _ = validate_npm_package_version_query_params()
-    result: celery.result.AsyncResult = get_celery_tasks().scan_npm_package_then_build_report_tree.delay(
-        package_name, package_version
+@api.route("/api/v1/jobs/<string:job_name>", methods=["GET"])
+def get_job(job_name: str):
+    """
+    Returns the k8s job object (including status) in the default app namespace
+    """
+    log.info(f"fetching k8s job {job_name}")
+    job = k8s.read_job(
+        namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
     )
-    return dict(task_id=result.id)
+    return job.to_dict()
+
+
+@api.route("/api/v1/jobs/<string:job_name>", methods=["DELETE"])
+def delete_job(job_name: str):
+    """
+    Returns the k8s job object (including status) for the default app namespace
+    """
+    log.info(f"deleting k8s job {job_name}")
+    return k8s.delete_job(
+        namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
+    ).to_dict()
+
+
+@api.route("/api/v1/jobs/<string:job_name>/logs", methods=["GET"])
+def read_job_logs(job_name: str):
+    return k8s.read_job_logs(
+        namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
+    )
+
+
+@api.route("/jobs/<string:job_name>/logs", methods=["GET"])
+def render_job_logs(job_name: str):
+    def generate():
+        log.info(f"waiting for the job {job_name} container to start")
+        yield dict(event_type="new_phase", message="finding job container")
+
+        for event in k8s.watch_job_pods(
+            namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
+        ):
+            log.info(
+                f"job {job_name} pod {event['type']} status {event['object'].status.phase} container statuses {event['object'].status.container_statuses}"
+            )
+            yield dict(event_type="k8s_pod_event", k8s_event=event)
+            if event["type"] == "ERROR":
+                log.error(f"error with job {job_name} pod {event}")
+                raise StopIteration
+
+            assert event["type"] in {"ADDED", "MODIFIED"}
+            event_obj = event["object"]
+            pod_phase = event_obj.status.phase
+
+            if pod_phase == "Running" and all(
+                container_status.state.running is not None
+                for container_status in event_obj.status.container_statuses
+            ):
+                job_pod_name = event_obj.metadata.name
+                log.info(f"job {job_name} pod container {job_pod_name} running")
+                break
+            elif pod_phase in {"Succeeded", "Failed"} and all(
+                container_status.state.terminated is not None
+                for container_status in event_obj.status.container_statuses
+            ):
+                job_pod_name = event_obj.metadata.name
+                log.info(
+                    f"job {job_name} pod container {job_pod_name} already succeeded"
+                )
+                break
+            elif pod_phase == "Unknown":
+                log.error(f"job {job_name} pod lifecycle phase is Unknown")
+                raise BadGateway(
+                    description="Unable to fetch pod status for job {job_name}"
+                )
+                break
+
+        log.info(f"streaming job {job_name} logs for pod {job_pod_name}")
+        yield dict(event_type="new_phase", message=f"logs for pod {job_pod_name}")
+        for i, line in enumerate(
+            k8s.tail_job_logs(
+                namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name,
+            )
+        ):
+            if i % 10:
+                log.debug(f"streaming job {job_name} logs line {i}")
+            else:
+                log.info(f"streaming job {job_name} logs line {i}")
+            yield dict(event_type="k8s_container_log_line", log_line=line)
+
+        log.info(f"waiting for job {job_name} completion")
+        for event in k8s.watch_job(
+            namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
+        ):
+            log.info(f"job {job_name} {event['type']} status {event['object'].status}")
+            job = event["object"]
+            if job.status.succeeded:
+                log.info(f"got finished job {job.status.succeeded} {job}")
+                package_name, package_version = job.spec.template.spec.containers[
+                    0
+                ].args[3:]
+                yield dict(
+                    event_type="new_phase",
+                    message=f"job succeeded! Redirecting to the package report at: ",
+                    redirect_url=url_for(
+                        "views_blueprint.show_package_report",
+                        package_manager="npm",
+                        package_name=package_name,
+                        package_version=package_version,
+                    ),
+                )
+                break
+            elif job.status.failed:
+                log.error(f"job {job_name} failed")
+                yield dict(
+                    event_type="new_phase", message=f"job failed",
+                )
+                break
+
+        yield dict(
+            event_type="new_phase", message=f"finished",
+        )
+
+    return Response(
+        stream_with_context(
+            stream_template("job_logs.html", job_name=job_name, events=generate())
+        )
+    )
 
 
 @api.route("/score_details/graphs/<int:graph_id>", methods=["GET"])
