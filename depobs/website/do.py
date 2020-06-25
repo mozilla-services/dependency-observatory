@@ -45,7 +45,7 @@ def create_app(test_config=None):
     models.db.init_app(app)
     models.migrate.init_app(app, models.db)
 
-    dockerflow = Customflow(app, db=models.db)
+    dockerflow = Customflow(app, db=models.db, version_paht="/app")
     dockerflow.init_app(app)
     app.register_blueprint(views_blueprint)
 
