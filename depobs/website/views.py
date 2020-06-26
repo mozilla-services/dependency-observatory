@@ -4,7 +4,6 @@ from random import randrange
 import time
 from typing import Any, Dict, List, Optional, Tuple, Type
 
-
 from flask import (
     Blueprint,
     Response,
@@ -18,6 +17,7 @@ from flask import (
 import graphviz
 from marshmallow import ValidationError
 import networkx as nx
+import urllib3
 from werkzeug.exceptions import BadGateway, BadRequest, NotFound
 
 from depobs.website.schemas import JobSchema
@@ -245,11 +245,16 @@ def render_job_logs(job_name: str):
         log.info(f"waiting for the job {job_name} container to start")
         yield dict(event_type="new_phase", message="finding job container")
 
-        job_pod_name = k8s.get_pod_container_name(
-            k8s.get_job_pod(
-                namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
+        try:
+            job_pod_name = k8s.get_pod_container_name(
+                k8s.get_job_pod(
+                    namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
+                )
             )
-        )
+        except urllib3.exceptions.MaxRetryError as err:
+            log.info(f"job pod not ready: {err}")
+            job_pod_name = None
+
         log.info(f"job {job_name} got pod name {job_pod_name}")
         if job_pod_name is None:
             for event in k8s.watch_job_pods(
