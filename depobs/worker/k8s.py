@@ -81,6 +81,7 @@ def create_job(job_config: KubeJobConfig,) -> kubernetes.client.V1Job:
 
 
 def read_job(namespace: str, name: str) -> kubernetes.client.models.v1_job.V1Job:
+    get_client()
     return (
         kubernetes.client.BatchV1Api()
         .list_namespaced_job(namespace=namespace, label_selector=f"job-name={name}",)
@@ -97,6 +98,7 @@ def read_job_status(
 
 
 def delete_job(namespace: str, name: str):
+    get_client()
     return kubernetes.client.BatchV1Api().delete_namespaced_job(
         name=name,
         namespace=namespace,
@@ -107,6 +109,7 @@ def delete_job(namespace: str, name: str):
 
 
 def get_job_pod(namespace: str, name: str) -> kubernetes.client.V1Pod:
+    get_client()
     return (
         kubernetes.client.CoreV1Api()
         .list_namespaced_pod(namespace=namespace, label_selector=f"job-name={name}",)
@@ -122,6 +125,7 @@ def get_pod_container_name(pod: kubernetes.client.V1Pod) -> Optional[str]:
 
     Raises for pod phase Unknown.
     """
+    get_client()
     pod_phase = pod.status.phase
     if pod_phase == "Running" and all(
         container_status.state.running is not None
@@ -144,6 +148,7 @@ def get_pod_container_name(pod: kubernetes.client.V1Pod) -> Optional[str]:
 def read_job_logs(
     namespace: str, name: str, read_logs_kwargs: Optional[Dict] = None
 ) -> str:
+    get_client()
     read_logs_kwargs = dict() if read_logs_kwargs is None else read_logs_kwargs
     job_pod_name = get_job_pod(namespace, name).metadata.name
 
@@ -156,6 +161,7 @@ def read_job_logs(
 def watch_job(
     namespace: str, name: str, timeout_seconds: Optional[int] = 30,
 ) -> Generator[kubernetes.client.V1WatchEvent, None, None]:
+    get_client()
     log.info(f"watching job for job {namespace} {name}")
     for event in kubernetes.watch.Watch().stream(
         kubernetes.client.BatchV1Api().list_namespaced_job,
@@ -169,6 +175,7 @@ def watch_job(
 def watch_job_pods(
     namespace: str, name: str, timeout_seconds: Optional[int] = 30,
 ) -> Generator[kubernetes.client.V1WatchEvent, None, None]:
+    get_client()
     log.info(f"watching job pod for job {namespace} {name}")
     for event in kubernetes.watch.Watch().stream(
         kubernetes.client.CoreV1Api().list_namespaced_pod,
