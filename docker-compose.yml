@@ -23,6 +23,8 @@ services:
       - FLASK_ENV=development
       - HOST=0.0.0.0
       - PORT=8000
+      - PROCS=4
+      - THREADS=1
     depends_on:
       - db
     links:
