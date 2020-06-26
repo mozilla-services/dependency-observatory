@@ -16,7 +16,7 @@ if [ "$1" = 'print-db-revision' ]; then
 fi
 
 if [ "$1" = 'web' ]; then
-    uwsgi --http-socket "${HOST}:${PORT}" --processes 4 --threads 2 -s /tmp/do.sock --mount /=depobs.website.wsgi:app
+    uwsgi --http-socket "${HOST}:${PORT}" --processes 4 --threads 1 -s /tmp/do.sock --mount "/=depobs.website.wsgi:app"
 elif [ "$1" = 'web-dev' ]; then
     python depobs/website/do.py
 elif [ "$1" = 'worker' ]; then
