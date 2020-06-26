@@ -20,14 +20,13 @@ import networkx as nx
 import urllib3
 from werkzeug.exceptions import BadGateway, BadRequest, NotFound
 
-from depobs.website.schemas import JobSchema
+from depobs.website.schemas import JobParamsSchema, PackageReportParamsSchema
 from depobs.database import models
 from depobs.util import graph_traversal
 from depobs.util import graph_util
 from depobs.worker import k8s
 from depobs.worker import tasks
 from depobs.worker import scoring
-from depobs.worker import validators
 
 
 log = logging.getLogger(__name__)
@@ -65,9 +64,14 @@ def stream_template(template_name, **context):
 
 
 def get_most_recently_scored_package_report_or_raise(
-    package_name: str, package_version: str, scored_after: datetime
+    package_name: str, package_version: str, scored_after: Optional[datetime] = None
 ) -> models.PackageReport:
     "Returns a PackageReport or raises werkzeug 404 NotFound exception"
+    if scored_after is None:
+        scored_after = datetime.now() - timedelta(
+            days=current_app.config["DEFAULT_SCORED_AFTER_DAYS"]
+        )
+
     package_report = models.get_most_recently_scored_package_report(
         package_name, package_version, scored_after
     )
@@ -92,11 +96,13 @@ def handle_bad_request(e):
 
 @api.route("/package_report", methods=["GET", "HEAD"])
 def show_package_report() -> Any:
-    scored_after = validate_scored_after_ts_query_param()
-    package_name, package_version, _ = validate_npm_package_version_query_params()
+    try:
+        report = PackageReportParamsSchema().load(data=request.args)
+    except ValidationError as err:
+        return err.messages, 422
 
     package_report = get_most_recently_scored_package_report_or_raise(
-        package_name, package_version, scored_after
+        report.package_name, report.package_version
     )
     return render_template(
         "package_report.html",
@@ -123,71 +129,15 @@ def index_page() -> Any:
     )
 
 
-def validate_scored_after_ts_query_param() -> datetime:
-    param_values = request.args.getlist("scored_after_ts", int)
-    if len(param_values) > 1:
-        raise BadRequest(description="only one scored_after_ts param supported")
-    param_value = param_values[0] if len(param_values) else None
-    # utcfromtimestamp might raise https://docs.python.org/3/library/exceptions.html#OverflowError
-    return (
-        datetime.utcfromtimestamp(param_value)
-        if param_value
-        else (
-            datetime.now()
-            - timedelta(days=current_app.config["DEFAULT_SCORED_AFTER_DAYS"])
-        )
-    )
-
-
-def validate_npm_package_version_query_params() -> Tuple[str, str, str]:
-    package_names = request.args.getlist("package_name", str)
-    package_versions = request.args.getlist("package_version", str)
-    package_managers = request.args.getlist("package_manager", str)
-    if len(package_names) != 1:
-        raise BadRequest(description="Exactly one package name required")
-    if len(package_versions) > 1:
-        raise BadRequest(description="only zero or one package version supported")
-    if len(package_managers) > 1:
-        raise BadRequest(description="only one package manager supported")
-
-    package_name = package_names[0]
-    package_version = (
-        package_versions[0]
-        if (len(package_versions) and package_versions[0] != "")
-        else None
-    )
-    package_manager = package_managers[0] if len(package_managers) else "npm"
-
-    package_name_validation_error = validators.get_npm_package_name_validation_error(
-        package_name
-    )
-    if package_name_validation_error is not None:
-        raise BadRequest(description=str(package_name_validation_error))
-
-    if package_version:
-        package_version_validation_error = validators.get_npm_package_version_validation_error(
-            package_version
-        )
-        if package_version_validation_error is not None:
-            raise BadRequest(description=str(package_version_validation_error))
-
-    if package_manager != "npm":
-        raise BadRequest(description="only the package manager 'npm' supported")
-
-    return package_name, package_version, package_manager
-
-
 @api.route("/api/v1/jobs", methods=["POST"])
 def create_job():
     """
     Creates a k8s job for a package and returns the k8s job object
     """
     job_body = request.get_json()
-    if not job_body:
-        raise BadRequest(description="received missing or invalid JSON in POST body")
     log.debug(f"received job JSON body: {job_body}")
     try:
-        web_job_config = JobSchema().load(data=job_body)
+        web_job_config = JobParamsSchema().load(data=job_body)
     except ValidationError as err:
         return err.messages, 422
 
