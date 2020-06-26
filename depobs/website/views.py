@@ -4,7 +4,6 @@ from random import randrange
 import time
 from typing import Any, Dict, List, Optional, Tuple, Type
 
-
 from flask import (
     Blueprint,
     Response,
@@ -18,6 +17,7 @@ from flask import (
 import graphviz
 from marshmallow import ValidationError
 import networkx as nx
+import urllib3
 from werkzeug.exceptions import BadGateway, BadRequest, NotFound
 
 from depobs.website.schemas import JobSchema
@@ -245,43 +245,33 @@ def render_job_logs(job_name: str):
         log.info(f"waiting for the job {job_name} container to start")
         yield dict(event_type="new_phase", message="finding job container")
 
-        for event in k8s.watch_job_pods(
-            namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
-        ):
-            log.info(
-                f"job {job_name} pod {event['type']} status {event['object'].status.phase} container statuses {event['object'].status.container_statuses}"
+        try:
+            job_pod_name = k8s.get_pod_container_name(
+                k8s.get_job_pod(
+                    namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
+                )
             )
-            yield dict(event_type="k8s_pod_event", k8s_event=event)
-            if event["type"] == "ERROR":
-                log.error(f"error with job {job_name} pod {event}")
-                raise StopIteration
+        except urllib3.exceptions.MaxRetryError as err:
+            log.info(f"job pod not ready: {err}")
+            job_pod_name = None
 
-            assert event["type"] in {"ADDED", "MODIFIED"}
-            event_obj = event["object"]
-            pod_phase = event_obj.status.phase
-
-            if pod_phase == "Running" and all(
-                container_status.state.running is not None
-                for container_status in event_obj.status.container_statuses
+        log.info(f"job {job_name} got pod name {job_pod_name}")
+        if job_pod_name is None:
+            for event in k8s.watch_job_pods(
+                namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
             ):
-                job_pod_name = event_obj.metadata.name
-                log.info(f"job {job_name} pod container {job_pod_name} running")
-                break
-            elif pod_phase in {"Succeeded", "Failed"} and all(
-                container_status.state.terminated is not None
-                for container_status in event_obj.status.container_statuses
-            ):
-                job_pod_name = event_obj.metadata.name
                 log.info(
-                    f"job {job_name} pod container {job_pod_name} already succeeded"
+                    f"job {job_name} pod {event['type']} status {event['object'].status.phase} container statuses {event['object'].status.container_statuses}"
                 )
-                break
-            elif pod_phase == "Unknown":
-                log.error(f"job {job_name} pod lifecycle phase is Unknown")
-                raise BadGateway(
-                    description="Unable to fetch pod status for job {job_name}"
-                )
-                break
+                yield dict(event_type="k8s_pod_event", k8s_event=event)
+                if event["type"] == "ERROR":
+                    log.error(f"error with job {job_name} pod {event}")
+                    raise StopIteration
+
+                assert event["type"] in {"ADDED", "MODIFIED"}
+                job_pod_name = k8s.get_pod_container_name(event["object"])
+                if job_pod_name is not None:
+                    break
 
         log.info(f"streaming job {job_name} logs for pod {job_pod_name}")
         yield dict(event_type="new_phase", message=f"logs for pod {job_pod_name}")
