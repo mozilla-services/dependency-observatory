@@ -21,43 +21,16 @@ from depobs.database.models import Advisory, NPMRegistryEntry, NPMSIOScore
 from depobs.util.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
 from depobs.models.nodejs import NPMPackage, flatten_deps
 from depobs.util.serialize_util import (
-    get_in,
     extract_fields,
     extract_nested_fields,
+    get_in,
     iter_jsonlines,
+    parse_stdout_as_json,
+    parse_stdout_as_jsonlines,
 )
 
 
 log = logging.getLogger(__name__)
-
-
-def parse_stdout_as_json(stdout: Optional[str]) -> Optional[Dict]:
-    if stdout is None:
-        return None
-
-    try:
-        parsed_stdout = json.loads(stdout)
-        return parsed_stdout
-    except json.decoder.JSONDecodeError as e:
-        log.warning(f"error parsing stdout as JSON: {e}")
-
-    return None
-
-
-def parse_stdout_as_jsonlines(stdout: Optional[str]) -> Optional[Sequence[Dict]]:
-    if stdout is None:
-        return None
-
-    try:
-        return list(
-            line
-            for line in iter_jsonlines(stdout.split("\n"))
-            if isinstance(line, dict)
-        )
-    except json.decoder.JSONDecodeError as e:
-        log.warning(f"error parsing stdout as JSON: {e}")
-
-    return None
 
 
 def parse_npm_list(parsed_stdout: Dict) -> Dict:
