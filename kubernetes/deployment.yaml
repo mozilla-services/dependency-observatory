@@ -64,13 +64,17 @@ spec:
         - "web-dev"
         env:
         - name: FLASK_APP
-          value: /app/depobs/website/do.py
+          value: depobs.website.wsgi:app
         - name: FLASK_ENV
           value: development
         - name: HOST
           value: 0.0.0.0
         - name: PORT
           value: "8000"
+        - name: PROCS
+          value: "4"
+        - name: THREADS
+          value: "1"
         - name: SQLALCHEMY_DATABASE_URI
           value: postgresql+psycopg2://postgres:postgres@db/dependency_observatory
         image: mozilla/dependency-observatory

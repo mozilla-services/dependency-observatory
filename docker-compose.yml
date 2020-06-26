@@ -19,10 +19,12 @@ services:
       - ./:/app:z
     environment:
       - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://postgres:postgres@db/dependency_observatory
-      - FLASK_APP=/app/depobs/website/do.py
+      - FLASK_APP=depobs.website.wsgi:app
       - FLASK_ENV=development
       - HOST=0.0.0.0
       - PORT=8000
+      - PROCS=4
+      - THREADS=1
     depends_on:
       - db
     links:
