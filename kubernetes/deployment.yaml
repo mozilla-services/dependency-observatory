@@ -64,7 +64,7 @@ spec:
         - "web-dev"
         env:
         - name: FLASK_APP
-          value: /app/depobs/website/do.py
+          value: depobs.website.wsgi:app
         - name: FLASK_ENV
           value: development
         - name: HOST
