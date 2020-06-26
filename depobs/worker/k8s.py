@@ -127,30 +127,33 @@ def read_job_logs(
 
 
 def watch_job(
-    namespace: str, name: str
+    namespace: str, name: str, timeout_seconds: Optional[int] = 30,
 ) -> Generator[kubernetes.client.V1WatchEvent, None, None]:
-    log.info(f"watching job pod for job {namespace} {name}")
+    log.info(f"watching job for job {namespace} {name}")
     for event in kubernetes.watch.Watch().stream(
         kubernetes.client.BatchV1Api().list_namespaced_job,
         namespace=namespace,
         label_selector=f"job-name={name}",
+        timeout_seconds=timeout_seconds,
     ):
         yield event
 
 
 def watch_job_pods(
-    namespace: str, name: str
+    namespace: str, name: str, timeout_seconds: Optional[int] = 30,
 ) -> Generator[kubernetes.client.V1WatchEvent, None, None]:
     log.info(f"watching job pod for job {namespace} {name}")
     for event in kubernetes.watch.Watch().stream(
         kubernetes.client.CoreV1Api().list_namespaced_pod,
         namespace=namespace,
         label_selector=f"job-name={name}",
+        timeout_seconds=timeout_seconds,
     ):
         yield event
 
 
-def tail_job_logs(namespace: str, name: str) -> Generator[str, None, None]:
+def tail_job_logs(namespace: str, name: str,) -> Generator[str, None, None]:
+    get_client()
     job_pod_name = get_job_pod(namespace, name).metadata.name
     log.info(f"tailing logs from pod {job_pod_name} for job {namespace} {name}")
     for line in kubernetes.watch.Watch().stream(
