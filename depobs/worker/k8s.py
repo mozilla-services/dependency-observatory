@@ -114,6 +114,33 @@ def get_job_pod(namespace: str, name: str) -> kubernetes.client.V1Pod:
     )
 
 
+def get_pod_container_name(pod: kubernetes.client.V1Pod) -> Optional[str]:
+    """
+    Returns the pod container name if the pod phase is Running with
+    all containers running or pod phase is Succeeded or Failed with
+    all containers terminated and otherwise None.
+
+    Raises for pod phase Unknown.
+    """
+    pod_phase = pod.status.phase
+    if pod_phase == "Running" and all(
+        container_status.state.running is not None
+        for container_status in pod.status.container_statuses
+    ):
+        log.info(f"pod {pod.metadata.name} running container")
+        return pod.metadata.name
+    elif pod_phase in {"Succeeded", "Failed"} and all(
+        container_status.state.terminated is not None
+        for container_status in pod.status.container_statuses
+    ):
+        log.info(f"pod {pod.metadata.name} container terminated")
+        return pod.metadata.name
+    elif pod_phase == "Unknown":
+        log.error(f"job pod lifecycle phase is Unknown")
+        raise Exception("Unable to fetch pod status for job")
+    return None
+
+
 def read_job_logs(
     namespace: str, name: str, read_logs_kwargs: Optional[Dict] = None
 ) -> str:
