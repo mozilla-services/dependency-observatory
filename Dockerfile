@@ -20,13 +20,13 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
         apt-get upgrade -y && \
         apt-get install --no-install-recommends -y \
             apt-transport-https \
-            ca-certificates \
             build-essential \
-            libpcre3 libpcre3-dev \
-            libpq-dev \
+            ca-certificates \
+            curl \
             graphviz \
             jq \
-            curl
+            libpcre3 libpcre3-dev \
+            libpq-dev
 
 WORKDIR /app
 
