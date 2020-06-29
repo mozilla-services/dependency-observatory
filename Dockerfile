@@ -26,7 +26,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
             graphviz \
             jq \
             libpcre3 libpcre3-dev \
-            libpq-dev
+            libpq-dev \
+            mime-support
 
 WORKDIR /app
 
