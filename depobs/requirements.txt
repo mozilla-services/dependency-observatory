@@ -17,7 +17,7 @@ dockerflow==2020.6.0
 gentools==1.1.0
 graphviz==0.14
 hashin==0.15.0
-idna==2.9
+idna==2.10
 kubernetes==11.0.0
 marshmallow-dataclass==7.6.0
 marshmallow==3.6.1
