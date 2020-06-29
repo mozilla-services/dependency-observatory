@@ -45,12 +45,22 @@ SQLALCHEMY_TRACK_MODIFICATIONS = bool(
 
 DEFAULT_SCORED_AFTER_DAYS = 365 * 10
 
-DEFAULT_APP_NAMESPACE = "default"
+# k8s jobs configs
+
+# trusted jobs run in the web server k8s context with access to the DB
+# and service accounts creds to spin up untrusted analysis jobs
+DEFAULT_JOB_NAMESPACE = os.environ.get("DEFAULT_JOB_NAMESPACE", "default")
+
+# untrusted jobs run in another cluster to run in a separate k8s context
+# without access to the DB
+UNTRUSTED_JOB_NAMESPACE = os.environ.get("UNTRUSTED_JOB_NAMESPACE", None)
+
 
 # k8s job configs the flask app can run
 WEB_JOB_CONFIGS = {
     "scan_score_npm_package": dict(
-        namespace=DEFAULT_APP_NAMESPACE,
+        context_name=None, # i.e. the in cluster config
+        namespace=DEFAULT_JOB_NAMESPACE,
         image_name="mozilla/dependency-observatory:latest",
         base_args=["worker", "npm", "scan"],
         env={
@@ -62,6 +72,15 @@ WEB_JOB_CONFIGS = {
     )
 }
 
+SCAN_NPM_TARBALL_ARGS = dict(
+    context_name=UNTRUSTED_JOB_CONTEXT,
+    namespace=UNTRUSTED_JOB_NAMESPACE,
+    language="nodejs",
+    package_manager="npm",
+    image_name="mozilla/dependency-observatory:node-12",
+    repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
+    service_account_name="default",
+)
 
 # depobs http client config
 
@@ -141,12 +160,3 @@ GITHUB_CLIENT = {
         github_max_retries=12,
     ),
 }
-
-SCAN_NPM_TARBALL_ARGS = dict(
-    language="nodejs",
-    package_manager="npm",
-    namespace="default",
-    image_name="mozilla/dependency-observatory:node-12",
-    repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
-    service_account_name="default",
-)

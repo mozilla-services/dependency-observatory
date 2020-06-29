@@ -166,7 +166,7 @@ def get_job(job_name: str):
     """
     log.info(f"fetching k8s job {job_name}")
     job = k8s.read_job(
-        namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
+        namespace=current_app.config["DEFAULT_JOB_NAMESPACE"], name=job_name
     )
     return job.to_dict()
 
@@ -178,14 +178,14 @@ def delete_job(job_name: str):
     """
     log.info(f"deleting k8s job {job_name}")
     return k8s.delete_job(
-        namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
+        namespace=current_app.config["DEFAULT_JOB_NAMESPACE"], name=job_name
     ).to_dict()
 
 
 @api.route("/api/v1/jobs/<string:job_name>/logs", methods=["GET"])
 def read_job_logs(job_name: str):
     return k8s.read_job_logs(
-        namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
+        namespace=current_app.config["DEFAULT_JOB_NAMESPACE"], name=job_name
     )
 
 
@@ -198,7 +198,7 @@ def render_job_logs(job_name: str):
         try:
             job_pod_name = k8s.get_pod_container_name(
                 k8s.get_job_pod(
-                    namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
+                    namespace=current_app.config["DEFAULT_JOB_NAMESPACE"], name=job_name
                 )
             )
         except urllib3.exceptions.MaxRetryError as err:
@@ -208,7 +208,7 @@ def render_job_logs(job_name: str):
         log.info(f"job {job_name} got pod name {job_pod_name}")
         if job_pod_name is None:
             for event in k8s.watch_job_pods(
-                namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
+                namespace=current_app.config["DEFAULT_JOB_NAMESPACE"], name=job_name
             ):
                 log.info(
                     f"job {job_name} pod {event['type']} status {event['object'].status.phase} container statuses {event['object'].status.container_statuses}"
@@ -227,7 +227,7 @@ def render_job_logs(job_name: str):
         yield dict(event_type="new_phase", message=f"logs for pod {job_pod_name}")
         for i, line in enumerate(
             k8s.tail_job_logs(
-                namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name,
+                namespace=current_app.config["DEFAULT_JOB_NAMESPACE"], name=job_name,
             )
         ):
             if i % 10:
@@ -238,7 +238,7 @@ def render_job_logs(job_name: str):
 
         log.info(f"waiting for job {job_name} completion")
         for event in k8s.watch_job(
-            namespace=current_app.config["DEFAULT_APP_NAMESPACE"], name=job_name
+            namespace=current_app.config["DEFAULT_JOB_NAMESPACE"], name=job_name
         ):
             log.info(f"job {job_name} {event['type']} status {event['object'].status}")
             job = event["object"]
