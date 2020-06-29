@@ -5,6 +5,10 @@ set -e
 # runs starts a server for 'web', 'web-dev' or for 'worker' runs the
 # flask command to completion
 
+PROCS=${PROCS:-"4"}
+THREADS=${THREADS:-"1"}
+
+
 DB_REVISION=${DB_REVISION:-"head"}
 if [ "$1" = 'migrate' ]; then
     flask db upgrade "$DB_REVISION"
