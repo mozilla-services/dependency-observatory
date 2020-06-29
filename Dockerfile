@@ -22,6 +22,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
             apt-transport-https \
             ca-certificates \
             build-essential \
+            libpcre3 libpcre3-dev \
             libpq-dev \
             graphviz \
             jq \
