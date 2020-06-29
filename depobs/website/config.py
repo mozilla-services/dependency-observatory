@@ -50,25 +50,39 @@ DEFAULT_SCORED_AFTER_DAYS = 365 * 10
 # trusted jobs run in the web server k8s context with access to the DB
 # and service accounts creds to spin up untrusted analysis jobs
 DEFAULT_JOB_NAMESPACE = os.environ.get("DEFAULT_JOB_NAMESPACE", "default")
+DEFAULT_JOB_SERVICE_ACCOUNT_NAME = os.environ.get(
+    "DEFAULT_JOB_SERVICE_ACCOUNT_NAME", ""
+)
 
 # untrusted jobs run in another cluster to run in a separate k8s context
 # without access to the DB
+UNTRUSTED_JOB_CONTEXT = os.environ.get("UNTRUSTED_JOB_CONTEXT", None)
 UNTRUSTED_JOB_NAMESPACE = os.environ.get("UNTRUSTED_JOB_NAMESPACE", None)
-
+UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME = os.environ.get(
+    "UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME", ""
+)
 
 # k8s job configs the flask app can run
 WEB_JOB_CONFIGS = {
     "scan_score_npm_package": dict(
-        context_name=None, # i.e. the in cluster config
+        context_name=None,  # i.e. the in cluster config
         namespace=DEFAULT_JOB_NAMESPACE,
         image_name="mozilla/dependency-observatory:latest",
         base_args=["worker", "npm", "scan"],
         env={
             k: os.environ[k]
-            for k in ["FLASK_APP", "FLASK_ENV", "SQLALCHEMY_DATABASE_URI"]
+            # pass through env vars to run the flask app and untrusted jobs
+            for k in [
+                "FLASK_APP",
+                "FLASK_ENV",
+                "SQLALCHEMY_DATABASE_URI",
+                "UNTRUSTED_JOB_CONTEXT",
+                "UNTRUSTED_JOB_NAMESPACE",
+                "UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME",
+            ]
             if k in os.environ
         },
-        service_account_name="job-runner",
+        service_account_name=DEFAULT_JOB_SERVICE_ACCOUNT_NAME,
     )
 }
 
@@ -79,7 +93,7 @@ SCAN_NPM_TARBALL_ARGS = dict(
     package_manager="npm",
     image_name="mozilla/dependency-observatory:node-12",
     repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
-    service_account_name="default",
+    service_account_name=UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME,
 )
 
 # depobs http client config
