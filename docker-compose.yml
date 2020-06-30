@@ -33,9 +33,9 @@ services:
     #   - "8000:8000"
     command: "migrate web"
 
-  js-dev-env:
+  format-web:
     build:
-      context: js-dev-env/
+      context: web-dev-env/
     container_name: dependency-observatory-js-dev-env
     image: mozilla/dependency-observatory-js-dev-env
     volumes:
