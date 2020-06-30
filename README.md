@@ -29,7 +29,7 @@ See `README.md` in `kubernetes/` to run the service.
    alembic detecting changes
    https://alembic.sqlalchemy.org/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect
 
-#### Adding a view
+#### Adding a database view
 
 1. run `docker-compose up -d api` if the api isn't already running with `docker-compose`
 
