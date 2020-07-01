@@ -20,19 +20,21 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
         apt-get upgrade -y && \
         apt-get install --no-install-recommends -y \
             apt-transport-https \
-            ca-certificates \
             build-essential \
-            libpq-dev \
+            ca-certificates \
+            curl \
+            gnupg \
             graphviz \
             jq \
-            curl \
-            gnupg
+            libpcre3 libpcre3-dev \
+            libpq-dev \
+            mime-support
 
 RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | \
     tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
       curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
       apt-key --keyring /usr/share/keyrings/cloud.google.gpg  add - && \
-      apt-get update -y && \
+      DEBIAN_FRONTEND=noninteractive apt-get update -y && \
       apt-get install google-cloud-sdk -y
 
 WORKDIR /app
@@ -41,6 +43,7 @@ COPY depobs/requirements.txt depobs/
 RUN pip install --upgrade --no-cache-dir -r depobs/requirements.txt
 COPY setup.cfg .
 COPY pyproject.toml .
+COPY uwsgi.ini .
 COPY migrations migrations
 COPY bin bin
 COPY depobs depobs
