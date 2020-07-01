@@ -23,11 +23,19 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
             build-essential \
             ca-certificates \
             curl \
+            gnupg \
             graphviz \
             jq \
             libpcre3 libpcre3-dev \
             libpq-dev \
             mime-support
+
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | \
+    tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
+      curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+      apt-key --keyring /usr/share/keyrings/cloud.google.gpg  add - && \
+      DEBIAN_FRONTEND=noninteractive apt-get update -y && \
+      apt-get install google-cloud-sdk -y
 
 WORKDIR /app
 
