@@ -18,6 +18,11 @@ if [ "$1" = 'print-db-revision' ]; then
     flask db show
     shift
 fi
+if [ "$1" = 'init-gcloud-creds' ]; then
+    # populate kube config
+    gcloud container clusters get-credentials "$JOBS_CLUSTER_NAME" --region "$JOBS_CLUSTER_REGION"
+    shift
+fi
 
 if [ "$1" = 'web' ]; then
     PROCS="$PROCS" THREADS="$THREADS" uwsgi --ini /app/uwsgi.ini
