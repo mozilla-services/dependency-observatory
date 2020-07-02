@@ -31,7 +31,7 @@ services:
       - db
     # ports:
     #   - "8000:8000"
-    command: "migrate web"
+    command: "migrate web-dev"
 
   format-web:
     build:

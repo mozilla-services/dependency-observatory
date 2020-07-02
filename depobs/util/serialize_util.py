@@ -1,6 +1,19 @@
 import itertools
 import json
-from typing import Any, Dict, Iterable, Set, Sequence, List, Union, Generator
+import logging
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+)
+
+log = logging.getLogger(__name__)
 
 JSONPathElement = Union[int, str]
 JSONPath = Sequence[JSONPathElement]
@@ -51,3 +64,32 @@ def grouper(iterable: Iterable[Any], n: int, fillvalue: Any = None):
     # from https://docs.python.org/3/library/itertools.html#itertools-recipes
     args = [iter(iterable)] * n
     return itertools.zip_longest(*args, fillvalue=fillvalue)
+
+
+def parse_stdout_as_json(stdout: Optional[str]) -> Optional[Dict]:
+    if stdout is None:
+        return None
+
+    try:
+        parsed_stdout = json.loads(stdout)
+        return parsed_stdout
+    except json.decoder.JSONDecodeError as e:
+        log.warning(f"error parsing stdout as JSON: {e}")
+
+    return None
+
+
+def parse_stdout_as_jsonlines(stdout: Optional[str]) -> Optional[Sequence[Dict]]:
+    if stdout is None:
+        return None
+
+    try:
+        return list(
+            line
+            for line in iter_jsonlines(stdout.split("\n"))
+            if isinstance(line, dict)
+        )
+    except json.decoder.JSONDecodeError as e:
+        log.warning(f"error parsing stdout as JSON: {e}")
+
+    return None

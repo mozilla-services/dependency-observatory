@@ -1,42 +1,24 @@
 import pytest
 
 
-def test_root_url_returns_index_page_title(client):
-    response = client.get("/")
-    assert response.status == "200 OK"
+@pytest.mark.unit
+def test_invalid_create_job_params(client):
+    response = client.post("/api/v1/jobs",)
+    assert response.status == "422 UNPROCESSABLE ENTITY"
+    assert response.json == {"_schema": ["Invalid input type."]}
 
+    # missing name
+    response = client.post("/api/v1/jobs", json={},)
+    assert response.status == "422 UNPROCESSABLE ENTITY"
+    assert response.json == {"name": ["Missing data for required field."]}
 
-def add_report(models, report):
-    models.db.session.add(report)
-    models.db.session.commit()
+    # invalid name
+    response = client.post("/api/v1/jobs", json={"name": "foo"},)
+    assert response.status == "400 BAD REQUEST"
+    assert response.json == {"description": "job not allowed or does not exist for app"}
 
-
-def delete_reports(models, package_name, package_version):
-    for report in models.PackageReport.query.filter_by(
-        package=package_name, version=package_version,
-    ):
-        models.db.session.delete(report)
-    models.db.session.commit()
-
-
-def test_found_package_report_returns_200(models, client):
-    delete_reports(models, "dep-obs-internal-wokka-wokka", "0.0.2")
-    add_report(
-        models,
-        models.PackageReport(
-            package="dep-obs-internal-wokka-wokka", version="0.0.2", scoring_date=None
-        ),
+    response = client.post(
+        "/api/v1/jobs", json={"name": "foo", "args": [], "kwargs": {}, "extra": -1},
     )
-
-    response = client.get(
-        "/package_report?package_name=dep-obs-internal-wokka-wokka&package_version=0.0.2"
-    )
-    assert response.status == "200 OK"
-
-
-def test_missing_package_report_returns_404(client):
-    delete_reports(models, "@hapi/bounceee", "0.0.2")
-    response = client.get(
-        "/package_report?package_name=%40hapi%2Fbounceee&package_version=0.0.2"
-    )
-    assert response.status == "404 NOT FOUND"
+    assert response.status == "422 UNPROCESSABLE ENTITY"
+    assert response.json == {"extra": ["Unknown field."]}
