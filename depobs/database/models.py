@@ -743,6 +743,21 @@ class NPMRegistryEntry(db.Model):
         )
 
 
+class JSONResult(db.Model):
+    """
+    A table to cache or sample results from HTTP clients and scan jobs
+    for debugging without rerunning jobs.
+    """
+
+    __tablename__ = "json_results"
+
+    id = Column(Integer, primary_key=True)
+    # track when it was inserted
+    inserted_at = deferred(Column(DateTime(timezone=False), server_default=utcnow()))
+
+    data = Column("data", JSONB)
+
+
 def get_package_report(
     package: str, version: Optional[str] = None
 ) -> Optional[PackageReport]:
@@ -1304,4 +1319,9 @@ def update_advisory_vulnerable_package_versions(
     db.session.query(Advisory.id).filter_by(id=db_advisory.id).update(
         dict(vulnerable_package_version_ids=sorted(vpvids))
     )
+    db.session.commit()
+
+
+def save_json_results(json_results: List[Dict]) -> None:
+    db.session.add_all(JSONResult(data=json_result) for json_result in json_results)
     db.session.commit()

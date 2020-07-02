@@ -309,13 +309,16 @@ def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
         debug=False,
     )
     if len(npmsio_scores) != len(package_names):
-        log.info(
+        log.warn(
             f"only fetched {len(npmsio_scores)} scores for {len(package_names)} package names"
         )
     else:
         log.info(
             f"fetched {len(npmsio_scores)} scores for {len(package_names)} package names"
         )
+    if current_app.config["NPMSIO_CLIENT"].get("save_to_db", False):
+        models.save_json_results(npmsio_scores)
+
     models.insert_npmsio_scores(
         serializers.serialize_npmsio_scores(
             score for score in npmsio_scores if score is not None
@@ -337,13 +340,16 @@ def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
         debug=False,
     )
     if len(npm_registry_entries) != len(package_names):
-        log.info(
+        log.warn(
             f"only fetched {len(npm_registry_entries)} registry entries for {len(package_names)} package names"
         )
     else:
         log.info(
             f"fetched {len(npm_registry_entries)} registry entries for {len(package_names)} package names"
         )
+    if current_app.config["NPM_CLIENT"].get("save_to_db", False):
+        models.save_json_results(npm_registry_entries)
+
     # inserts new entries for new versions (but doesn't update old ones)
     models.insert_npm_registry_entries(
         serializers.serialize_npm_registry_entries(
