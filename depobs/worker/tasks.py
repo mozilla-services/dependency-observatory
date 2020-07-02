@@ -309,7 +309,7 @@ def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
         debug=False,
     )
     if len(npmsio_scores) != len(package_names):
-        log.info(
+        log.warn(
             f"only fetched {len(npmsio_scores)} scores for {len(package_names)} package names"
         )
     else:
@@ -337,7 +337,7 @@ def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
         debug=False,
     )
     if len(npm_registry_entries) != len(package_names):
-        log.info(
+        log.warn(
             f"only fetched {len(npm_registry_entries)} registry entries for {len(package_names)} package names"
         )
     else:
