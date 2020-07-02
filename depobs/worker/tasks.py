@@ -12,7 +12,6 @@ from typing import (
     List,
     Optional,
     Tuple,
-    TypeVar,
     TypedDict,
 )
 
@@ -38,13 +37,9 @@ import depobs.worker.scoring as scoring
 import depobs.worker.serializers as serializers
 import depobs.worker.validators as validators
 
-# import exc_to_str to resolve import cycle for the following depobs.clients
-from depobs.util.traceback_util import exc_to_str as _
-from depobs.clients.npmsio import fetch_npmsio_scores, NPMSIOClientConfig
-from depobs.clients.npm_registry import (
-    fetch_npm_registry_metadata,
-    NPMRegistryClientConfig,
-)
+from depobs.clients.aiohttp_client import AIOHTTPClientConfig
+from depobs.clients.npmsio import fetch_npmsio_scores
+from depobs.clients.npm_registry import fetch_npm_registry_metadata
 from depobs.database.models import (
     PackageGraph,
     PackageVersion,
@@ -285,18 +280,12 @@ def scan_npm_package_then_build_report_tree(
         store_package_reports(list(scoring.score_package_graph(db_graph).values()))
 
 
-# fetch_package_data should take fetcher and config params with matching config
-# types i.e. do not not let fetcher take an NPMSIOClientConfig with config
-# NPMRegistryClientConfig
-ClientConfig = TypeVar("ClientConfig", NPMSIOClientConfig, NPMRegistryClientConfig)
-
-
 async def fetch_package_data(
     fetcher: Callable[
-        [ClientConfig, Iterable[str], Optional[int]],
+        [AIOHTTPClientConfig, Iterable[str], Optional[int]],
         AsyncGenerator[Result[Dict[str, Dict]], None],
     ],
-    config: ClientConfig,
+    config: AIOHTTPClientConfig,
     package_names: List[str],
 ) -> List[Dict]:
     package_results = []

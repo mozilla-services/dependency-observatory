@@ -22,6 +22,7 @@ LOGGING = {
     "loggers": {
         "do": {"handlers": ["console"], "level": "DEBUG"},
         "request.summary": {"handlers": ["console"], "level": "INFO"},
+        "depobs.clients.aiohttp_client": {"handlers": ["console"], "level": "INFO"},
         "depobs.clients.cratesio": {"handlers": ["console"], "level": "INFO"},
         "depobs.clients.github": {"handlers": ["console"], "level": "INFO"},
         "depobs.clients.npm_registry": {"handlers": ["console"], "level": "INFO",},
@@ -67,8 +68,6 @@ WEB_JOB_CONFIGS = {
 _aiohttp_args = dict(
     # time to sleep between requests in seconds
     delay=0.5,
-    # don't hit the third part API just print intended actions
-    dry_run=False,
     # number of simultaneous connections to open
     max_connections=10,
     # number of times to retry requests
@@ -90,7 +89,7 @@ NPM_CLIENT = {
         base_url=os.environ.get("NPM_BASE_URL", "https://registry.npmjs.com/"),
         package_batch_size=10,
         # an npm registry access token for fetch_npm_registry_metadata. Defaults NPM_PAT env var. Should be read-only.
-        npm_auth_token=os.environ.get("NPM_PAT", None),
+        bearer_auth_token=os.environ.get("NPM_PAT", None),
     ),
 }
 

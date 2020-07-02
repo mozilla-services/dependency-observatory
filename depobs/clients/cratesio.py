@@ -4,7 +4,7 @@ from typing import AbstractSet, Dict, AsyncGenerator, Generator, Optional
 
 import aiohttp
 
-from depobs.clients.aiohttp_client_config import AIOHTTPClientConfig
+from depobs.clients.aiohttp_client import AIOHTTPClientConfig, aiohttp_session
 from depobs.models.rust import (
     RustPackageID,
     cargo_metadata_to_rust_crates,
@@ -15,12 +15,6 @@ from depobs.util.type_util import Result
 log = logging.getLogger(__name__)
 
 
-class CratesIOClientConfig(
-    AIOHTTPClientConfig, total=False
-):  # don't require keys defined below
-    pass
-
-
 __doc__ = """Given cargo metadata output fetches metadata from the crates.io
 registry for the resolved packages and outputs them as jsonlines.
 
@@ -29,21 +23,8 @@ metadata into memory.
 """
 
 
-def aiohttp_session(config: CratesIOClientConfig) -> aiohttp.ClientSession:
-    return aiohttp.ClientSession(
-        headers={
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "User-Agent": config["user_agent"],
-        },
-        timeout=aiohttp.ClientTimeout(total=config["total_timeout"]),
-        connector=aiohttp.TCPConnector(limit=config["max_connections"]),
-        raise_for_status=True,
-    )
-
-
 async def async_query(
-    config: CratesIOClientConfig, session: aiohttp.ClientSession, url: str
+    config: AIOHTTPClientConfig, session: aiohttp.ClientSession, url: str
 ) -> Result[Optional[Dict]]:
     await asyncio.sleep(config["delay"])
     try:
@@ -57,7 +38,7 @@ async def async_query(
 
 
 async def fetch_cratesio_metadata(
-    config: CratesIOClientConfig, source: Generator[Dict, None, None]
+    config: AIOHTTPClientConfig, source: Generator[Dict, None, None]
 ) -> AsyncGenerator[Dict, None]:
     log.info("pipeline crates_io_metadata started")
     rust_crate_ids: Generator[RustPackageID, None, None] = (

@@ -55,7 +55,7 @@
                                 <tr>
                                     <td>NPMS IO Score</td>
                                     <td id="npmsio_score">
-                                        <a href="https://api.npms.io/v2/package/{{package_report['package']}}" title="JSON output from NPM including the NPMS IO Score">
+                                        <a href="https://api.npms.io/v2/package/{{package_report['package'] | replace('/', '%2F') }}" title="JSON output from NPM including the NPMS IO Score">
                                             {{package_report['npmsio_score'] | round(2)}}
                                         </a>
                                     </td>
