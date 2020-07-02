@@ -78,6 +78,8 @@ _aiohttp_args = dict(
     total_timeout=300,
     # user agent to use to query third party APIs
     user_agent="https://github.com/mozilla-services/dependency-observatory (foxsec+dependency+observatory@mozilla.com)",
+    # save client JSON results to the database for additional analysis
+    save_to_db=True,
 )
 
 
