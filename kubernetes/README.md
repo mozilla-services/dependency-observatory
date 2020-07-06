@@ -100,9 +100,9 @@ Handling connection for 8000
 ...
 ```
 
-1. visit API and start pages:
+1. visit start and report pages:
 
-  * http://localhost:8000/static/index.html
-  * http://localhost:8000/package/foo (should 404)
+  * http://localhost:8000/
+  * http://localhost:8000/package_report?package_manager=npm&package_name=foo&package_version=2.0.0 (should 404)
 
-1. run `curl -X POST 'http://localhost:8000/scan?package_name=eslint&package_manager=npm'` to kick off a scan
+1. search for a npm package name andversion to start a scan and score job
