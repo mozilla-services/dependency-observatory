@@ -18,6 +18,9 @@ class KubeJobConfig(TypedDict):
     V1Container
     """
 
+    # k8s config context name to use (to access other clusters)
+    context_name: str
+
     # k8s namespace to create pods e.g. "default"
     namespace: str
 
@@ -37,13 +40,27 @@ class KubeJobConfig(TypedDict):
     service_account_name: str
 
 
-def get_client() -> kubernetes.client:
-    kubernetes.config.load_incluster_config()
-    return kubernetes.client
+def get_api_client(context_name: Optional[str] = None) -> kubernetes.client.ApiClient:
+    """
+    Returns the k8s ApiClient using the provided context name.
+
+    Defaults to the in cluster config when None is provided.
+    """
+    if context_name is None:
+        kubernetes.config.load_incluster_config()
+        return kubernetes.client.ApiClient(
+            configuration=kubernetes.client.Configuration()
+        )
+    else:
+        contexts, _ = kubernetes.config.list_kube_config_contexts()
+        for context in contexts:
+            if context_name == context["name"]:
+                return kubernetes.config.new_client_from_config(context=context)
+        raise Exception(f"Failed to find k8s context with name {context_name}")
 
 
 def create_job(job_config: KubeJobConfig,) -> kubernetes.client.V1Job:
-    get_client()
+    api_client = get_api_client(job_config["context_name"])
     # Configureate Pod template container
     container = kubernetes.client.V1Container(
         name=job_config["name"],
@@ -74,32 +91,34 @@ def create_job(job_config: KubeJobConfig,) -> kubernetes.client.V1Job:
         metadata=kubernetes.client.V1ObjectMeta(name=job_config["name"]),
         spec=spec,
     )
-    job = kubernetes.client.BatchV1Api().create_namespaced_job(
-        body=job_obj, namespace=job_config["namespace"]
+    job = kubernetes.client.BatchV1Api(api_client=api_client).create_namespaced_job(
+        namespace=job_config["namespace"], body=job_obj,
     )
     return job
 
 
-def read_job(namespace: str, name: str) -> kubernetes.client.models.v1_job.V1Job:
-    get_client()
+def read_job(
+    namespace: str, name: str, context_name: Optional[str] = None
+) -> kubernetes.client.models.v1_job.V1Job:
+    api_client = get_api_client(context_name)
     return (
-        kubernetes.client.BatchV1Api()
+        kubernetes.client.BatchV1Api(api_client=api_client)
         .list_namespaced_job(namespace=namespace, label_selector=f"job-name={name}",)
         .items[0]
     )
 
 
 def read_job_status(
-    namespace: str, name: str
+    namespace: str, name: str, context_name: Optional[str] = None
 ) -> kubernetes.client.models.v1_job_status.V1JobStatus:
     # TODO: figure out status only perms for:
     # .read_namespaced_job_status(name=job_name, namespace=job_config["namespace"])
-    return read_job(namespace, name).status
+    return read_job(namespace, name, context_name).status
 
 
-def delete_job(namespace: str, name: str):
-    get_client()
-    return kubernetes.client.BatchV1Api().delete_namespaced_job(
+def delete_job(namespace: str, name: str, context_name: Optional[str] = None):
+    api_client = get_api_client(context_name)
+    return kubernetes.client.BatchV1Api(api_client=api_client).delete_namespaced_job(
         name=name,
         namespace=namespace,
         body=kubernetes.client.V1DeleteOptions(
@@ -108,10 +127,12 @@ def delete_job(namespace: str, name: str):
     )
 
 
-def get_job_pod(namespace: str, name: str) -> kubernetes.client.V1Pod:
-    get_client()
+def get_job_pod(
+    namespace: str, name: str, context_name: Optional[str] = None
+) -> kubernetes.client.V1Pod:
+    api_client = get_api_client(context_name)
     return (
-        kubernetes.client.CoreV1Api()
+        kubernetes.client.CoreV1Api(api_client=api_client)
         .list_namespaced_pod(namespace=namespace, label_selector=f"job-name={name}",)
         .items[0]
     )
@@ -125,7 +146,6 @@ def get_pod_container_name(pod: kubernetes.client.V1Pod) -> Optional[str]:
 
     Raises for pod phase Unknown.
     """
-    get_client()
     pod_phase = pod.status.phase
     if pod_phase == "Running" and all(
         container_status.state.running is not None
@@ -146,25 +166,31 @@ def get_pod_container_name(pod: kubernetes.client.V1Pod) -> Optional[str]:
 
 
 def read_job_logs(
-    namespace: str, name: str, read_logs_kwargs: Optional[Dict] = None
+    namespace: str,
+    name: str,
+    context_name: Optional[str] = None,
+    read_logs_kwargs: Optional[Dict] = None,
 ) -> str:
-    get_client()
+    api_client = get_api_client(context_name)
     read_logs_kwargs = dict() if read_logs_kwargs is None else read_logs_kwargs
     job_pod_name = get_job_pod(namespace, name).metadata.name
 
     log.info(f"reading logs from pod {job_pod_name} for job {namespace} {name}")
-    return kubernetes.client.CoreV1Api().read_namespaced_pod_log(
+    return kubernetes.client.CoreV1Api(api_client=api_client).read_namespaced_pod_log(
         name=job_pod_name, namespace=namespace, **read_logs_kwargs
     )
 
 
 def watch_job(
-    namespace: str, name: str, timeout_seconds: Optional[int] = 30,
+    namespace: str,
+    name: str,
+    timeout_seconds: Optional[int] = 30,
+    context_name: Optional[str] = None,
 ) -> Generator[kubernetes.client.V1WatchEvent, None, None]:
-    get_client()
+    api_client = get_api_client(context_name)
     log.info(f"watching job for job {namespace} {name}")
     for event in kubernetes.watch.Watch().stream(
-        kubernetes.client.BatchV1Api().list_namespaced_job,
+        kubernetes.client.BatchV1Api(api_client=api_client).list_namespaced_job,
         namespace=namespace,
         label_selector=f"job-name={name}",
         timeout_seconds=timeout_seconds,
@@ -173,12 +199,15 @@ def watch_job(
 
 
 def watch_job_pods(
-    namespace: str, name: str, timeout_seconds: Optional[int] = 30,
+    namespace: str,
+    name: str,
+    timeout_seconds: Optional[int] = 30,
+    context_name: Optional[str] = None,
 ) -> Generator[kubernetes.client.V1WatchEvent, None, None]:
-    get_client()
+    api_client = get_api_client(context_name)
     log.info(f"watching job pod for job {namespace} {name}")
     for event in kubernetes.watch.Watch().stream(
-        kubernetes.client.CoreV1Api().list_namespaced_pod,
+        kubernetes.client.CoreV1Api(api_client=api_client).list_namespaced_pod,
         namespace=namespace,
         label_selector=f"job-name={name}",
         timeout_seconds=timeout_seconds,
@@ -186,12 +215,14 @@ def watch_job_pods(
         yield event
 
 
-def tail_job_logs(namespace: str, name: str,) -> Generator[str, None, None]:
-    get_client()
+def tail_job_logs(
+    namespace: str, name: str, context_name: Optional[str] = None
+) -> Generator[str, None, None]:
+    api_client = get_api_client(context_name)
     job_pod_name = get_job_pod(namespace, name).metadata.name
     log.info(f"tailing logs from pod {job_pod_name} for job {namespace} {name}")
     for line in kubernetes.watch.Watch().stream(
-        kubernetes.client.CoreV1Api().read_namespaced_pod_log,
+        kubernetes.client.CoreV1Api(api_client=api_client).read_namespaced_pod_log,
         namespace=namespace,
         name=job_pod_name,
     ):
@@ -207,11 +238,12 @@ def run_job(
 
     Deletes the job when then context manager exits
     """
+    api_client = get_api_client(job_config["context_name"])
     job = create_job(job_config)
     try:
         yield job
     finally:
-        kubernetes.client.BatchV1Api().delete_namespaced_job(
+        kubernetes.client.BatchV1Api(api_client=api_client).delete_namespaced_job(
             name=job_config["name"],
             namespace=job_config["namespace"],
             body=kubernetes.client.V1DeleteOptions(

@@ -53,6 +53,9 @@ log = logging.getLogger(__name__)
 
 
 class RunRepoTasksConfig(TypedDict):
+    # k8s config context name to use (to access other clusters)
+    context_name: str
+
     # k8s namespace to create pods e.g. "default"
     namespace: str
 
@@ -87,6 +90,7 @@ async def scan_tarball_url(
     """
     job_name = f"scan-tarball-url-{hex(randrange(1 << 32))[2:]}"
     job_config: k8s.KubeJobConfig = {
+        "context_name": config["context_name"],
         "name": job_name,
         "namespace": config["namespace"],
         "image_name": config["image_name"],
@@ -101,13 +105,14 @@ async def scan_tarball_url(
         },
         "service_account_name": config["service_account_name"],
     }
-
-    client = k8s.get_client()
+    log.info(f"starting job {job_name} with config {job_config}")
     with k8s.run_job(job_config) as job:
         log.info(f"started job {job}")
         await asyncio.sleep(1)
 
-        status = k8s.read_job_status(job_config["namespace"], job_name)
+        status = k8s.read_job_status(
+            job_config["namespace"], job_name, context_name=job_config["context_name"]
+        )
         log.info(f"got job status {status}")
         while True:
             if status.failed:
@@ -116,7 +121,11 @@ async def scan_tarball_url(
                 break
             if status.succeeded:
                 log.info(f"k8s job {job_name} succeeded")
-                stdout = k8s.read_job_logs(job_config["namespace"], job_name)
+                stdout = k8s.read_job_logs(
+                    job_config["namespace"],
+                    job_name,
+                    context_name=job_config["context_name"],
+                )
                 break
             if not status.active:
                 log.error(f"k8s job {job_name} stopped")
@@ -126,7 +135,11 @@ async def scan_tarball_url(
                 break
 
             await asyncio.sleep(1)
-            status = k8s.read_job_status(job_config["namespace"], job_name)
+            status = k8s.read_job_status(
+                job_config["namespace"],
+                job_name,
+                context_name=job_config["context_name"],
+            )
             log.info(f"got job status {status}")
 
     versions: Optional[Dict[str, str]] = None
@@ -184,8 +197,9 @@ def scan_npm_package_then_build_report_tree(
 
         # we need a source_url and git_head or a tarball url to install
         if tarball_url:
-            log.info(f"scanning {package_name}@{package_version} with {tarball_url}")
-
+            log.info(
+                f"scanning {package_name}@{package_version} with {tarball_url} with config {current_app.config['SCAN_NPM_TARBALL_ARGS']}"
+            )
             # start an npm container, install the tarball, run list and audit
             # assert tarball_url == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{package_version}.tgz
             container_task_results: Dict[str, Any] = asyncio.run(

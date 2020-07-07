@@ -77,6 +77,12 @@ spec:
           value: "1"
         - name: SQLALCHEMY_DATABASE_URI
           value: postgresql+psycopg2://postgres:postgres@db/dependency_observatory
+        - name: DEFAULT_JOB_SERVICE_ACCOUNT_NAME
+          value: "job-runner"
+        - name: UNTRUSTED_JOB_NAMESPACE
+          value: "default"
+        - name: UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME
+          value: ""
         image: mozilla/dependency-observatory
         imagePullPolicy: IfNotPresent
         name: dependency-observatory-api
