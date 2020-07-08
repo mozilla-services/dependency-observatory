@@ -59,6 +59,13 @@ class RunRepoTasksConfig(TypedDict):
     # k8s namespace to create pods e.g. "default"
     namespace: str
 
+    # number of retries before marking this job failed
+    backoff_limit: int
+
+    # number of seconds the job completes or fails to delete it
+    # 0 to delete immediately, None to never delete the job
+    ttl_seconds_after_finished: Optional[int]
+
     # Language to run commands for
     language: str
 
@@ -90,6 +97,8 @@ async def scan_tarball_url(
     """
     job_name = f"scan-tarball-url-{hex(randrange(1 << 32))[2:]}"
     job_config: k8s.KubeJobConfig = {
+        "backoff_limit": config["backoff_limit"],
+        "ttl_seconds_after_finished": config["ttl_seconds_after_finished"],
         "context_name": config["context_name"],
         "name": job_name,
         "namespace": config["namespace"],
