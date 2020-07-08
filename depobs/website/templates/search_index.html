@@ -40,10 +40,13 @@
     </div>
 </div>
 
-<div class="d-none" id="scan-error">
+<div class="d-none" id="search-error">
     <div class="alert alert-danger">
-        An unexpected error occured. We're looking into it - please try again later.
-	TODO: add request ID and bug template
+        <br>An unexpected error occurred <span id="error-context"></span> (request ID: <span id="error-request-id"></span>).
+
+	<br>Please retry your search.
+
+	<br>If the problem persists, please <a class="error-issue-link" target="_blank" href="https://github.com/mozilla-services/dependency-observatory/issues/new?title=error making request&body=request id: replaceme">click here</a> to file an issue
     </div>
 </div>
 
