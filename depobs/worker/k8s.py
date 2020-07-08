@@ -27,6 +27,13 @@ class KubeJobConfig(TypedDict):
     # k8s container and Job name should be unique per run
     name: str
 
+    # number of retries before marking this job failed
+    backoff_limit: int
+
+    # number of seconds the job completes or fails to delete it
+    # 0 to delete immediately, None to never delete the job
+    ttl_seconds_after_finished: Optional[int]
+
     # container image to run
     image_name: str
 
@@ -82,7 +89,17 @@ def create_job(job_config: KubeJobConfig,) -> kubernetes.client.V1Job:
     )
 
     # Create the specification of deployment
-    spec = kubernetes.client.V1JobSpec(template=template, backoff_limit=4)
+    ttl = job_config.get("ttl_seconds_after_finished", None)
+    if ttl is not None:
+        spec = kubernetes.client.V1JobSpec(
+            template=template,
+            backoff_limit=job_config["backoff_limit"],
+            ttl_seconds_after_finished=job_config["ttl_seconds_after_finished"],
+        )
+    else:
+        spec = kubernetes.client.V1JobSpec(
+            template=template, backoff_limit=job_config["backoff_limit"],
+        )
 
     # Instantiate the job object
     job_obj = kubernetes.client.V1Job(
