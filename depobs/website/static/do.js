@@ -36,29 +36,30 @@ async function checkReportExists(formData) {
 
 const formEl = document.getElementById("search-form");
 const formFieldsetEls = formEl.querySelectorAll("fieldset");
-const scanErrorEl = document.getElementById("scan-error");
 
-function clearReportHeadError() {
-  scanErrorEl.classList.add("d-none");
+function updateScanError(err, reportURI) {
+  const scanErrorEl = document.getElementById("scan-error");
+
+  if (err) {
+    console.error(`error fetching HEAD ${reportURI}: ${err}`);
+    scanErrorEl.classList.remove("d-none");
+  } else {
+    scanErrorEl.classList.add("d-none");
+  }
 }
 
-function displayReportHeadError(reportURI, err) {
-  console.error(`error fetching HEAD ${reportURI}: ${err}`);
-  scanErrorEl.classList.remove("d-none");
-}
-
-function disableSearchForm() {
-  console.debug("disabling search form");
-  formFieldsetEls.forEach((fieldsetEl) =>
-    fieldsetEl.removeAttribute("disabled")
-  );
-}
-
-function enableSearchForm() {
-  console.debug("enabling search form");
-  formFieldsetEls.forEach((fieldsetEl) =>
-    fieldsetEl.setAttribute("disabled", "disabled")
-  );
+function updateSearchForm(disable) {
+  if (disable) {
+    console.debug("disabling search form");
+    formFieldsetEls.forEach((fieldsetEl) =>
+      fieldsetEl.setAttribute("disabled", "disabled")
+    );
+  } else {
+    console.debug("enabling search form");
+    formFieldsetEls.forEach((fieldsetEl) =>
+      fieldsetEl.removeAttribute("disabled")
+    );
+  }
 }
 
 async function scanAndScorePackage(formDataObj) {
@@ -82,8 +83,7 @@ function redirectToJobLogs(jobName) {
 function onSubmit(event) {
   console.debug(`form submitted! timestamp: ${event.timeStamp}`);
   event.preventDefault();
-  clearReportHeadError();
-  disableSearchForm();
+  updateScanError(null); // clear errors
 
   let formData = new FormData(formEl);
   let formDataObj = Object.fromEntries(formData);
@@ -93,15 +93,16 @@ function onSubmit(event) {
     console.debug("skipping report check since rescan requested");
     scanAndScorePackage(formDataObj).then(redirectToJobLogs);
   } else {
+    updateSearchForm(true); // disable the search form
     checkReportExists(formData).then((response) => {
+      updateSearchForm(false); // enable the search form
       if (response.status === 200) {
         // redirect to report if it exists
         console.debug(`report exists redirecting to ${response.url}`);
         window.location.assign(response.url);
       } else if (response.status !== 404) {
         // something unexpected display an error for non-404 errors
-        displayReportHeadError(response);
-        enableSearchForm();
+        updateScanError(response, response.url);
       } else {
         scanAndScorePackage(formDataObj).then(redirectToJobLogs);
       }
