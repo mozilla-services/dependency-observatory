@@ -65,6 +65,8 @@ UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME = os.environ.get(
 # k8s job configs the flask app can run
 WEB_JOB_CONFIGS = {
     "scan_score_npm_package": dict(
+        backoff_limit=4,
+        ttl_seconds_after_finished=3600 * 8,  # keeps jobs for 8 hours
         context_name=None,  # i.e. the in cluster config
         namespace=DEFAULT_JOB_NAMESPACE,
         image_name="mozilla/dependency-observatory:latest",
@@ -87,6 +89,8 @@ WEB_JOB_CONFIGS = {
 }
 
 SCAN_NPM_TARBALL_ARGS = dict(
+    backoff_limit=4,
+    ttl_seconds_after_finished=3600 * 8,  # keeps jobs for 8 hours
     context_name=UNTRUSTED_JOB_CONTEXT,
     namespace=UNTRUSTED_JOB_NAMESPACE,
     language="nodejs",
