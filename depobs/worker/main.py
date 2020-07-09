@@ -21,6 +21,15 @@ def scan_npm_package(package_name: str, package_version: str):
     tasks.scan_npm_package_then_build_report_tree(package_name, package_version)
 
 
+@npm_cli.command("advisories")
+@click.argument("package_name", envvar="PACKAGE_USERNAME")
+def test_package_analysis(package_name: str):
+    """
+
+    """
+    tasks.get_github_advisories(package_name)
+
+
 def main():
     app.cli.add_command(npm_cli)
     app.cli.main()
