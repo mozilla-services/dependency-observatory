@@ -385,7 +385,7 @@ def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
     return npm_registry_entries
 
 
-def get_github_advisories(package_name: str) -> List[Dict]:
+def get_github_advisories(package_name: str) -> None:
 
     github_client = current_app.config["GITHUB_CLIENT"]
     base_url = github_client["base_url"]
@@ -418,8 +418,7 @@ def get_github_advisories(package_name: str) -> List[Dict]:
 
     response = requests.post(base_url, json={"query": query}, headers=headers)
     response.raise_for_status()
-    response = response.json()
-    nodes = response["data"]["securityVulnerabilities"]["nodes"]
+    nodes = response.json()["data"]["securityVulnerabilities"]["nodes"]
 
     advisories = list()
     ids = list()
