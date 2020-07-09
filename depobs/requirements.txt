@@ -37,6 +37,7 @@ pytest-mock==3.1.1
 pytest==5.4.3
 quiz==0.2.0
 regex==2020.6.8
+requests==2.24.0
 six==1.15.0
 snug==2.0.0
 toml==0.10.1

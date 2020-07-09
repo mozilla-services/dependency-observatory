@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import requests
 from random import randrange
 from typing import (
     AbstractSet,
@@ -32,6 +33,7 @@ from depobs.database.models import (
     store_package_reports,
     get_most_recently_inserted_package_from_name_and_version,
     get_latest_graph_including_package_as_parent,
+    save_json_results,
 )
 import depobs.worker.scoring as scoring
 import depobs.worker.serializers as serializers
@@ -47,7 +49,6 @@ from depobs.database.models import (
 )
 from depobs.util.type_util import Result
 from depobs.worker import k8s
-
 
 log = logging.getLogger(__name__)
 
@@ -382,3 +383,53 @@ def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
         )
     )
     return npm_registry_entries
+
+
+def get_github_advisories(package_name: str) -> None:
+
+    github_client = current_app.config["GITHUB_CLIENT"]
+    base_url = github_client["base_url"]
+    github_auth_token = github_client["github_auth_token"]
+
+    headers = {"Authorization": "token " + github_auth_token}
+
+    query = (
+        """
+    {
+        securityVulnerabilities(ecosystem: NPM, first: 100, package: \""""
+        + package_name
+        + """\", orderBy: {field: UPDATED_AT, direction: DESC}) {
+            nodes {
+                advisory {
+                    id, description, permalink, publishedAt, severity, summary, updatedAt, withdrawnAt
+                }
+                package {
+                    name
+                }
+            }
+            pageInfo {
+                endCursor, hasNextPage, hasPreviousPage, startCursor
+            }
+            totalCount
+        }
+    }
+    """
+    )
+
+    response = requests.post(base_url, json={"query": query}, headers=headers)
+    response.raise_for_status()
+    nodes = response.json()["data"]["securityVulnerabilities"]["nodes"]
+
+    advisories = list()
+    ids = list()
+    for node in nodes:
+        if (
+            node["advisory"]["id"] not in ids
+            and node["advisory"]["withdrawnAt"] == None
+        ):
+            advisory = node["advisory"]
+            advisory["package"] = package_name
+            advisories.append(advisory)
+            ids.append(node["advisory"]["id"])
+
+    save_json_results(advisories)
