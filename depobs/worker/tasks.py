@@ -375,6 +375,7 @@ def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
     )
     return npm_registry_entries
 
+
 def get_github_advisories(package_name: str) -> List[Dict]:
 
     github_client = current_app.config["GITHUB_CLIENT"]
@@ -384,7 +385,7 @@ def get_github_advisories(package_name: str) -> List[Dict]:
     headers = {"Authorization": "token " + github_auth_token}
 
     query = (
-    """
+        """
     {
         securityVulnerabilities(ecosystem: NPM, first: 100, package: \""""
         + package_name
