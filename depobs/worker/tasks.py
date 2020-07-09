@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import requests
 from random import randrange
 from typing import (
     AbstractSet,
@@ -48,8 +49,6 @@ from depobs.database.models import (
 )
 from depobs.util.type_util import Result
 from depobs.worker import k8s
-
-import json, requests
 
 log = logging.getLogger(__name__)
 
@@ -407,9 +406,9 @@ def get_github_advisories(package_name: str) -> List[Dict]:
     """
     )
 
-    response = json.loads(
-        requests.post(base_url, json={"query": query}, headers=headers).content
-    )
+    response = requests.post(base_url, json={"query": query}, headers=headers)
+    response.raise_for_status()
+    response = response.json()
     nodes = response["data"]["securityVulnerabilities"]["nodes"]
 
     advisories = list()
