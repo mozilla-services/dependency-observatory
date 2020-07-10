@@ -24,6 +24,11 @@ $ minikube start
 🌟  Enabled addons: default-storageclass, storage-provisioner
 🏄  Done! kubectl is now configured to use "minikube"
 ```
+1. Create a kubernetes secret with GCP Service Account key for the `dev-local`
+Service Account in the depobs-nonprod project.
+```
+kubectl create secret generic dev-local-service-account --from-file=key.json=<path/to/KEYFILE.json>
+```
 
 1. From the project root, run `kubectl create -f kubernetes/` to start DO (use `kubectl delete -f kubernetes/` to remote it):
 
