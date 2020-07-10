@@ -21,13 +21,20 @@ def scan_npm_package(package_name: str, package_version: str) -> None:
     tasks.scan_npm_package_then_build_report_tree(package_name, package_version)
 
 
-@npm_cli.command("advisories")
+@npm_cli.command("package-advisories")
 @click.argument("package_name", envvar="PACKAGE_NAME")
 def get_package_advisories(package_name: str) -> None:
     """
     Get GitHub Advisories for a specific package
     """
-    tasks.get_github_advisories(package_name)
+    tasks.get_github_advisories_for_package(package_name)
+
+@npm_cli.command("advisories")
+def get_ecosystem_advisories() -> None:
+    """
+    Get GitHub Advisories for the NPM ecosystem
+    """
+    tasks.get_github_advisories()
 
 
 def main():
