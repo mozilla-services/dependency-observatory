@@ -29,6 +29,7 @@ def get_package_advisories(package_name: str) -> None:
     """
     tasks.get_github_advisories_for_package(package_name)
 
+
 @npm_cli.command("advisories")
 def get_ecosystem_advisories() -> None:
     """

@@ -432,6 +432,7 @@ def get_github_advisories_for_package(package_name: str) -> None:
 
     save_json_results(advisories)
 
+
 def get_github_advisories() -> None:
 
     github_client = current_app.config["GITHUB_CLIENT"]
@@ -443,7 +444,7 @@ def get_github_advisories() -> None:
     perPage = 100
 
     query = (
-    """
+        """
     {{
         securityVulnerabilities(ecosystem: NPM, first: {0}, orderBy: {{field: UPDATED_AT, direction: DESC}}) {{
             nodes {{
@@ -460,7 +461,8 @@ def get_github_advisories() -> None:
             totalCount
         }}
     }}
-    """).format(perPage)
+    """
+    ).format(perPage)
 
     response = requests.post(base_url, json={"query": query}, headers=headers)
     response.raise_for_status()
@@ -470,9 +472,9 @@ def get_github_advisories() -> None:
     hasNextPage = response_json["pageInfo"]["hasNextPage"]
     endCursor = response_json["pageInfo"]["endCursor"]
 
-    while(hasNextPage):
+    while hasNextPage:
         query = (
-        """
+            """
         {{
             securityVulnerabilities(ecosystem: NPM, first: {0}, after: "{1}", orderBy: {{field: UPDATED_AT, direction: DESC}}) {{
                 nodes {{
@@ -489,7 +491,8 @@ def get_github_advisories() -> None:
                 totalCount
             }}
         }}
-        """).format(perPage, endCursor)
+        """
+        ).format(perPage, endCursor)
 
         response = requests.post(base_url, json={"query": query}, headers=headers)
         response.raise_for_status()
