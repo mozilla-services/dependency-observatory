@@ -510,7 +510,6 @@ def get_github_advisories() -> None:
             and node["advisory"]["withdrawnAt"] == None
         ):
             advisory = node["advisory"]
-            advisory["package"] = package_name
             advisories.append(advisory)
             ids.append(node["advisory"]["id"])
 
