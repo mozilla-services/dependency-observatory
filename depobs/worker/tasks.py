@@ -393,10 +393,9 @@ def get_github_advisories_for_package(package_name: str) -> None:
 
     headers = {"Authorization": "token " + github_auth_token}
 
-    query = (
-        """
+    query = f"""
     {{
-        securityVulnerabilities(ecosystem: NPM, first: 100, package: {0}, orderBy: {{field: UPDATED_AT, direction: DESC}}) {{
+        securityVulnerabilities(ecosystem: NPM, first: 100, package: \"{package_name}\", orderBy: {{field: UPDATED_AT, direction: DESC}}) {{
             nodes {{
                 advisory {{
                     id, description, permalink, publishedAt, severity, summary, updatedAt, withdrawnAt
@@ -412,7 +411,6 @@ def get_github_advisories_for_package(package_name: str) -> None:
         }}
     }}
     """
-    ).format(package_name)
 
     response = requests.post(base_url, json={"query": query}, headers=headers)
     response.raise_for_status()
@@ -443,10 +441,9 @@ def get_github_advisories() -> None:
 
     perPage = 100
 
-    query = (
-        """
+    query = f"""
     {{
-        securityVulnerabilities(ecosystem: NPM, first: {0}, orderBy: {{field: UPDATED_AT, direction: DESC}}) {{
+        securityVulnerabilities(ecosystem: NPM, first: {perPage}, orderBy: {{field: UPDATED_AT, direction: DESC}}) {{
             nodes {{
                 advisory {{
                     id, description, permalink, publishedAt, severity, summary, updatedAt, withdrawnAt
@@ -462,7 +459,7 @@ def get_github_advisories() -> None:
         }}
     }}
     """
-    ).format(perPage)
+
 
     response = requests.post(base_url, json={"query": query}, headers=headers)
     response.raise_for_status()
@@ -473,10 +470,9 @@ def get_github_advisories() -> None:
     endCursor = response_json["pageInfo"]["endCursor"]
 
     while hasNextPage:
-        query = (
-            """
+        query = f"""
         {{
-            securityVulnerabilities(ecosystem: NPM, first: {0}, after: "{1}", orderBy: {{field: UPDATED_AT, direction: DESC}}) {{
+            securityVulnerabilities(ecosystem: NPM, first: {perPage}, after: \"{endCursor}\", orderBy: {{field: UPDATED_AT, direction: DESC}}) {{
                 nodes {{
                     advisory {{
                         id, description, permalink, publishedAt, severity, summary, updatedAt, withdrawnAt
@@ -492,7 +488,6 @@ def get_github_advisories() -> None:
             }}
         }}
         """
-        ).format(perPage, endCursor)
 
         response = requests.post(base_url, json={"query": query}, headers=headers)
         response.raise_for_status()
