@@ -460,7 +460,6 @@ def get_github_advisories() -> None:
     }}
     """
 
-
     response = requests.post(base_url, json={"query": query}, headers=headers)
     response.raise_for_status()
     response_json = response.json()["data"]["securityVulnerabilities"]
