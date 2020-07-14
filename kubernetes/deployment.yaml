@@ -83,15 +83,23 @@ spec:
           value: "default"
         - name: UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME
           value: ""
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: "/var/secrets/google/key.json"
         image: mozilla/dependency-observatory
         imagePullPolicy: IfNotPresent
         name: dependency-observatory-api
         ports:
         - containerPort: 8000
         resources: {}
+        volumeMounts:
+          - name: google-cloud-key
+            mountPath: /var/secrets/google
       restartPolicy: Always
       serviceAccountName: job-runner
-      volumes: null
+      volumes:
+      - name: google-cloud-key
+        secret:
+          secretName: dev-local-service-account
 status: {}
 
 ---
