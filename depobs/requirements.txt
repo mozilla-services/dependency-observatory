@@ -15,7 +15,7 @@ coverage==5.1
 decorator==4.4.2
 dockerflow==2020.6.0
 gentools==1.1.0
-graphviz==0.14
+graphviz==0.14.1
 hashin==0.15.0
 idna==2.10
 kubernetes==11.0.0
