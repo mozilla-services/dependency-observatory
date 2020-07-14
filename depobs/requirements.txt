@@ -33,7 +33,7 @@ pluggy==0.13.1
 psycopg2==2.8.5
 py==1.9.0
 pytest-asyncio==0.14.0
-pytest-mock==3.1.1
+pytest-mock==3.2.0
 pytest==5.4.3
 quiz==0.2.0
 regex==2020.6.8
