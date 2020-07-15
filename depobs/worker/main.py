@@ -1,14 +1,29 @@
 import click
-from flask import Flask
-from flask.cli import AppGroup
+from flask import Flask, current_app
+from flask.cli import AppGroup, with_appcontext
 
 from depobs.website.do import create_app
 from depobs.worker import tasks
 
 
 app = create_app()
-
 npm_cli = AppGroup("npm")
+
+
+@app.cli.command("run")
+@with_appcontext
+def listen_and_serve() -> None:
+    """
+    Run a worker process that:
+
+    * reads tasks from the pending tasks table
+    * start k8s jobs in the untrusted jobs cluster
+    * subscribes to pubsub output from the running jobs
+    * saves the job output
+    * fetches additional data from APIs
+    * score packages from the fetched data and scan results
+    """
+    pass
 
 
 @npm_cli.command("scan")
