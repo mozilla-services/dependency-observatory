@@ -30,7 +30,9 @@ if [ "$1" = 'web' ]; then
 elif [ "$1" = 'web-dev' ]; then
     python depobs/website/do.py
 elif [ "$1" = 'worker' ]; then
-    python depobs/worker/main.py run
+    python depobs/worker/main.py run \
+	   --task-name save_pubsub \
+	   --task-name run_next_scan
 else
     echo "got unrecognized command:" "$1"
     exit 1
