@@ -12,9 +12,6 @@ metadata:
   namespace: default
   name: job-admin
 rules:
-- apiGroups: [""] # resource for accessing Pod
-  resources: ["pods", "pods/log"]
-  verbs: ["get", "list", "watch"]
 - apiGroups: ["batch", "extensions"]
   resources: ["jobs"]
   verbs: ["read", "list", "watch", "create", "update", "patch", "replace", "delete"]
