@@ -30,8 +30,7 @@ if [ "$1" = 'web' ]; then
 elif [ "$1" = 'web-dev' ]; then
     python depobs/website/do.py
 elif [ "$1" = 'worker' ]; then
-    shift
-    python depobs/worker/main.py "$@"
+    python depobs/worker/main.py run
 else
     echo "got unrecognized command:" "$1"
     exit 1
