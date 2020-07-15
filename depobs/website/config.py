@@ -45,23 +45,6 @@ SQLALCHEMY_TRACK_MODIFICATIONS = bool(
 
 DEFAULT_SCORED_AFTER_DAYS = 365 * 10
 
-# k8s jobs configs
-
-# trusted jobs run in the web server k8s context with access to the DB
-# and service accounts creds to spin up untrusted analysis jobs
-DEFAULT_JOB_NAMESPACE = os.environ.get("DEFAULT_JOB_NAMESPACE", "default")
-DEFAULT_JOB_SERVICE_ACCOUNT_NAME = os.environ.get(
-    "DEFAULT_JOB_SERVICE_ACCOUNT_NAME", ""
-)
-
-# untrusted jobs run in another cluster to run in a separate k8s context
-# without access to the DB
-UNTRUSTED_JOB_CONTEXT = os.environ.get("UNTRUSTED_JOB_CONTEXT", None)
-UNTRUSTED_JOB_NAMESPACE = os.environ.get("UNTRUSTED_JOB_NAMESPACE", None)
-UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME = os.environ.get(
-    "UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME", ""
-)
-
 # k8s job configs the flask app can run
 WEB_JOB_CONFIGS = {
     "scan_score_npm_package": dict(
