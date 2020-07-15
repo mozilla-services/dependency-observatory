@@ -15,6 +15,7 @@ coverage==5.2.1
 decorator==4.4.2
 dockerflow==2020.6.0
 gentools==1.1.0
+google-cloud-pubsub==1.7.0
 graphviz==0.14.1
 hashin==0.15.0
 idna==2.10
