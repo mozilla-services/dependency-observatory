@@ -45,6 +45,9 @@ SQLALCHEMY_TRACK_MODIFICATIONS = bool(
 
 DEFAULT_SCORED_AFTER_DAYS = 365 * 10
 
+# GCP pubsub topic
+PUBSUB_JOBS_TOPIC = os.environ.get("PUBSUB_JOBS_TOPIC", "depobs_jobs")
+
 # k8s job configs the flask app can run
 WEB_JOB_CONFIGS = {
     "scan_score_npm_package": dict(
