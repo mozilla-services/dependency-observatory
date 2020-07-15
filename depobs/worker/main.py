@@ -1,10 +1,14 @@
+import logging
+
 import click
 from flask import Flask, current_app
 from flask.cli import AppGroup, with_appcontext
 
 from depobs.website.do import create_app
+from depobs.worker import gcp
 from depobs.worker import tasks
 
+log = logging.getLogger(__name__)
 
 app = create_app()
 npm_cli = AppGroup("npm")
@@ -23,7 +27,11 @@ def listen_and_serve() -> None:
     * fetches additional data from APIs
     * score packages from the fetched data and scan results
     """
-    pass
+    # create the topic if it doesn't exist
+    gcp.create_pubsub_topic(
+        current_app.config["GCP_PROJECT_ID"],
+        current_app.config["JOB_STATUS_PUBSUB_TOPIC"],
+    )
 
 
 @npm_cli.command("scan")
