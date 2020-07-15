@@ -8,7 +8,7 @@ RUN groupadd --gid 10001 app && \
       --home-dir /home/app/ app
 RUN install -o app -g app -d /var/run/app /var/log/app /home/app
 
-RUN apt-get -y update && apt-get install -y git jq ripgrep
+RUN apt-get -y update && apt-get install -y git jq ripgrep curl
 
 RUN mkdir -p /opt
 COPY docker-entrypoint.sh /opt
