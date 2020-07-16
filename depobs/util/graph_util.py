@@ -1,3 +1,7 @@
+import depobs.worker.scoring as m
+from depobs.database import models
+
+
 import logging
 from typing import (
     AbstractSet,
@@ -227,3 +231,12 @@ def nx_digraph_to_graphviz_digraph(
         dot_graph.edge(str(src), str(dest))
 
     return dot_graph
+
+
+def compare_two_graphs(package_graph_current: models.PackageGraph, package_graph_new: models.PackageGraph) -> None:
+    nx_graph_current = package_graph_to_networkx_graph(package_graph_current)
+    nx_graph_new = package_graph_to_networkx_graph(package_graph_new)
+
+    nodes = nx_graph_new.nodes
+    for node_id in nodes:
+        name = nodes[node_id].get("package_version", None)
