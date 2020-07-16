@@ -1,7 +1,3 @@
-import depobs.worker.scoring as m
-from depobs.database import models
-
-
 import logging
 from typing import (
     AbstractSet,
@@ -19,6 +15,7 @@ from typing import (
 import graphviz
 import networkx as nx
 
+import depobs.worker.scoring as scoring
 from depobs.database import models
 from depobs.models.nodejs import NPMPackage
 from depobs.models.rust import RustCrate, RustPackageID, RustPackage
@@ -234,9 +231,23 @@ def nx_digraph_to_graphviz_digraph(
 
 
 def compare_two_graphs(package_graph_current: models.PackageGraph, package_graph_new: models.PackageGraph) -> None:
-    nx_graph_current = package_graph_to_networkx_graph(package_graph_current)
-    nx_graph_new = package_graph_to_networkx_graph(package_graph_new)
 
-    nodes = nx_graph_new.nodes
-    for node_id in nodes:
-        name = nodes[node_id].get("package_version", None)
+    nx_graph_current: nx.DiGraph = add_scoring_component_data_to_node_attrs(
+        package_graph_current,
+        graph_util.package_graph_to_networkx_graph(package_graph_current),
+        [scoring.PackageVersionScoreComponent],
+    )
+
+    nx_graph_new: nx.DiGraph = add_scoring_component_data_to_node_attrs(
+        package_graph_new,
+        graph_util.package_graph_to_networkx_graph(package_graph_new),
+        [scoring.PackageVersionScoreComponent],
+    )
+
+    nodes_current = {nodes[node_id].get("package_version", None) for node_id in nx_graph_current.nodes}
+    nodes_new = {nodes[node_id].get("package_version", None) for node_id in nx_graph_new.nodes}
+
+    intersection = nodes_current.intersection(nodes_new)
+
+    # TODO: Change signature once I figure out the type this is returning
+    return intersection, nodes_current - intersection, nodes_new - intersection
