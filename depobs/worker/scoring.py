@@ -423,7 +423,10 @@ def find_component_with_package_report_field(
             return component
     return None
 
-def compare_two_package_graphs(package_graph_current: PackageGraph, package_graph_new: PackageGraph) -> Tuple[List[Dict], List[Dict], List[Dict], List[Dict]]:
+
+def compare_two_package_graphs(
+    package_graph_current: PackageGraph, package_graph_new: PackageGraph
+) -> Tuple[List[Dict], List[Dict], List[Dict], List[Dict]]:
 
     nx_graph_current: nx.DiGraph = add_scoring_component_data_to_node_attrs(
         package_graph_current,
@@ -453,52 +456,37 @@ def compare_two_package_graphs(package_graph_current: PackageGraph, package_grap
 
     intersection = package_tuples_current & package_tuples_new
 
-    intersection_nodes_current = [node for node in nodes_current.values() if (node.get("package_version", None).name, node.get("package_version", None).version) in intersection]
-    intersection_nodes_new = [node for node in nodes_new.values() if (node.get("package_version", None).name, node.get("package_version", None).version) in intersection]
+    intersection_nodes_current = [
+        node
+        for node in nodes_current.values()
+        if (
+            node.get("package_version", None).name,
+            node.get("package_version", None).version,
+        )
+        in intersection
+    ]
+    intersection_nodes_new = [
+        node
+        for node in nodes_new.values()
+        if (
+            node.get("package_version", None).name,
+            node.get("package_version", None).version,
+        )
+        in intersection
+    ]
 
-    unique_nodes_current = [node for node in nodes_current.values() if node not in intersection_nodes_current]
-    unique_nodes_new = [node for node in nodes_new.values() if node not in intersection_nodes_new]
+    unique_nodes_current = [
+        node
+        for node in nodes_current.values()
+        if node not in intersection_nodes_current
+    ]
+    unique_nodes_new = [
+        node for node in nodes_new.values() if node not in intersection_nodes_new
+    ]
 
-    return (intersection_nodes_current, intersection_nodes_new, unique_nodes_current, unique_nodes_new)
-
-
-a = PackageGraph(
-    id=-1,
-    package_links_by_id={0: (0, 1), 1: (1, 0),},
-    distinct_package_versions_by_id={
-        0: PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
-        1: PackageVersion(id=1, name="test-child-pkg", version="0.0.3"),
-    },
-    get_npmsio_scores_by_package_version_id=lambda: {
-        0: ("0.1.0", {"0.1.3": 0.2}),
-        1: ("0.0.3", {"0.0.3": 0.8}),
-    },
-    get_npm_registry_data_by_package_version_id=lambda: {0: None, 1: None},
-    get_advisories_by_package_version_id=lambda: {0: [], 1: [],},
-)
-
-b = PackageGraph(
-    id=-1,
-    # m.nx.path_graph(3, create_using=m.nx.DiGraph),
-    package_links_by_id={0: (0, 1), 1: (1, 2)},
-    distinct_package_versions_by_id={
-        0: PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
-        1: PackageVersion(id=1, name="test-child-pkg", version="0.0.3"),
-        2: PackageVersion(id=2, name="test-grandchild-pkg", version="2.1.0"),
-    },
-    get_npmsio_scores_by_package_version_id=lambda: {
-        0: ("0.1.0", {"0.1.3": 0.34}),
-        1: ("0.0.3", {"0.0.3": 0.9}),
-        2: ("2.1.0", {"2.0.0": 0.25}),
-    },
-    get_npm_registry_data_by_package_version_id=lambda: {
-        0: None,
-        1: None,
-        2: None,
-    },
-    get_advisories_by_package_version_id=lambda: {0: [], 1: [], 2: []},
-)
-
-x = compare_two_package_graphs(a,b)
-
-print(x)
+    return (
+        intersection_nodes_current,
+        intersection_nodes_new,
+        unique_nodes_current,
+        unique_nodes_new,
+    )

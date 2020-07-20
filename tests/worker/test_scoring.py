@@ -662,8 +662,53 @@ compare_package_graph_testcases = {
         (
             [],
             [],
-            [{'label': 'test-solo-pkg@0.1.1'}],
+            [{'label': 'test-solo-pkg@0.1.0'}],
             [{'label': 'test-solo-pkg-1@0.1.0'}],
+        ),
+    ),
+    "three_node_graph": (
+        m.PackageGraph(
+            id=-1,
+            package_links_by_id={0: (0, 1)},
+            distinct_package_versions_by_id={
+                0: m.PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
+                1: m.PackageVersion(id=1, name="test-grandchild-pkg", version="0.3.0"),
+            },
+            get_npmsio_scores_by_package_version_id=lambda: {
+                0: ("0.1.0", {"0.1.3": 0.34}),
+                1: ("0.3.0", {"2.0.0": 0.25}),
+            },
+            get_npm_registry_data_by_package_version_id=lambda: {
+                0: None,
+                1: None,
+            },
+            get_advisories_by_package_version_id=lambda: {0: [], 1: []},
+        ),
+        m.PackageGraph(
+            id=-1,
+            package_links_by_id={0: (0, 1), 1: (1, 2)},
+            distinct_package_versions_by_id={
+                0: m.PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
+                1: m.PackageVersion(id=1, name="test-child-pkg", version="0.2.0"),
+                2: m.PackageVersion(id=2, name="test-grandchild-pkg", version="0.3.0"),
+            },
+            get_npmsio_scores_by_package_version_id=lambda: {
+                0: ("0.1.0", {"0.1.3": 0.34}),
+                1: ("0.2.0", {"0.0.3": 0.9}),
+                2: ("0.3.0", {"2.0.0": 0.25}),
+            },
+            get_npm_registry_data_by_package_version_id=lambda: {
+                0: None,
+                1: None,
+                2: None,
+            },
+            get_advisories_by_package_version_id=lambda: {0: [], 1: [], 2: []},
+        ),
+        (
+            [{'label': 'test-root-pkg@0.1.0'}, {'label': 'test-grandchild-pkg@0.3.0'}],
+            [{'label': 'test-root-pkg@0.1.0'}, {'label': 'test-grandchild-pkg@0.3.0'}],
+            [{'label': 'test-child-pkg@0.2.0'}],
+            [],
         ),
     ),
 }
@@ -682,12 +727,13 @@ def test_compare_package_graph(
 
     diffs = m.compare_two_package_graphs(current_graph, new_graph)
 
+    # For each element in the response tuple (current/new intersection, current/new unique)
     for diff, expected_diff in zip(diffs, expected_diffs):
-        # For each element in the response tuple (current/new intersection, current/new unique)
-        for field, expected_field in zip(diff, expected_diff):
-            for node, expected_node in zip(field, expected_field):
-                # Ensure package name and versions are the same
-                assert node['label'] == expected_node['label']
+        for node, expected_node in zip(diff, expected_diff):
+            print(node)
+            print(expected_node)
+            # Ensure package name and versions are the same
+            assert node['label'] == expected_node['label']
 
 
 count_advisories_by_severity_testcases = {
