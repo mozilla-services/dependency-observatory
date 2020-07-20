@@ -596,10 +596,10 @@ compare_package_graph_testcases = {
             get_advisories_by_package_version_id=lambda: {0: []},
         ),
         (
-            [{'label': 'test-solo-pkg@0.1.0'}],
-            [{'label': 'test-solo-pkg@0.1.0'}],
+            [{"label": "test-solo-pkg@0.1.0"}],
+            [{"label": "test-solo-pkg@0.1.0"}],
             [],
-            []
+            [],
         ),
     ),
     "different_version_one_node_graph": (
@@ -630,8 +630,8 @@ compare_package_graph_testcases = {
         (
             [],
             [],
-            [{'label': 'test-solo-pkg@0.1.1'}],
-            [{'label': 'test-solo-pkg@0.1.0'}],
+            [{"label": "test-solo-pkg@0.1.1"}],
+            [{"label": "test-solo-pkg@0.1.0"}],
         ),
     ),
     "different_name_one_node_graph": (
@@ -662,8 +662,8 @@ compare_package_graph_testcases = {
         (
             [],
             [],
-            [{'label': 'test-solo-pkg@0.1.0'}],
-            [{'label': 'test-solo-pkg-1@0.1.0'}],
+            [{"label": "test-solo-pkg@0.1.0"}],
+            [{"label": "test-solo-pkg-1@0.1.0"}],
         ),
     ),
     "three_node_graph": (
@@ -678,10 +678,7 @@ compare_package_graph_testcases = {
                 0: ("0.1.0", {"0.1.3": 0.34}),
                 1: ("0.3.0", {"2.0.0": 0.25}),
             },
-            get_npm_registry_data_by_package_version_id=lambda: {
-                0: None,
-                1: None,
-            },
+            get_npm_registry_data_by_package_version_id=lambda: {0: None, 1: None,},
             get_advisories_by_package_version_id=lambda: {0: [], 1: []},
         ),
         m.PackageGraph(
@@ -705,18 +702,19 @@ compare_package_graph_testcases = {
             get_advisories_by_package_version_id=lambda: {0: [], 1: [], 2: []},
         ),
         (
-            [{'label': 'test-root-pkg@0.1.0'}, {'label': 'test-grandchild-pkg@0.3.0'}],
-            [{'label': 'test-root-pkg@0.1.0'}, {'label': 'test-grandchild-pkg@0.3.0'}],
-            [{'label': 'test-child-pkg@0.2.0'}],
+            [{"label": "test-root-pkg@0.1.0"}, {"label": "test-grandchild-pkg@0.3.0"}],
+            [{"label": "test-root-pkg@0.1.0"}, {"label": "test-grandchild-pkg@0.3.0"}],
+            [{"label": "test-child-pkg@0.2.0"}],
             [],
         ),
     ),
 }
 
+
 @pytest.mark.parametrize(
     "current_graph, new_graph, expected_diffs",
     compare_package_graph_testcases.values(),
-    ids=compare_package_graph_testcases.keys()
+    ids=compare_package_graph_testcases.keys(),
 )
 @pytest.mark.unit
 def test_compare_package_graph(
@@ -733,7 +731,7 @@ def test_compare_package_graph(
             print(node)
             print(expected_node)
             # Ensure package name and versions are the same
-            assert node['label'] == expected_node['label']
+            assert node["label"] == expected_node["label"]
 
 
 count_advisories_by_severity_testcases = {
