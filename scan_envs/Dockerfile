@@ -9,7 +9,7 @@ RUN groupadd --gid 10001 app && \
 RUN install -o app -g app -d /var/run/app /var/log/app /home/app
 
 RUN apt-get -y update && apt-get install -y git jq ripgrep curl
-RUN cargo && cargo install cargo-audit || true
+RUN cargo --version && cargo install cargo-audit || true
 
 RUN mkdir -p /opt
 COPY docker-entrypoint.sh /opt
