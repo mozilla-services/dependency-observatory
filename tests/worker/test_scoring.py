@@ -569,6 +569,171 @@ def test_score_package_graph(
         assert report.json_with_dependencies() == expected_report_json
 
 
+compare_package_graph_testcases = {
+    "same_one_node_graph": (
+        m.PackageGraph(
+            id=-1,
+            package_links_by_id={0: (0, 0)},
+            distinct_package_versions_by_id={
+                0: m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
+            },
+            get_npmsio_scores_by_package_version_id=lambda: {
+                0: ("0.1.0", {"0.1.0": 0})
+            },
+            get_npm_registry_data_by_package_version_id=lambda: {0: None},
+            get_advisories_by_package_version_id=lambda: {0: []},
+        ),
+        m.PackageGraph(
+            id=-2,
+            package_links_by_id={0: (0, 0)},
+            distinct_package_versions_by_id={
+                0: m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
+            },
+            get_npmsio_scores_by_package_version_id=lambda: {
+                0: ("0.1.0", {"0.1.0": 0})
+            },
+            get_npm_registry_data_by_package_version_id=lambda: {0: None},
+            get_advisories_by_package_version_id=lambda: {0: []},
+        ),
+        (
+            [{"label": "test-solo-pkg@0.1.0"}],
+            [{"label": "test-solo-pkg@0.1.0"}],
+            [],
+            [],
+        ),
+    ),
+    "different_version_one_node_graph": (
+        m.PackageGraph(
+            id=-1,
+            package_links_by_id={0: (0, 0)},
+            distinct_package_versions_by_id={
+                0: m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.1"),
+            },
+            get_npmsio_scores_by_package_version_id=lambda: {
+                0: ("0.1.0", {"0.1.0": 0})
+            },
+            get_npm_registry_data_by_package_version_id=lambda: {0: None},
+            get_advisories_by_package_version_id=lambda: {0: []},
+        ),
+        m.PackageGraph(
+            id=-2,
+            package_links_by_id={0: (0, 0)},
+            distinct_package_versions_by_id={
+                0: m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
+            },
+            get_npmsio_scores_by_package_version_id=lambda: {
+                0: ("0.1.0", {"0.1.0": 0})
+            },
+            get_npm_registry_data_by_package_version_id=lambda: {0: None},
+            get_advisories_by_package_version_id=lambda: {0: []},
+        ),
+        (
+            [],
+            [],
+            [{"label": "test-solo-pkg@0.1.1"}],
+            [{"label": "test-solo-pkg@0.1.0"}],
+        ),
+    ),
+    "different_name_one_node_graph": (
+        m.PackageGraph(
+            id=-1,
+            package_links_by_id={0: (0, 0)},
+            distinct_package_versions_by_id={
+                0: m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
+            },
+            get_npmsio_scores_by_package_version_id=lambda: {
+                0: ("0.1.0", {"0.1.0": 0})
+            },
+            get_npm_registry_data_by_package_version_id=lambda: {0: None},
+            get_advisories_by_package_version_id=lambda: {0: []},
+        ),
+        m.PackageGraph(
+            id=-2,
+            package_links_by_id={0: (0, 0)},
+            distinct_package_versions_by_id={
+                0: m.PackageVersion(id=0, name="test-solo-pkg-1", version="0.1.0"),
+            },
+            get_npmsio_scores_by_package_version_id=lambda: {
+                0: ("0.1.0", {"0.1.0": 0})
+            },
+            get_npm_registry_data_by_package_version_id=lambda: {0: None},
+            get_advisories_by_package_version_id=lambda: {0: []},
+        ),
+        (
+            [],
+            [],
+            [{"label": "test-solo-pkg@0.1.0"}],
+            [{"label": "test-solo-pkg-1@0.1.0"}],
+        ),
+    ),
+    "three_node_graph": (
+        m.PackageGraph(
+            id=-1,
+            package_links_by_id={0: (0, 1)},
+            distinct_package_versions_by_id={
+                0: m.PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
+                1: m.PackageVersion(id=1, name="test-grandchild-pkg", version="0.3.0"),
+            },
+            get_npmsio_scores_by_package_version_id=lambda: {
+                0: ("0.1.0", {"0.1.3": 0.34}),
+                1: ("0.3.0", {"2.0.0": 0.25}),
+            },
+            get_npm_registry_data_by_package_version_id=lambda: {0: None, 1: None,},
+            get_advisories_by_package_version_id=lambda: {0: [], 1: []},
+        ),
+        m.PackageGraph(
+            id=-1,
+            package_links_by_id={0: (0, 1), 1: (1, 2)},
+            distinct_package_versions_by_id={
+                0: m.PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
+                1: m.PackageVersion(id=1, name="test-child-pkg", version="0.2.0"),
+                2: m.PackageVersion(id=2, name="test-grandchild-pkg", version="0.3.0"),
+            },
+            get_npmsio_scores_by_package_version_id=lambda: {
+                0: ("0.1.0", {"0.1.3": 0.34}),
+                1: ("0.2.0", {"0.0.3": 0.9}),
+                2: ("0.3.0", {"2.0.0": 0.25}),
+            },
+            get_npm_registry_data_by_package_version_id=lambda: {
+                0: None,
+                1: None,
+                2: None,
+            },
+            get_advisories_by_package_version_id=lambda: {0: [], 1: [], 2: []},
+        ),
+        (
+            [{"label": "test-root-pkg@0.1.0"}, {"label": "test-grandchild-pkg@0.3.0"}],
+            [{"label": "test-root-pkg@0.1.0"}, {"label": "test-grandchild-pkg@0.3.0"}],
+            [{"label": "test-child-pkg@0.2.0"}],
+            [],
+        ),
+    ),
+}
+
+
+@pytest.mark.parametrize(
+    "current_graph, new_graph, expected_diffs",
+    compare_package_graph_testcases.values(),
+    ids=compare_package_graph_testcases.keys(),
+)
+@pytest.mark.unit
+def test_compare_package_graph(
+    current_graph: m.PackageGraph,
+    new_graph: m.PackageGraph,
+    expected_diffs: Tuple[List[Dict], List[Dict], List[Dict], List[Dict]],
+):
+
+    diffs = m.compare_two_package_graphs(current_graph, new_graph)
+
+    # For each element in the response tuple (current/new intersection, current/new unique)
+    for diff, expected_diff in zip(diffs, expected_diffs):
+        for node, expected_node in zip(diff, expected_diff):
+            print(node)
+            print(expected_node)
+            # Ensure package name and versions are the same
+            assert node["label"] == expected_node["label"]
+
+
 count_advisories_by_severity_testcases = {
     "none": ([], m.Counter()),
     "empty_str_ignored": ([m.Advisory(severity=""),], m.Counter(),),

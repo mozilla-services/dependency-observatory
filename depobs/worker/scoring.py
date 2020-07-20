@@ -422,3 +422,71 @@ def find_component_with_package_report_field(
         if package_report_field in component.package_report_fields.keys():
             return component
     return None
+
+
+def compare_two_package_graphs(
+    package_graph_current: PackageGraph, package_graph_new: PackageGraph
+) -> Tuple[List[Dict], List[Dict], List[Dict], List[Dict]]:
+
+    nx_graph_current: nx.DiGraph = add_scoring_component_data_to_node_attrs(
+        package_graph_current,
+        graph_util.package_graph_to_networkx_graph(package_graph_current),
+        [PackageVersionScoreComponent],
+    )
+
+    nx_graph_new: nx.DiGraph = add_scoring_component_data_to_node_attrs(
+        package_graph_new,
+        graph_util.package_graph_to_networkx_graph(package_graph_new),
+        [PackageVersionScoreComponent],
+    )
+
+    nodes_current = nx_graph_current.nodes
+    nodes_new = nx_graph_new.nodes
+
+    package_tuples_current = set()
+    package_tuples_new = set()
+
+    for node_id in nodes_current:
+        package_version = nodes_current[node_id].get("package_version", None)
+        package_tuples_current.add((package_version.name, package_version.version))
+
+    for node_id in nodes_new:
+        package_version = nodes_new[node_id].get("package_version", None)
+        package_tuples_new.add((package_version.name, package_version.version))
+
+    intersection = package_tuples_current & package_tuples_new
+
+    intersection_nodes_current = [
+        node
+        for node in nodes_current.values()
+        if (
+            node.get("package_version", None).name,
+            node.get("package_version", None).version,
+        )
+        in intersection
+    ]
+    intersection_nodes_new = [
+        node
+        for node in nodes_new.values()
+        if (
+            node.get("package_version", None).name,
+            node.get("package_version", None).version,
+        )
+        in intersection
+    ]
+
+    unique_nodes_current = [
+        node
+        for node in nodes_current.values()
+        if node not in intersection_nodes_current
+    ]
+    unique_nodes_new = [
+        node for node in nodes_new.values() if node not in intersection_nodes_new
+    ]
+
+    return (
+        intersection_nodes_current,
+        intersection_nodes_new,
+        unique_nodes_current,
+        unique_nodes_new,
+    )
