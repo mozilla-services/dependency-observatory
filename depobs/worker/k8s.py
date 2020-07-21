@@ -169,17 +169,6 @@ def read_job_status(
     return read_job(namespace, name, context_name).status
 
 
-def delete_job(namespace: str, name: str, context_name: Optional[str] = None):
-    api_client = get_api_client(context_name)
-    return kubernetes.client.BatchV1Api(api_client=api_client).delete_namespaced_job(
-        name=name,
-        namespace=namespace,
-        body=kubernetes.client.V1DeleteOptions(
-            propagation_policy="Foreground", grace_period_seconds=5
-        ),
-    )
-
-
 def get_job_pod(
     namespace: str, name: str, context_name: Optional[str] = None
 ) -> kubernetes.client.V1Pod:
