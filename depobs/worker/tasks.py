@@ -90,12 +90,12 @@ async def scan_tarball_url(
     tarball_url: str,
     package_name: Optional[str] = None,
     package_version: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> None:
     """
     Takes a run_repo_tasks config, tarball url, and optional package
-    name and version
+    name and version.
 
-    returns
+    Returns on the job completing successfully and raises an Exception otherwise
     """
     job_name = f"scan-tarball-url-{hex(randrange(1 << 32))[2:]}"
     job_config: k8s.KubeJobConfig = {
@@ -133,11 +133,6 @@ async def scan_tarball_url(
                 break
             if status.succeeded:
                 log.info(f"k8s job {job_name} succeeded")
-                stdout = k8s.read_job_logs(
-                    job_config["namespace"],
-                    job_name,
-                    context_name=job_config["context_name"],
-                )
                 break
             if not status.active:
                 log.error(f"k8s job {job_name} stopped")
@@ -153,20 +148,7 @@ async def scan_tarball_url(
                 context_name=job_config["context_name"],
             )
             log.info(f"got job status {status}")
-
-    versions: Optional[Dict[str, str]] = None
-    task_results: List[Dict[str, Any]] = []
-    for stdout_line in stdout.split("\n"):
-        line = serializers.parse_stdout_as_json(stdout_line.strip("\r"))
-        if not isinstance(line, dict):
-            continue
-        if line.get("type", None) != "task_result":
-            continue
-        versions = versions or line.get("versions", None)
-        line["container_name"] = job_name
-        task_results.append(line)
-
-    return dict(versions=versions, task_results=task_results)
+    return None
 
 
 def scan_npm_package_then_build_report_tree(
@@ -214,7 +196,7 @@ def scan_npm_package_then_build_report_tree(
             )
             # start an npm container, install the tarball, run list and audit
             # assert tarball_url == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{package_version}.tgz
-            container_task_results: Dict[str, Any] = asyncio.run(
+            asyncio.run(
                 scan_tarball_url(
                     current_app.config["SCAN_NPM_TARBALL_ARGS"],
                     tarball_url,
