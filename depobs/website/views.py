@@ -9,6 +9,7 @@ from flask import (
     Response,
     current_app,
     g,
+    jsonify,
     render_template,
     request,
     stream_with_context,
@@ -169,13 +170,19 @@ def get_scan(job_id: int) -> Dict:
     )
 
 
-@api.route("/api/v1/jobs/<string:job_name>/logs", methods=["GET"])
-def read_job_logs(job_name: str):
-    return k8s.read_job_logs(
-        namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-        name=job_name,
-        context_name=None,
-    )
+@api.route("/api/v1/jobs/<int:job_id>/logs", methods=["GET"])
+def read_scan_logs(job_id: int) -> Dict:
+    """
+    Returns the scan JSONResults
+    """
+    json_results = list(models.get_scan_results_by_id(job_id).all())
+    if not json_results:
+        raise NotFound
+
+    serialized = [JSONResultSchema().dump(json_result) for json_result in json_results]
+    log.info(f"got s'd jr {serialized}")
+
+    return jsonify(serialized)
 
 
 @api.route("/jobs/<string:job_name>/logs", methods=["GET"])
