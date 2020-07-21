@@ -197,6 +197,10 @@ spec:
           value: postgresql+psycopg2://postgres:postgres@db/dependency_observatory
         - name: GCP_PROJECT_ID
           value: replaceme
+        - name: JOB_STATUS_PUBSUB_TOPIC
+          value: job-status-dev
+        - name: JOB_STATUS_PUBSUB_SUBSCRIPTION
+          value: job-status-dev
         - name: GOOGLE_APPLICATION_CREDENTIALS
           value: "/var/secrets/google/key.json"
         image: mozilla/dependency-observatory
