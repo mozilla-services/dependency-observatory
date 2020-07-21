@@ -32,6 +32,12 @@ def listen_and_serve() -> None:
         current_app.config["GCP_PROJECT_ID"],
         current_app.config["JOB_STATUS_PUBSUB_TOPIC"],
     )
+    for message in gcp.subscribe_and_poll(
+        current_app.config["GCP_PROJECT_ID"],
+        current_app.config["JOB_STATUS_PUBSUB_TOPIC"],
+        current_app.config["JOB_STATUS_PUBSUB_SUBSCRIPTION"],
+    ):
+        log.info(f"got pubsub message: {message}")
 
 
 @npm_cli.command("scan")
