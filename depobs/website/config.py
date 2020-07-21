@@ -84,15 +84,22 @@ WEB_JOB_CONFIGS = {
 
 SCAN_NPM_TARBALL_ARGS = dict(
     backoff_limit=4,
-    ttl_seconds_after_finished=3600 * 8,  # keeps jobs for 8 hours
-    context_name=UNTRUSTED_JOB_CONTEXT,
-    namespace=UNTRUSTED_JOB_NAMESPACE,
+    ttl_seconds_after_finished=None,
+    context_name=None,
+    namespace="default",
     language="nodejs",
     package_manager="npm",
     image_name="mozilla/dependency-observatory:node-12",
     repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
     service_account_name=os.environ.get("JOB_SERVICE_ACCOUNT_NAME", ""),
+    env=dict(GCP_PUBSUB_TOPIC=JOB_STATUS_PUBSUB_TOPIC, GCP_PROJECT_ID=GCP_PROJECT_ID,),
 )
+# for local dev override set job creds
+if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+    assert isinstance(SCAN_NPM_TARBALL_ARGS["env"], dict)
+    SCAN_NPM_TARBALL_ARGS["env"]["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ[
+        "GOOGLE_APPLICATION_CREDENTIALS"
+    ]
 
 # depobs http client config
 

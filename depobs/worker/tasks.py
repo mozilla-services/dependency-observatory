@@ -54,20 +54,7 @@ from depobs.worker import k8s
 log = logging.getLogger(__name__)
 
 
-class RunRepoTasksConfig(TypedDict):
-    # k8s config context name to use (to access other clusters)
-    context_name: str
-
-    # k8s namespace to create pods e.g. "default"
-    namespace: str
-
-    # number of retries before marking this job failed
-    backoff_limit: int
-
-    # number of seconds the job completes or fails to delete it
-    # 0 to delete immediately, None to never delete the job
-    ttl_seconds_after_finished: Optional[int]
-
+class RunRepoTasksConfig(k8s.KubeJobConfig, total=True):
     # Language to run commands for
     language: str
 
@@ -77,12 +64,6 @@ class RunRepoTasksConfig(TypedDict):
     # Run install, list_metadata, or audit tasks in the order
     # provided
     repo_tasks: List[str]
-
-    # Docker image to run
-    image_name: str
-
-    # k8s service account name to run the job pod with
-    service_account_name: str
 
 
 async def scan_tarball_url(
@@ -107,6 +88,7 @@ async def scan_tarball_url(
         "image_name": config["image_name"],
         "args": config["repo_tasks"],
         "env": {
+            **config["env"],
             "LANGUAGE": config["language"],
             "PACKAGE_MANAGER": config["package_manager"],
             "PACKAGE_NAME": package_name or "unknown-package-name",
@@ -114,7 +96,6 @@ async def scan_tarball_url(
             # see: https://github.com/mozilla-services/dependency-observatory/issues/280#issuecomment-641588717
             "INSTALL_TARGET": ".",
             "JOB_NAME": job_name,
-            "GCP_PUBSUB_TOPIC": current_app.config["JOB_STATUS_PUBSUB_TOPIC"],
         },
         "service_account_name": config["service_account_name"],
     }
@@ -170,7 +151,6 @@ def scan_npm_package_then_build_report_tree(
 
     # TODO: use asyncio.gather to run these concurrently
     fetch_and_save_registry_entries([package_name])
-
     fetch_and_save_npmsio_scores([package_name])
 
     scanned_package_name_and_versions: List[Tuple[str, str]] = []
