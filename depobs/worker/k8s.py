@@ -182,22 +182,6 @@ def get_pod_container_name(pod: kubernetes.client.V1Pod) -> Optional[str]:
     return None
 
 
-def read_job_logs(
-    namespace: str,
-    name: str,
-    context_name: Optional[str] = None,
-    read_logs_kwargs: Optional[Dict] = None,
-) -> str:
-    api_client = get_api_client(context_name)
-    read_logs_kwargs = dict() if read_logs_kwargs is None else read_logs_kwargs
-    job_pod_name = get_job_pod(namespace, name).metadata.name
-
-    log.info(f"reading logs from pod {job_pod_name} for job {namespace} {name}")
-    return kubernetes.client.CoreV1Api(api_client=api_client).read_namespaced_pod_log(
-        name=job_pod_name, namespace=namespace, **read_logs_kwargs
-    )
-
-
 def watch_job(
     namespace: str,
     name: str,
