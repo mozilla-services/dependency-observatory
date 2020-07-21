@@ -51,7 +51,10 @@ DEFAULT_SCORED_AFTER_DAYS = 365 * 10
 GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", None)
 
 # GCP pubsub topic id
-JOB_STATUS_PUBSUB_TOPIC = os.environ.get("JOB_STATUS_PUBSUB_TOPIC", "depobs_jobs")
+JOB_STATUS_PUBSUB_TOPIC = os.environ.get("JOB_STATUS_PUBSUB_TOPIC", None)
+
+# GCP pubsub subscription id
+JOB_STATUS_PUBSUB_SUBSCRIPTION = os.environ.get("JOB_STATUS_PUBSUB_SUBSCRIPTION", None)
 
 # k8s job configs the flask app can run
 WEB_JOB_CONFIGS = {
