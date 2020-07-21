@@ -56,9 +56,12 @@ def pg_utcnow(element: Any, compiler: Any, **kw: Dict) -> str:
     return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
 
 
-# TODO: harmonize with stuff defined in models/languages
 lang_enum = ENUM("node", "rust", "python", name="language_enum")
 package_manager_enum = ENUM("npm", "yarn", name="package_manager_enum")
+# scans transition from queued -> started -> {succeeded, failed}
+scan_status_enum = ENUM(
+    "queued", "started", "failed", "succeeded", name="scan_status_enum"
+)
 
 
 class Dependency(db.Model):
@@ -756,6 +759,26 @@ class JSONResult(db.Model):
     inserted_at = deferred(Column(DateTime(timezone=False), server_default=utcnow()))
 
     data = Column("data", JSONB)
+
+
+class Scan(db.Model):
+    """
+    Pending, running, and completed package scans
+    """
+
+    __tablename__ = "scans"
+
+    id = Column(Integer, primary_key=True)
+
+    # track when it was inserted and changed
+    inserted_at = deferred(Column(DateTime(timezone=False), server_default=utcnow()))
+    updated_at = deferred(Column(DateTime(timezone=False), onupdate=utcnow()))
+
+    # blob of scan name, version, args, and kwargs
+    params = Column("params", JSONB)
+
+    # scan status
+    status = Column(scan_status_enum, nullable=False)
 
 
 def get_package_report(
