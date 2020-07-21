@@ -36,8 +36,8 @@ def test_valid_create_job_and_get(models, client):
     response = client.get(f"/api/v1/jobs/{scan_id}",)
     assert response.status == "200 OK"
 
-    response = client.get(f"/api/v1/jobs/{response.json['id']}/logs",)
-    assert response.status == "404 Not Found"
+    response = client.get(f"/api/v1/jobs/{scan_id}/logs",)
+    assert response.status == "404 NOT FOUND"
 
     # insert a fake result for the scan
     scan = models.db.session.query(models.Scan).filter_by(id=scan_id).first()
@@ -45,9 +45,12 @@ def test_valid_create_job_and_get(models, client):
     models.db.session.add(result)
     models.db.session.commit()
     scan.result_id = result.id
-    models.db.session.update(scan)
+    models.db.session.add(scan)
     models.db.session.commit()
 
-    response = client.get(f"/api/v1/jobs/{response.json['id']}/logs",)
+    response = client.get(f"/api/v1/jobs/{scan_id}/logs",)
     assert response.status == "200 OK"
-    assert response.json == -1
+    assert set(response.json.keys()) == {"data", "id", "url"}
+    assert response.json["data"] == [{"foo": "bar"}]
+    assert response.json["url"] is None
+    assert isinstance(response.json["id"], int)

@@ -20,7 +20,12 @@ import networkx as nx
 import urllib3
 from werkzeug.exceptions import BadGateway, BadRequest, NotFound
 
-from depobs.website.schemas import JobParamsSchema, PackageReportParamsSchema
+from depobs.website.schemas import (
+    JobParamsSchema,
+    JSONResultSchema,
+    PackageReportParamsSchema,
+    ScanSchema,
+)
 from depobs.database import models
 from depobs.util import graph_traversal
 from depobs.util import graph_util
@@ -145,10 +150,12 @@ def queue_scan() -> Tuple[Dict, int]:
     if web_job_config.name not in current_app.config["WEB_JOB_NAMES"]:
         raise BadRequest(description="job not allowed or does not exist for app")
 
-    scan = models.Scan(params=web_job_config, status="queued",)
+    scan = models.Scan(params=JobParamsSchema().dump(web_job_config), status="queued",)
     models.db.session.add(scan)
+    models.db.session.commit()
     log.info(f"queued job {scan.id}")
-    return scan, 202
+
+    return ScanSchema().dump(scan), 202
 
 
 @api.route("/api/v1/jobs/<int:job_id>", methods=["GET"])
@@ -157,7 +164,9 @@ def get_scan(job_id: int) -> Dict:
     Returns the scan as JSON
     """
     log.info(f"fetching scan {job_id}")
-    return models.db.session.query(models.Scan).filter_by(id=job_id).one()
+    return ScanSchema().dump(
+        models.db.session.query(models.Scan).filter_by(id=job_id).one()
+    )
 
 
 @api.route("/api/v1/jobs/<int:job_id>/logs", methods=["GET"])
@@ -168,7 +177,7 @@ def read_scan_logs(job_id: str) -> Dict:
     scan = models.db.session.query(models.Scan).filter_by(id=job_id).first()
     if scan.result_id is None:
         raise NotFound
-    return (
+    return JSONResultSchema().dump(
         models.db.session.query(models.JSONResult).filter_by(id=scan.result_id).first()
     )
 

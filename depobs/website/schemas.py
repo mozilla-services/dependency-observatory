@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 # from flask import current_app
 import marshmallow
@@ -51,3 +51,39 @@ class PackageReportParams:
 
 
 PackageReportParamsSchema = marshmallow_dataclass.class_schema(PackageReportParams)
+
+
+@dataclass
+class Scan:
+    """
+    A package scan
+    """
+
+    id: int
+
+    # blob of scan name, version, args, and kwargs
+    params: Dict[str, Any]
+
+    # scan status
+    status: Optional[str]
+
+    # job logs
+    result_id: Optional[int]
+
+
+ScanSchema = marshmallow_dataclass.class_schema(Scan)
+
+
+@dataclass
+class JSONResult:
+    """
+    A package scan
+    """
+
+    id: int
+
+    data: List[Dict[str, Any]]
+    url: Optional[str]
+
+
+JSONResultSchema = marshmallow_dataclass.class_schema(JSONResult)
