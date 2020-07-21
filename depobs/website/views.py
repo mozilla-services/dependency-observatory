@@ -160,12 +160,16 @@ def get_scan(job_id: int) -> Dict:
     return models.db.session.query(models.Scan).filter_by(id=job_id).one()
 
 
-@api.route("/api/v1/jobs/<string:job_name>/logs", methods=["GET"])
-def read_job_logs(job_name: str):
-    return k8s.read_job_logs(
-        namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-        name=job_name,
-        context_name=None,
+@api.route("/api/v1/jobs/<int:job_id>/logs", methods=["GET"])
+def read_scan_logs(job_id: str) -> Dict:
+    """
+    Returns a scan logs
+    """
+    scan = models.db.session.query(models.Scan).filter_by(id=job_id).first()
+    if scan.result_id is None:
+        raise NotFound
+    return (
+        models.db.session.query(models.JSONResult).filter_by(id=scan.result_id).first()
     )
 
 

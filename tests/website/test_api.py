@@ -24,15 +24,30 @@ def test_invalid_create_job_params(client):
     assert response.json == {"extra": ["Unknown field."]}
 
 
-def test_valid_create_job_and_get(client):
-    response = client.post(
+def test_valid_create_job_and_get(models, client):
+    scan_response = client.post(
         "/api/v1/jobs",
         json={"name": "scan_score_npm_package", "args": [], "kwargs": {}},
     )
-    assert response.status == "202 ACCEPTED"
-    assert "id" in response.json
+    assert scan_response.status == "202 ACCEPTED"
+    assert "id" in scan_response.json
+    scan_id = scan_response.json["id"]
 
-    response = client.get(
-        f"/api/v1/jobs/{response.json['id']}",
-    )
+    response = client.get(f"/api/v1/jobs/{scan_id}",)
     assert response.status == "200 OK"
+
+    response = client.get(f"/api/v1/jobs/{response.json['id']}/logs",)
+    assert response.status == "404 Not Found"
+
+    # insert a fake result for the scan
+    scan = models.db.session.query(models.Scan).filter_by(id=scan_id).first()
+    result = models.JSONResult(data=[{"foo": "bar"}],)
+    models.db.session.add(result)
+    models.db.session.commit()
+    scan.result_id = result.id
+    models.db.session.update(scan)
+    models.db.session.commit()
+
+    response = client.get(f"/api/v1/jobs/{response.json['id']}/logs",)
+    assert response.status == "200 OK"
+    assert response.json == -1
