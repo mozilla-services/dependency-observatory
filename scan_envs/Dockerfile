@@ -8,7 +8,24 @@ RUN groupadd --gid 10001 app && \
       --home-dir /home/app/ app
 RUN install -o app -g app -d /var/run/app /var/log/app /home/app
 
-RUN apt-get -y update && apt-get install -y git jq ripgrep curl
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y update && \
+    apt-get install --no-install-recommends -y \
+	    curl \
+	    git \
+	    jq \
+	    ripgrep \
+            apt-transport-https \
+            ca-certificates \
+            curl \
+            gnupg
+
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | \
+    tee -a /etc/apt/sources.list.d/google-cloud-sdk.list && \
+      curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+      apt-key --keyring /usr/share/keyrings/cloud.google.gpg  add - && \
+      DEBIAN_FRONTEND=noninteractive apt-get update -y && \
+      apt-get install google-cloud-sdk -y
+
 RUN cargo --version && cargo install cargo-audit || true
 
 RUN mkdir -p /opt
