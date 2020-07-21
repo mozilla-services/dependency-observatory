@@ -113,6 +113,7 @@ async def scan_tarball_url(
             "PACKAGE_VERSION": package_version or "unknown-package-version",
             # see: https://github.com/mozilla-services/dependency-observatory/issues/280#issuecomment-641588717
             "INSTALL_TARGET": ".",
+            "JOB_NAME": job_name,
             "GCP_PUBSUB_TOPIC": current_app.config["JOB_STATUS_PUBSUB_TOPIC"],
         },
         "service_account_name": config["service_account_name"],
