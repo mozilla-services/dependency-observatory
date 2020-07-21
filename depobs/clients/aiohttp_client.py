@@ -40,6 +40,10 @@ class AIOHTTPClientConfig(TypedDict, total=True):  # require all keys defined be
     # optional API token
     bearer_auth_token: Optional[str]
 
+    # optional additional headers
+    additional_headers: Optional[Dict[str, str]]
+
+
 
 def aiohttp_session(config: AIOHTTPClientConfig) -> aiohttp.ClientSession:
     headers = {
@@ -49,6 +53,10 @@ def aiohttp_session(config: AIOHTTPClientConfig) -> aiohttp.ClientSession:
     }
     if config.get("bearer_auth_token", None):
         headers["Authorization"] = f"Bearer {config['bearer_auth_token']}"
+    if config.get("additional_headers", None):
+        additional_headers = config["additional_headers"]
+        for header in additional_headers:
+            headers[header] = additional_headers[header]
 
     return aiohttp.ClientSession(
         headers=headers,

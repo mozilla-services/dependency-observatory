@@ -40,6 +40,7 @@ import depobs.worker.serializers as serializers
 import depobs.worker.validators as validators
 
 from depobs.clients.aiohttp_client import AIOHTTPClientConfig
+from depobs.clients.hibp import fetch_hibp_breach_data
 from depobs.clients.npmsio import fetch_npmsio_scores
 from depobs.clients.npm_registry import fetch_npm_registry_metadata
 from depobs.database.models import (
@@ -508,3 +509,95 @@ def get_github_advisories() -> None:
             ids.append(node["advisory"]["id"])
 
     save_json_results(advisories)
+
+
+async def fetch_breach_data(
+    fetcher: Callable[
+        [AIOHTTPClientConfig, Iterable[str], Optional[int]],
+        AsyncGenerator[Result[Dict[str, Dict]], None],
+    ],
+    config: AIOHTTPClientConfig,
+    emails: List[str],
+) -> List[Dict]:
+    breach_results = []
+
+    async for breach_result in fetcher(config, emails):
+        if isinstance(breach_result, Exception):
+            raise breach_result
+        breach_results.append(breach_result)
+
+    return breach_results
+
+
+def get_maintainer_breaches(package_name: str, package_version: str = None) -> None: # TODO: fix signature
+
+    registry_entries = get_NPMRegistryEntry(package_name).all()
+    registry_entry = registry_entries[0]
+
+    if package_version:
+
+        package_version_validation_error = validators.get_npm_package_version_validation_error(
+            package_version
+        )
+        if package_version_validation_error is not None:
+            raise package_version_validation_error
+
+        for entry in registry_entries:
+            if entry.package_version == package_version:
+                registry_entry = entry
+                break
+
+    maintainers = registry_entry.maintainers
+
+    if maintainers:
+        emails = [maintainer["email"] for maintainer in maintainers]
+
+        leaks = dict()
+        totalLeaks = 0
+        totalViableLeaks = 0
+
+        websites = fetch_breaches(emails)
+
+    # for email in emails:
+    #     websites = queryHIBP(email)
+    #     viableLeakNum = sum([1 for key in websites if websites[key] == False])
+    #     leaks[email] = {
+    #         "leakNum": len(websites),
+    #         "viableLeakNum": viableLeakNum,
+    #         "leakWebsites": websites,
+    #     }
+    #     totalLeaks += len(websites)
+    #     totalViableLeaks += viableLeakNum
+    #
+    # avgLeaks = totalLeaks / len(emails) if len(emails) else 0.0
+    # avgViableLeaks = totalViableLeaks / len(emails) if len(emails) else 0.0
+
+    # return leaks, totalLeaks, totalViableLeaks, avgLeaks, avgViableLeaks
+
+    # save_json_results(breaches)
+
+
+def fetch_breaches(emails: List[str]) -> None: # TODO: fix return type List[Dict[str]]
+    # headers = {"user-agent": "package-analysis", "hibp-api-key": HIBP_V3_TOKEN}
+
+    breaches = asyncio.run(
+        fetch_breach_data(
+            fetch_hibp_breach_data, current_app.config["HIBP_CLIENT"], emails,
+        ),
+        debug=False,
+    )
+
+    print(breaches)
+
+    # breaches = [breach["Name"] for breach in response]
+    #
+    # result = dict()
+    # url = "https://haveibeenpwned.com/api/v3/breach/"
+    # for breach in breaches:
+    #     response = json.loads(
+    #         requests.get(url + urllib.parse.quote_plus(breach), headers=headers).content
+    #     )
+    #     _, viable = inPastYear(response["BreachDate"], "%Y-%m-%d")
+    #     result[breach] = viable
+    #
+    # return result

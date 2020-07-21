@@ -119,6 +119,15 @@ _aiohttp_args = dict(
     save_to_db=True,
 )
 
+HIBP_CLIENT = {
+    **_aiohttp_args,
+    **dict(
+        base_url=os.environ.get("HIBP_BASE_URL", "https://haveibeenpwned.com/api/v3/"),
+        additional_headers={"hibp-api-key": os.environ.get("HIBP_AUTH_TOKEN", None)},
+        max_connections=1,
+        user_agent="dependency_observatory" # Don't know why the user_agent above doesn't work
+    ),
+}
 
 NPM_CLIENT = {
     **_aiohttp_args,
