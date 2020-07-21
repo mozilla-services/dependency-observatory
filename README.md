@@ -35,7 +35,6 @@ dockerflow.lbheartbeat                GET, HEAD, OPTIONS  /__lbheartbeat__
 dockerflow.version                    GET, HEAD, OPTIONS  /__version__
 views_blueprint.create_job            OPTIONS, POST       /api/v1/jobs
 views_blueprint.get_job               GET, HEAD, OPTIONS  /api/v1/jobs/<string:job_name>
-views_blueprint.delete_job            DELETE, OPTIONS     /api/v1/jobs/<string:job_name>
 views_blueprint.read_job_logs         GET, HEAD, OPTIONS  /api/v1/jobs/<string:job_name>/logs
 views_blueprint.faq_page              GET, HEAD, OPTIONS  /faq
 views_blueprint.render_job_logs       GET, HEAD, OPTIONS  /jobs/<string:job_name>/logs

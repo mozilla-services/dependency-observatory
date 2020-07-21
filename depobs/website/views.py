@@ -172,19 +172,6 @@ def get_job(job_name: str):
     return job.to_dict()
 
 
-@api.route("/api/v1/jobs/<string:job_name>", methods=["DELETE"])
-def delete_job(job_name: str):
-    """
-    Returns the k8s job object (including status) for the default app namespace
-    """
-    log.info(f"deleting k8s job {job_name}")
-    return k8s.delete_job(
-        namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-        name=job_name,
-        context_name=None,
-    ).to_dict()
-
-
 @api.route("/api/v1/jobs/<string:job_name>/logs", methods=["GET"])
 def read_job_logs(job_name: str):
     return k8s.read_job_logs(
