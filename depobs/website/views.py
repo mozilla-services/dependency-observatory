@@ -130,9 +130,9 @@ def index_page() -> Any:
 
 
 @api.route("/api/v1/jobs", methods=["POST"])
-def create_job():
+def queue_scan() -> Tuple[Dict, int]:
     """
-    Creates a k8s job for a package and returns the k8s job object
+    Queues a scan for a package and returns the scan JSON with status 202
     """
     job_body = request.get_json()
     log.debug(f"received job JSON body: {job_body}")
@@ -141,21 +141,14 @@ def create_job():
     except ValidationError as err:
         return err.messages, 422
 
-    app_job_config = current_app.config["WEB_JOB_CONFIGS"].get(
-        web_job_config.name, None
-    )
     log.info(f"deserialized job JSON to {web_job_config.name}: {web_job_config}")
-    if app_job_config is None:
+    if web_job_config.name not in current_app.config["WEB_JOB_NAMES"]:
         raise BadRequest(description="job not allowed or does not exist for app")
 
-    # NB: name must be shorter than 64 chars
-    k8s_job_config: k8s.KubeJobConfig = dict(
-        **app_job_config,
-        name=f"{web_job_config.name.lower().replace('_', '-')}-{hex(randrange(1 << 32))[2:]}",
-        args=app_job_config["base_args"] + web_job_config.args,
-    )
-    log.info(f"creating k8s job {k8s_job_config['name']} with config: {k8s_job_config}")
-    return k8s.create_job(k8s_job_config).to_dict()
+    scan = models.Scan(params=web_job_config, status="queued",)
+    models.db.session.add(scan)
+    log.info(f"queued job {scan.id}")
+    return scan, 202
 
 
 @api.route("/api/v1/jobs/<string:job_name>", methods=["GET"])

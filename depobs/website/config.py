@@ -56,30 +56,8 @@ JOB_STATUS_PUBSUB_TOPIC = os.environ.get("JOB_STATUS_PUBSUB_TOPIC", None)
 # GCP pubsub subscription id
 JOB_STATUS_PUBSUB_SUBSCRIPTION = os.environ.get("JOB_STATUS_PUBSUB_SUBSCRIPTION", None)
 
-# k8s job configs the flask app can run
-WEB_JOB_CONFIGS = {
-    "scan_score_npm_package": dict(
-        backoff_limit=4,
-        ttl_seconds_after_finished=3600 * 8,  # keeps jobs for 8 hours
-        context_name=None,  # i.e. the in cluster config
-        namespace=DEFAULT_JOB_NAMESPACE,
-        image_name="mozilla/dependency-observatory:latest",
-        base_args=["worker", "npm", "scan"],
-        env={
-            k: os.environ[k]
-            # pass through env vars to run the flask app and untrusted jobs
-            for k in [
-                "FLASK_APP",
-                "FLASK_ENV",
-                "SQLALCHEMY_DATABASE_URI",
-                "UNTRUSTED_JOB_CONTEXT",
-                "UNTRUSTED_JOB_NAMESPACE",
-                "UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME",
-            ]
-            if k in os.environ
-        },
-        service_account_name=DEFAULT_JOB_SERVICE_ACCOUNT_NAME,
-    )
+WEB_JOB_NAMES = {
+    "scan_score_npm_package",
 }
 
 SCAN_NPM_TARBALL_ARGS: Dict[

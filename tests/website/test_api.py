@@ -22,3 +22,12 @@ def test_invalid_create_job_params(client):
     )
     assert response.status == "422 UNPROCESSABLE ENTITY"
     assert response.json == {"extra": ["Unknown field."]}
+
+
+def test_valid_create_job(client):
+    response = client.post(
+        "/api/v1/jobs",
+        json={"name": "scan_score_npm_package", "args": [], "kwargs": {}},
+    )
+    assert response.status == "202 ACCEPTED"
+    assert "id" in response.json
