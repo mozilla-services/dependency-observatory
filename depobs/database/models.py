@@ -757,6 +757,7 @@ class JSONResult(db.Model):
 
     data = Column("data", JSONB)
 
+    url = Column(String)
 
 def get_package_report(
     package: str, version: Optional[str] = None
