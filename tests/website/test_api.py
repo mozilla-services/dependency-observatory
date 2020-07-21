@@ -24,10 +24,15 @@ def test_invalid_create_job_params(client):
     assert response.json == {"extra": ["Unknown field."]}
 
 
-def test_valid_create_job(client):
+def test_valid_create_job_and_get(client):
     response = client.post(
         "/api/v1/jobs",
         json={"name": "scan_score_npm_package", "args": [], "kwargs": {}},
     )
     assert response.status == "202 ACCEPTED"
     assert "id" in response.json
+
+    response = client.get(
+        f"/api/v1/jobs/{response.json['id']}",
+    )
+    assert response.status == "200 OK"

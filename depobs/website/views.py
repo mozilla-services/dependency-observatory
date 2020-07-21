@@ -151,18 +151,13 @@ def queue_scan() -> Tuple[Dict, int]:
     return scan, 202
 
 
-@api.route("/api/v1/jobs/<string:job_name>", methods=["GET"])
-def get_job(job_name: str):
+@api.route("/api/v1/jobs/<int:job_id>", methods=["GET"])
+def get_scan(job_id: int) -> Dict:
     """
-    Returns the k8s job object (including status) in the default app namespace
+    Returns the scan as JSON
     """
-    log.info(f"fetching k8s job {job_name}")
-    job = k8s.read_job(
-        namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-        name=job_name,
-        context_name=None,
-    )
-    return job.to_dict()
+    log.info(f"fetching scan {job_id}")
+    return models.db.session.query(models.Scan).filter_by(id=job_id).one()
 
 
 @api.route("/api/v1/jobs/<string:job_name>", methods=["DELETE"])
