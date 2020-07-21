@@ -2,8 +2,6 @@
 
 FROM python:3.8-slim-buster
 
-MAINTAINER https://github.com/mozilla-services/dependency-observatory
-
 ENV PYTHONPATH $PYTHONPATH:/app
 ENV PYTHONUNBUFFERED 1
 
