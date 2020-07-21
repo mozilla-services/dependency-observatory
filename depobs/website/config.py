@@ -1,6 +1,6 @@
 import os
 import sys
-
+from typing import Dict, List, Union
 
 LOGGING = {
     "version": 1,
@@ -82,7 +82,12 @@ WEB_JOB_CONFIGS = {
     )
 }
 
-SCAN_NPM_TARBALL_ARGS = dict(
+SCAN_NPM_TARBALL_ARGS: Dict[
+    str,
+    Union[
+        str, int, None, Dict[str, Union[str, None]], List[Union[str, Dict[str, str]]]
+    ],
+] = dict(
     backoff_limit=4,
     ttl_seconds_after_finished=None,
     context_name=None,
@@ -93,6 +98,8 @@ SCAN_NPM_TARBALL_ARGS = dict(
     repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
     service_account_name=os.environ.get("JOB_SERVICE_ACCOUNT_NAME", ""),
     env=dict(GCP_PUBSUB_TOPIC=JOB_STATUS_PUBSUB_TOPIC, GCP_PROJECT_ID=GCP_PROJECT_ID,),
+    volume_mounts=[],
+    secrets=[],
 )
 # for local dev override set job creds
 if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
@@ -100,6 +107,14 @@ if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
     SCAN_NPM_TARBALL_ARGS["env"]["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ[
         "GOOGLE_APPLICATION_CREDENTIALS"
     ]
+    assert isinstance(SCAN_NPM_TARBALL_ARGS["volume_mounts"], list)
+    SCAN_NPM_TARBALL_ARGS["volume_mounts"] = [
+        dict(mount_path="/var/secrets/google", name="google-cloud-key",),
+    ]
+    SCAN_NPM_TARBALL_ARGS["secrets"] = [
+        dict(secret_name="dev-local-service-account", name="google-cloud-key")
+    ]
+
 
 # depobs http client config
 

@@ -97,7 +97,9 @@ async def scan_tarball_url(
             "INSTALL_TARGET": ".",
             "JOB_NAME": job_name,
         },
+        "secrets": config["secrets"],
         "service_account_name": config["service_account_name"],
+        "volume_mounts": config["volume_mounts"],
     }
     log.info(f"starting job {job_name} with config {job_config}")
     with k8s.run_job(job_config) as job:
