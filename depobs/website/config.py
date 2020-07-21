@@ -89,7 +89,7 @@ SCAN_NPM_TARBALL_ARGS = dict(
     package_manager="npm",
     image_name="mozilla/dependency-observatory:node-12",
     repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
-    service_account_name=UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME,
+    service_account_name=os.environ.get("JOB_SERVICE_ACCOUNT_NAME", ""),
 )
 
 # depobs http client config
