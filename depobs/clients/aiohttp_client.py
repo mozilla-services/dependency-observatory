@@ -53,10 +53,9 @@ def aiohttp_session(config: AIOHTTPClientConfig) -> aiohttp.ClientSession:
     if config.get("bearer_auth_token", None):
         headers["Authorization"] = f"Bearer {config['bearer_auth_token']}"
     if config.get("additional_headers", None):
-        if config["additional_headers"]:
-            additional_headers = config["additional_headers"]
-            for header in additional_headers:
-                headers[header] = additional_headers[header]
+        additional_headers = config["additional_headers"]
+        for header in additional_headers:
+            headers[header] = additional_headers[header]
 
     return aiohttp.ClientSession(
         headers=headers,
