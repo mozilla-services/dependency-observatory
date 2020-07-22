@@ -529,9 +529,13 @@ async def fetch_breach_data(
     return breach_results
 
 
-def get_maintainer_breaches(package_name: str, package_version: str = None) -> None: # TODO: fix signature
+def get_maintainer_breaches(package_name: str, package_version: str = None) -> None:
 
     registry_entries = get_NPMRegistryEntry(package_name).all()
+
+    if not registry_entries:
+        return
+
     registry_entry = registry_entries[0]
 
     if package_version:
@@ -548,37 +552,37 @@ def get_maintainer_breaches(package_name: str, package_version: str = None) -> N
                 break
 
     maintainers = registry_entry.maintainers
+    emails = [maintainer["email"] for maintainer in maintainers]
+
+    breach_results = dict()
+    total_breaches = 0
 
     if maintainers:
-        emails = [maintainer["email"] for maintainer in maintainers]
 
-        leaks = dict()
-        totalLeaks = 0
-        totalViableLeaks = 0
+        breaches = fetch_breaches(emails)
 
-        websites = fetch_breaches(emails)
+        for email, breach_list in zip(emails, breaches):
 
-    # for email in emails:
-    #     websites = queryHIBP(email)
-    #     viableLeakNum = sum([1 for key in websites if websites[key] == False])
-    #     leaks[email] = {
-    #         "leakNum": len(websites),
-    #         "viableLeakNum": viableLeakNum,
-    #         "leakWebsites": websites,
-    #     }
-    #     totalLeaks += len(websites)
-    #     totalViableLeaks += viableLeakNum
-    #
-    # avgLeaks = totalLeaks / len(emails) if len(emails) else 0.0
-    # avgViableLeaks = totalViableLeaks / len(emails) if len(emails) else 0.0
+            breach_results[email] = {
+                "breach_num": len(breach_list),
+                "breaches": breach_list,
+            }
+            total_breaches += len(breach_list)
 
-    # return leaks, totalLeaks, totalViableLeaks, avgLeaks, avgViableLeaks
+    average_breaches = total_breaches / len(emails) if len(emails) else 0.0
 
-    # save_json_results(breaches)
+    result = {
+        "package_name": package_name,
+        "package_version": package_version,
+        "breaches": breach_results,
+        "total_breaches": total_breaches,
+        "average_breaches": average_breaches,
+    }
+
+    save_json_results([result])
 
 
-def fetch_breaches(emails: List[str]) -> None: # TODO: fix return type List[Dict[str]]
-    # headers = {"user-agent": "package-analysis", "hibp-api-key": HIBP_V3_TOKEN}
+def fetch_breaches(emails: List[str]) -> List[Dict[str, str]]:
 
     breaches = asyncio.run(
         fetch_breach_data(
@@ -587,17 +591,4 @@ def fetch_breaches(emails: List[str]) -> None: # TODO: fix return type List[Dict
         debug=False,
     )
 
-    print(breaches)
-
-    # breaches = [breach["Name"] for breach in response]
-    #
-    # result = dict()
-    # url = "https://haveibeenpwned.com/api/v3/breach/"
-    # for breach in breaches:
-    #     response = json.loads(
-    #         requests.get(url + urllib.parse.quote_plus(breach), headers=headers).content
-    #     )
-    #     _, viable = inPastYear(response["BreachDate"], "%Y-%m-%d")
-    #     result[breach] = viable
-    #
-    # return result
+    return breaches

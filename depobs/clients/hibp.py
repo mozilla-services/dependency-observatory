@@ -1,11 +1,15 @@
 import asyncio
-import logging
 from urllib import parse
+
+import aiohttp
+import backoff
+import logging
 from typing import Any, AsyncGenerator, Dict, Iterable, Optional
 
 from depobs.clients.aiohttp_client import (
     AIOHTTPClientConfig,
     aiohttp_session,
+    is_not_found_exception,
     request_json,
 )
 from depobs.util.serialize_util import grouper
@@ -15,22 +19,28 @@ log = logging.getLogger(__name__)
 
 
 async def fetch_hibp_breach_data(
-    config: AIOHTTPClientConfig,
-    emails: Iterable[str],
+    config: AIOHTTPClientConfig, emails: Iterable[str],
 ) -> AsyncGenerator[Result[Dict[str, Dict]], None]:
     """
     Fetches breach information for one or more email accounts
 
     Uses: https://haveibeenpwned.com/API/v3#BreachesForAccount
     """
+
+    async_query_with_backoff = backoff.on_exception(
+        backoff.constant,
+        (aiohttp.ClientResponseError, aiohttp.ClientError, asyncio.TimeoutError),
+        max_tries=config["max_retries"],
+        giveup=is_not_found_exception,
+        logger=log,
+        interval=2,
+    )(request_json)
+
     async with aiohttp_session(config) as s:
         results = await asyncio.gather(
             *[
-                request_json(
-                    s,
-                    "GET",
-                    # f"{config['base_url']}breachedaccount/{parse.quote_plus(email)}",
-                    f"{config['base_url']}breachedaccount/{email}",
+                async_query_with_backoff(
+                    s, "GET", f"{config['base_url']}breachedaccount/{email}",
                 )
                 for email in emails
             ]
@@ -38,8 +48,21 @@ async def fetch_hibp_breach_data(
 
         for result in results:
             if result is None:
-                log.warn(
-                    f"got None HIBP results for emails {emails}"
-                )
+                log.warn(f"got None HIBP results for emails {emails}")
                 continue
+
+            breach_details = await asyncio.gather(
+                *[
+                    async_query_with_backoff(
+                        s, "GET", f"{config['base_url']}breach/{breach['Name']}",
+                    )
+                    for breach in result
+                ]
+            )
+
+            breach_dates = [detail["BreachDate"] for detail in breach_details]
+
+            for dict, date in zip(result, breach_dates):
+                dict["Date"] = date
+
             yield result

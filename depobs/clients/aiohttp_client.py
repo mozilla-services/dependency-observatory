@@ -44,7 +44,6 @@ class AIOHTTPClientConfig(TypedDict, total=True):  # require all keys defined be
     additional_headers: Optional[Dict[str, str]]
 
 
-
 def aiohttp_session(config: AIOHTTPClientConfig) -> aiohttp.ClientSession:
     headers = {
         "Accept": "application/json",
