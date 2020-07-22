@@ -513,7 +513,7 @@ def get_github_advisories() -> None:
 
 async def fetch_breach_data(
     fetcher: Callable[
-        [AIOHTTPClientConfig, Iterable[str], Optional[int]],
+        [AIOHTTPClientConfig, Iterable[str],],
         AsyncGenerator[Result[Dict[str, Dict]], None],
     ],
     config: AIOHTTPClientConfig,
