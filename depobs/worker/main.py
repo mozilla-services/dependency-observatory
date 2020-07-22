@@ -5,7 +5,6 @@ from flask import Flask, current_app
 from flask.cli import AppGroup, with_appcontext
 
 from depobs.website.do import create_app
-from depobs.worker import gcp
 from depobs.worker import tasks
 
 log = logging.getLogger(__name__)
@@ -18,26 +17,11 @@ npm_cli = AppGroup("npm")
 @with_appcontext
 def listen_and_serve() -> None:
     """
-    Run a worker process that:
+    Run a worker daemon that runs one or more async or backgroud tasks
+    of the following:
 
-    * reads tasks from the pending tasks table
-    * start k8s jobs in the untrusted jobs cluster
-    * subscribes to pubsub output from the running jobs
-    * saves the job output
-    * fetches additional data from APIs
-    * score packages from the fetched data and scan results
     """
-    # create the topic if it doesn't exist
-    gcp.create_pubsub_topic(
-        current_app.config["GCP_PROJECT_ID"],
-        current_app.config["JOB_STATUS_PUBSUB_TOPIC"],
-    )
-    for message in gcp.subscribe_and_poll(
-        current_app.config["GCP_PROJECT_ID"],
-        current_app.config["JOB_STATUS_PUBSUB_TOPIC"],
-        current_app.config["JOB_STATUS_PUBSUB_SUBSCRIPTION"],
-    ):
-        log.info(f"got pubsub message: {message}")
+    tasks.run_pubsub_thread(app)
 
 
 @npm_cli.command("scan")

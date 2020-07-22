@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Generator, Optional, Tuple
+from typing import Callable, Dict, Generator, Optional, Tuple
 
 from google.api_core.exceptions import AlreadyExists, GoogleAPICallError, RetryError
 from google.cloud import pubsub_v1
@@ -48,40 +48,31 @@ def subscribe_to_pubsub_topic(
     return subscriber, subscription_path
 
 
-def subscribe_and_poll(
-    project_id: str, topic_id: str, subscription_id: str
-) -> Generator[Optional[Dict], None, None]:
+def receive_pubsub_messages(
+    project_id: str,
+    topic_id: str,
+    subscription_id: str,
+    callback: Callable[[pubsub_v1.types.PubsubMessage], None],
+) -> pubsub_v1.subscriber.futures.StreamingPullFuture:
     """
-    Subscribes to the pubsub topic ID and polls for responses yielding
-    received messages (possibly redundant messages) and acking them
-    when the next message is received
+    Starts a background thread that subscribes to the pubsub topic ID
+    and calls the callback param on each message. Returns the pubsub
+    StreamingPullFuture.
+
+    The callback should:
+
+    * call .ack() or .nack() on each message
+    * be idempotent since messages might be delivered twice
+    * not raise exceptions unless it wants to stop receiving messages
 
     """
     subscriber, subscription_path = subscribe_to_pubsub_topic(
         project_id, topic_id, subscription_id,
     )
-    max_messages = 10
-    timeout = 15
-    while True:
-        log.info(
-            f"polling for messages from {subscription_path} (max_msgs={max_messages}, timeout={timeout})"
-        )
-        try:
-            response: pubsub_v1.types.PullResponse = subscriber.pull(
-                subscription_path, max_messages=max_messages, timeout=timeout
-            )
-        except RetryError as err:
-            log.info(f"got gapi retry error {err}")
-            continue
-        except GoogleAPICallError as err:
-            log.error(f"got generic gapi call error {err}")
-            continue
-
-        for message in response.received_messages:
-            # TODO: have receiver send whether to ack each message or not back
-            # ack: bool = yield message
-            # if ack:
-            #     subscriber.acknowledge(subscription_path, message.ack_id)
-            yield message
-            log.info(f"acking message with ack_id: {message.ack_id}")
-            subscriber.acknowledge(subscription_path, [message.ack_id])
+    log.info(
+        f"starting thread to receive messages from {subscription_path} and call {callback} on them"
+    )
+    future: pubsub_v1.subscriber.futures.StreamingPullFuture = subscriber.subscribe(
+        subscription_path, callback
+    )
+    return future
