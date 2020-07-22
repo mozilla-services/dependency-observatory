@@ -1,4 +1,6 @@
+import asyncio
 import logging
+from typing import List
 
 import click
 from flask import Flask, current_app
@@ -13,15 +15,23 @@ app = create_app()
 npm_cli = AppGroup("npm")
 
 
-@app.cli.command("run")
-@with_appcontext
-def listen_and_serve() -> None:
-    """
-    Run a worker daemon that runs one or more async or backgroud tasks
-    of the following:
+TASK_NAMES = ["save_pubsub", "run_scan"]
+assert all(getattr(tasks, task_name) for task_name in TASK_NAMES)
 
+
+@app.cli.command("run")
+@click.option(
+    "--task-name", required=True, type=click.Choice(TASK_NAMES), multiple=True,
+)
+@with_appcontext
+def listen_and_run(task_name: List[str]) -> None:
     """
-    tasks.run_pubsub_thread(app)
+    Run one or more background tasks
+    """
+    log.info(f"starting background tasks: {task_name}")
+    asyncio.run(
+        tasks.run_background_tasks(app, [getattr(tasks, name) for name in task_name])
+    )
 
 
 @npm_cli.command("scan")
