@@ -1348,3 +1348,22 @@ def update_advisory_vulnerable_package_versions(
 def save_json_results(json_results: List[Dict]) -> None:
     db.session.add_all(JSONResult(data=json_result) for json_result in json_results)
     db.session.commit()
+
+
+def get_next_queued_scan() -> sqlalchemy.orm.query.Query:
+    """
+    Returns the next scan with status queued.
+
+    >>> 'queued' in scan_status_enum.enums
+    True
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_next_queued_scan())
+    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status \\nFROM scans \\nWHERE scans.status = %(status_1)s ORDER BY scans.inserted_at DESC \\n LIMIT %(param_1)s'
+    """
+    return (
+        db.session.query(Scan)
+        .filter_by(status="queued")
+        .order_by(Scan.inserted_at.desc())
+        .limit(1)
+    )
