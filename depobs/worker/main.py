@@ -38,6 +38,16 @@ def get_ecosystem_advisories() -> None:
     tasks.get_github_advisories()
 
 
+@npm_cli.command("breaches")
+@click.argument("package_name", envvar="PACKAGE_NAME")
+@click.argument("package_version", envvar="PACKAGE_VERSION", required=False)
+def get_maintainer_breaches(package_name: str, package_version: str = None) -> None:
+    """
+    Get HaveIBeenPwned breaches for maintainers of a specific package
+    """
+    tasks.get_maintainer_breaches(package_name, package_version)
+
+
 def main():
     app.cli.add_command(npm_cli)
     app.cli.main()

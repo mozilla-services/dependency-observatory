@@ -26,6 +26,7 @@ services:
       - PROCS=4
       - THREADS=1
       - GITHUB_PAT=${GITHUB_AUTH_TOKEN}
+      - HIBP_AUTH_TOKEN=${HIBP_AUTH_TOKEN}
     depends_on:
       - db
     links:
