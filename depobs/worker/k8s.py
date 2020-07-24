@@ -161,6 +161,15 @@ def read_job(
     )
 
 
+def get_job_env_var(
+    job: kubernetes.client.models.v1_job.V1Job, env_var_name: str
+) -> str:
+    for env_var in job.spec.template.spec.containers[0].env:
+        if env_var.name == env_var_name:
+            return env_var.value
+    raise ValueError(f"env var {env_var_name} not found in k8s job config")
+
+
 def read_job_status(
     namespace: str, name: str, context_name: Optional[str] = None
 ) -> kubernetes.client.models.v1_job_status.V1JobStatus:
