@@ -290,11 +290,15 @@ def serialize_npm_registry_constraints(
         ("", "dependencies"),
         ("optional", "optionalDependencies"),
         ("dev", "devDependencies"),
-        ("bundle", "bundleDependencies"),
         ("peer", "peerDependencies"),
     ):
         field_data = get_in(version_data, [constraint_field])
         if field_data is None:
+            continue
+        if not isinstance(field_data, dict):
+            log.warn(
+                "got unexpected dependencies data type for {prefix} {constraint_field} {type(field_data)}"
+            )
             continue
 
         for name, version_range in field_data.items():
