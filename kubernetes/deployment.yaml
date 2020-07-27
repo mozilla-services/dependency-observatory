@@ -12,9 +12,6 @@ metadata:
   namespace: default
   name: job-admin
 rules:
-- apiGroups: [""] # resource for accessing Pod
-  resources: ["pods", "pods/log"]
-  verbs: ["get", "list", "watch"]
 - apiGroups: ["batch", "extensions"]
   resources: ["jobs"]
   verbs: ["read", "list", "watch", "create", "update", "patch", "replace", "delete"]
@@ -77,29 +74,14 @@ spec:
           value: "1"
         - name: SQLALCHEMY_DATABASE_URI
           value: postgresql+psycopg2://postgres:postgres@db/dependency_observatory
-        - name: DEFAULT_JOB_SERVICE_ACCOUNT_NAME
-          value: "job-runner"
-        - name: UNTRUSTED_JOB_NAMESPACE
-          value: "default"
-        - name: UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME
-          value: ""
-        - name: GOOGLE_APPLICATION_CREDENTIALS
-          value: "/var/secrets/google/key.json"
         image: mozilla/dependency-observatory
         imagePullPolicy: IfNotPresent
         name: dependency-observatory-api
         ports:
         - containerPort: 8000
         resources: {}
-        volumeMounts:
-          - name: google-cloud-key
-            mountPath: /var/secrets/google
       restartPolicy: Always
-      serviceAccountName: job-runner
-      volumes:
-      - name: google-cloud-key
-        secret:
-          secretName: dev-local-service-account
+      serviceAccountName: ""
 status: {}
 
 ---
@@ -178,3 +160,62 @@ spec:
     io.kompose.service: db
 status:
   loadBalancer: {}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: worker
+  name: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: worker
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.21.0 (HEAD)
+      labels:
+        io.kompose.service: worker
+    spec:
+      containers:
+      - args:
+        # - "init-gcloud-creds"
+        - "worker"
+        env:
+        - name: FLASK_APP
+          value: depobs.website.wsgi:app
+        - name: FLASK_ENV
+          value: development
+        - name: SQLALCHEMY_DATABASE_URI
+          value: postgresql+psycopg2://postgres:postgres@db/dependency_observatory
+        - name: GCP_PROJECT_ID
+          value: replaceme
+        - name: JOB_STATUS_PUBSUB_TOPIC
+          value: job-status-dev
+        - name: JOB_STATUS_PUBSUB_SUBSCRIPTION
+          value: job-status-dev
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: "/var/secrets/google/key.json"
+        image: mozilla/dependency-observatory
+        imagePullPolicy: IfNotPresent
+        name: dependency-observatory-worker
+        ports:
+        - containerPort: 8000
+        resources: {}
+        volumeMounts:
+          - name: google-cloud-key
+            mountPath: /var/secrets/google
+      restartPolicy: Always
+      serviceAccountName: job-runner
+      volumes:
+      - name: google-cloud-key
+        secret:
+          secretName: dev-local-service-account
+status: {}
