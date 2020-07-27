@@ -13,8 +13,8 @@ PACKAGE_MANAGER 'cargo', 'npm', or 'yarn'
 Usage: $0 [repo_task]+
 "
 if [ $# -lt 1 ]; then
-        echo "$USAGE"
-        exit 1
+    echo "$USAGE"
+    exit 1
 fi
 
 GIT_VERSION="$(git --version)"
@@ -24,10 +24,36 @@ JQ_VERSION="$(jq --version)"
 LANGUAGE=${LANGUAGE}
 PACKAGE_MANAGER=${PACKAGE_MANAGER}
 
+JOB_NAME=${JOB_NAME:-"undefined-job"}
 BUILD_TARGET=${BUILD_TARGET:-""}
 INSTALL_TARGET=${INSTALL_TARGET:-""}
 PACKAGE_NAME=${PACKAGE_NAME:-""}
 PACKAGE_VERSION=${PACKAGE_VERSION:-""}
+GCP_PUBSUB_TOPIC=${GCP_PUBSUB_TOPIC:-""}
+GCP_PROJECT_ID=${GCP_PROJECT_ID:-""}
+
+echo "starting job ${JOB_NAME}"
+
+# let gcloud sdk use a writable config
+CLOUDSDK_CONFIG=$(mktemp -d)
+export CLOUDSDK_CONFIG
+export CLOUDSDK_CORE_PROJECT="$GCP_PROJECT_ID"
+
+# use provided service account creds when set for dev (on GCP gcloud
+# elsewhere use the cluster config)
+if [ ! -z "${GOOGLE_APPLICATION_CREDENTIALS+default}" ]; then
+    test -f "$GOOGLE_APPLICATION_CREDENTIALS"
+    export CLOUDSDK_AUTH_CREDENTIAL_FILE_OVERRIDE="$GOOGLE_APPLICATION_CREDENTIALS"
+fi
+
+function publish_message () {
+    # NB: max message size is 10MB https://cloud.google.com/pubsub/quotas#resource_limits
+    # NB: max attribute key size is 256 bytes max key value 1024 bytes
+    message=$1
+    gcloud pubsub topics publish "$GCP_PUBSUB_TOPIC" --message "$message" --attribute JOB_NAME="$JOB_NAME"
+}
+
+message_temp=$(mktemp)
 
 # validate input env vars (TODO: validate combinations)
 case "$LANGUAGE" in
@@ -38,7 +64,8 @@ case "$LANGUAGE" in
         LANGUAGE_VERSION="$(rustc --version)"
         ;;
     *)
-        jq -cnM --arg invalid_value "$LANGUAGE" '{type: "validation_error", message: "unknown language", $invalid_value}'
+        jq -cnM --arg invalid_value "$LANGUAGE" '{type: "validation_error", message: "unknown language", $invalid_value}' | tee -a "$message_temp"
+        publish_message "$(cat "$message_temp")"
         exit 1
         ;;
 esac
@@ -54,7 +81,8 @@ case "$PACKAGE_MANAGER" in
         PACKAGE_MANAGER_VERSION="$(yarn --version)"
         ;;
     *)
-        jq -cnM --arg invalid_value "$PACKAGE_MANAGER" '{type: "validation_error", message: "unknown package_manager", $invalid_value}'
+        jq -cnM --arg invalid_value "$PACKAGE_MANAGER" '{type: "validation_error", message: "unknown package_manager", $invalid_value}' | tee -a "$message_temp"
+        publish_message "$(cat "$message_temp")"
         exit 1
         ;;
 esac
@@ -123,7 +151,7 @@ while (( $# )); do
             ;;
         nodejs-npm-write_manifest)
             # write a package.json file to so npm audit doesn't error out
-            TASK_COMMAND="jq -cnM --arg name \"$PACKAGE_NAME\" --arg version \"$PACKAGE_VERSION\" '{dependencies: {}} | .dependencies[\$name] = \$version' | tee package.json"
+            TASK_COMMAND="jq -cnM --arg name \"$PACKAGE_NAME\" --arg version \"$PACKAGE_VERSION\" '{dependencies: {}} | .dependencies[\$name] = \$version' | tee -a package.json"
             ;;
 
         nodejs-yarn-audit)
@@ -143,7 +171,7 @@ while (( $# )); do
             TASK_COMMAND="yarn list --json --frozen-lockfile"
             ;;
         *)
-            jq -cnM --arg invalid_value "${LANGUAGE}-${PACKAGE_MANAGER}-${TASK_NAME}" "{type: \"not_implemented_error\", message: \"do not know how to ${TASK_NAME} for language and package manager\", \$invalid_value}"
+            jq -cnM --arg invalid_value "${LANGUAGE}-${PACKAGE_MANAGER}-${TASK_NAME}" "{type: \"not_implemented_error\", message: \"do not know how to ${TASK_NAME} for language and package manager\", \$invalid_value}" | tee -a "$message_temp"
             shift
             continue
             ;;
@@ -167,9 +195,12 @@ while (( $# )); do
        --arg stderr "$stderr" \
        --argjson versions "$VERSIONS" \
        --argjson envvar_args "$ENVVAR_ARGS" \
-       '{type: "task_result", $name, $command, $working_dir, $exit_code, $stdout, $stderr, $versions, $envvar_args}'
+       '{type: "task_result", $name, $command, $working_dir, $exit_code, $stdout, $stderr, $versions, $envvar_args}' | tee -a "$message_temp"
     shift
 done
+jq -cnM '{type: "task_complete"}' | tee -a "$message_temp"
+ls -lh "$message_temp"
+publish_message "$(jq -s '.' "$message_temp")"
 
 # TODO: add find_git_refs task
 #   git fetch --tags origin # all tags
