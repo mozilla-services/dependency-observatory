@@ -1376,7 +1376,7 @@ def get_scan_job_results(job_name: str) -> sqlalchemy.orm.query.Query:
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
     ...     str(get_scan_job_results('scan-foo'))
-    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data, json_results.url AS json_results_url \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id DESC'
+    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id DESC'
     """
     return (
         db.session.query(JSONResult)
