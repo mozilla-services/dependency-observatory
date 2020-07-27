@@ -19,8 +19,9 @@ if [ "$1" = 'print-db-revision' ]; then
     shift
 fi
 if [ "$1" = 'init-gcloud-creds' ]; then
-    # populate kube config
+    # populate kube config and GCP_PROJECT_ID env var
     gcloud container clusters get-credentials "$JOBS_CLUSTER_NAME" --region "$JOBS_CLUSTER_REGION"
+    export GCP_PROJECT_ID=$(gcloud config get-value project)
     shift
 fi
 

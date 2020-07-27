@@ -16,7 +16,7 @@ npm_cli = AppGroup("npm")
 @click.argument("package_version", envvar="PACKAGE_VERSION")
 def scan_npm_package(package_name: str, package_version: str) -> None:
     """
-    Help!
+    Scan and score an npm package name and version
     """
     tasks.scan_npm_package_then_build_report_tree(package_name, package_version)
 
