@@ -56,9 +56,12 @@ def pg_utcnow(element: Any, compiler: Any, **kw: Dict) -> str:
     return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
 
 
-# TODO: harmonize with stuff defined in models/languages
 lang_enum = ENUM("node", "rust", "python", name="language_enum")
 package_manager_enum = ENUM("npm", "yarn", name="package_manager_enum")
+# scans transition from queued -> started -> {succeeded, failed}
+scan_status_enum = ENUM(
+    "queued", "started", "failed", "succeeded", name="scan_status_enum"
+)
 
 
 class Dependency(db.Model):
@@ -758,6 +761,26 @@ class JSONResult(db.Model):
     data = Column("data", JSONB)
 
 
+class Scan(db.Model):
+    """
+    Pending, running, and completed package scans
+    """
+
+    __tablename__ = "scans"
+
+    id = Column(Integer, primary_key=True)
+
+    # track when it was inserted and changed
+    inserted_at = deferred(Column(DateTime(timezone=False), server_default=utcnow()))
+    updated_at = deferred(Column(DateTime(timezone=False), onupdate=utcnow()))
+
+    # blob of scan name, version, args, and kwargs
+    params = Column("params", JSONB)
+
+    # scan status
+    status = Column(scan_status_enum, nullable=False)
+
+
 def get_package_report(
     package: str, version: Optional[str] = None
 ) -> Optional[PackageReport]:
@@ -1325,3 +1348,38 @@ def update_advisory_vulnerable_package_versions(
 def save_json_results(json_results: List[Dict]) -> None:
     db.session.add_all(JSONResult(data=json_result) for json_result in json_results)
     db.session.commit()
+
+
+def get_next_queued_scan() -> sqlalchemy.orm.query.Query:
+    """
+    Returns the next scan with status queued.
+
+    >>> 'queued' in scan_status_enum.enums
+    True
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_next_queued_scan())
+    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status \\nFROM scans \\nWHERE scans.status = %(status_1)s ORDER BY scans.inserted_at DESC \\n LIMIT %(param_1)s'
+    """
+    return (
+        db.session.query(Scan)
+        .filter_by(status="queued")
+        .order_by(Scan.inserted_at.desc())
+        .limit(1)
+    )
+
+
+def get_scan_job_results(job_name: str) -> sqlalchemy.orm.query.Query:
+    """
+    Returns query for JSONResults from pubsub with the given job_name:
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_scan_job_results('scan-foo'))
+    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data, json_results.url AS json_results_url \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id DESC'
+    """
+    return (
+        db.session.query(JSONResult)
+        .filter(JSONResult.data["attributes"]["JOB_NAME"].as_string() == job_name)
+        .order_by(JSONResult.id.desc())
+    )
