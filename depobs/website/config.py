@@ -45,6 +45,9 @@ SQLALCHEMY_TRACK_MODIFICATIONS = bool(
 
 DEFAULT_SCORED_AFTER_DAYS = 365 * 10
 
+# GCP project id
+GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", None)
+
 # GCP pubsub topic id
 JOB_STATUS_PUBSUB_TOPIC = os.environ.get("JOB_STATUS_PUBSUB_TOPIC", None)
 
