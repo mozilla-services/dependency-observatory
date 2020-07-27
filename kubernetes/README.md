@@ -30,6 +30,8 @@ Service Account in the depobs-nonprod project.
 kubectl create secret generic dev-local-service-account --from-file=key.json=<path/to/KEYFILE.json>
 ```
 
+1. Change the `GCP_PROJECT_ID` from `replaceme` in the worker deployment
+
 1. From the project root, run `kubectl create -f kubernetes/` to start DO (use `kubectl delete -f kubernetes/` to remote it):
 
 ```console
