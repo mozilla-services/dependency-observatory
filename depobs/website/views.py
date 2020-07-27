@@ -177,105 +177,71 @@ def read_scan_logs(job_id: str) -> Dict:
     scan = models.db.session.query(models.Scan).filter_by(id=job_id).first()
     if scan.result_id is None:
         raise NotFound
-    return JSONResultSchema().dump(
-        models.db.session.query(models.JSONResult).filter_by(id=scan.result_id).first()
-    )
+    return JSONResultSchema().dump(models.db.session.query(models.JSONResult).first())
 
 
-@api.route("/jobs/<int:job_id>/logs", methods=["GET"])
-def render_job_logs(job_id: str):
-    return {}
-    # def generate():
-    #     log.info(f"waiting for the job {job_name} container to start")
-    #     yield dict(event_type="new_phase", message="finding job container")
+# @api.route("/jobs/<int:job_id>/logs", methods=["GET"])
+# def render_job_logs(job_id: str):
+#     def generate():
 
-    #     try:
-    #         job_pod_name = k8s.get_pod_container_name(
-    #             k8s.get_job_pod(
-    #                 namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-    #                 name=job_name,
-    #                 context_name=None,
-    #             )
-    #         )
-    #     except urllib3.exceptions.MaxRetryError as err:
-    #         log.info(f"job pod not ready: {err}")
-    #         job_pod_name = None
+#         log.info(f"waiting for the job {job_name} container to start")
+#         yield dict(event_type="new_phase", message="finding job container")
 
-    #     log.info(f"job {job_name} got pod name {job_pod_name}")
-    #     if job_pod_name is None:
-    #         for event in k8s.watch_job_pods(
-    #             namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-    #             name=job_name,
-    #             context_name=None,
-    #         ):
-    #             log.info(
-    #                 f"job {job_name} pod {event['type']} status {event['object'].status.phase} container statuses {event['object'].status.container_statuses}"
-    #             )
-    #             yield dict(event_type="k8s_pod_event", k8s_event=event)
-    #             if event["type"] == "ERROR":
-    #                 log.error(f"error with job {job_name} pod {event}")
-    #                 raise StopIteration
+#         log.info(f"streaming job {job_name} logs for pod {job_pod_name}")
+#         yield dict(event_type="new_phase", message=f"logs for pod {job_pod_name}")
+#         for i, line in enumerate(
+#             k8s.tail_job_logs(
+#                 namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
+#                 name=job_name,
+#                 context_name=None,
+#             )
+#         ):
+#             if i % 10:
+#                 log.debug(f"streaming job {job_name} logs line {i}")
+#             else:
+#                 log.info(f"streaming job {job_name} logs line {i}")
+#             yield dict(event_type="k8s_container_log_line", log_line=line)
 
-    #             assert event["type"] in {"ADDED", "MODIFIED"}
-    #             job_pod_name = k8s.get_pod_container_name(event["object"])
-    #             if job_pod_name is not None:
-    #                 break
+#         log.info(f"waiting for job {job_name} completion")
+#         for event in k8s.watch_job(
+#             namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
+#             name=job_name,
+#             context_name=None,
+#         ):
+#             log.info(f"job {job_name} {event['type']} status {event['object'].status}")
+#             job = event["object"]
+#             if job.status.succeeded:
+#                 log.info(f"got finished job {job.status.succeeded} {job}")
+#                 package_name, package_version = job.spec.template.spec.containers[
+#                     0
+#                 ].args[3:]
+#                 yield dict(
+#                     event_type="new_phase",
+#                     message=f"job succeeded! Redirecting to the package report at: ",
+#                     redirect_url=url_for(
+#                         "views_blueprint.show_package_report",
+#                         package_manager="npm",
+#                         package_name=package_name,
+#                         package_version=package_version,
+#                     ),
+#                 )
+#                 break
+#             elif job.status.failed:
+#                 log.error(f"job {job_name} failed")
+#                 yield dict(
+#                     event_type="new_phase", message=f"job failed",
+#                 )
+#                 break
 
-    #     log.info(f"streaming job {job_name} logs for pod {job_pod_name}")
-    #     yield dict(event_type="new_phase", message=f"logs for pod {job_pod_name}")
-    #     for i, line in enumerate(
-    #         k8s.tail_job_logs(
-    #             namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-    #             name=job_name,
-    #             context_name=None,
-    #         )
-    #     ):
-    #         if i % 10:
-    #             log.debug(f"streaming job {job_name} logs line {i}")
-    #         else:
-    #             log.info(f"streaming job {job_name} logs line {i}")
-    #         yield dict(event_type="k8s_container_log_line", log_line=line)
+#         yield dict(
+#             event_type="new_phase", message=f"finished",
+#         )
 
-    #     log.info(f"waiting for job {job_name} completion")
-    #     for event in k8s.watch_job(
-    #         namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-    #         name=job_name,
-    #         context_name=None,
-    #     ):
-    #         log.info(f"job {job_name} {event['type']} status {event['object'].status}")
-    #         job = event["object"]
-    #         if job.status.succeeded:
-    #             log.info(f"got finished job {job.status.succeeded} {job}")
-    #             package_name, package_version = job.spec.template.spec.containers[
-    #                 0
-    #             ].args[3:]
-    #             yield dict(
-    #                 event_type="new_phase",
-    #                 message=f"job succeeded! Redirecting to the package report at: ",
-    #                 redirect_url=url_for(
-    #                     "views_blueprint.show_package_report",
-    #                     package_manager="npm",
-    #                     package_name=package_name,
-    #                     package_version=package_version,
-    #                 ),
-    #             )
-    #             break
-    #         elif job.status.failed:
-    #             log.error(f"job {job_name} failed")
-    #             yield dict(
-    #                 event_type="new_phase", message=f"job failed",
-    #             )
-    #             break
-
-    #     yield dict(
-    #         event_type="new_phase", message=f"finished",
-    #     )
-
-    # return Response(
-    #     stream_with_context(
-    #         stream_template("job_logs.html", job_name=job_name, events=generate())
-    #     )
-    # )
+#     return Response(
+#         stream_with_context(
+#             stream_template("job_logs.html", job_name=job_name, events=generate())
+#         )
+#     )
 
 
 @api.route("/score_details/graphs/<int:graph_id>", methods=["GET"])

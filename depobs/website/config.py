@@ -67,7 +67,7 @@ SCAN_NPM_TARBALL_ARGS: Dict[
     ],
 ] = dict(
     backoff_limit=4,
-    ttl_seconds_after_finished=None,
+    ttl_seconds_after_finished=3600 * 8,
     context_name=None,
     namespace="default",
     language="nodejs",
