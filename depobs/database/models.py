@@ -34,7 +34,7 @@ from sqlalchemy.schema import Table
 from sqlalchemy import func
 
 from depobs.database.mixins import PackageReportColumnsMixin
-
+from depobs.website.schemas import JobParamsSchema
 
 log = logging.getLogger(__name__)
 
@@ -780,6 +780,16 @@ class Scan(db.Model):
     # scan status
     status = Column(scan_status_enum, nullable=False)
 
+    @cached_property
+    def package_name(self,) -> str:
+        assert isinstance(self.params, dict)
+        return self.params["args"][0]
+
+    @cached_property
+    def package_version(self,) -> Optional[str]:
+        assert isinstance(self.params, dict)
+        return self.params["args"][1]
+
 
 def get_package_report(
     package: str, version: Optional[str] = None
@@ -1392,10 +1402,32 @@ def get_scan_results_by_id(scan_id: int) -> sqlalchemy.orm.query.Query:
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
     ...     str(get_scan_results_by_id(392))
-    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS INTEGER) = %(param_2)s ORDER BY json_results.id DESC'
+    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id DESC'
     """
     return (
         db.session.query(JSONResult)
-        .filter(JSONResult.data["attributes"]["SCAN_ID"].as_integer() == scan_id)
+        .filter(JSONResult.data["attributes"]["SCAN_ID"].as_string() == str(scan_id))
         .order_by(JSONResult.id.desc())
     )
+
+
+def package_name_and_version_to_scan(
+    package_name: str, package_version: Optional[str]
+) -> Scan:
+    """
+    Return a scan model for the given package name and optional
+    package_version.
+    """
+    return Scan(
+        params=JobParamsSchema().dump(
+            {"name": "scan_score_npm_package", "args": [package_name, package_version],}
+        ),
+        status="queued",
+    )
+
+
+def save_scan_with_status(scan: Scan, status: str) -> Scan:
+    scan.status = status
+    db.session.add(scan)
+    db.session.commit()
+    return scan
