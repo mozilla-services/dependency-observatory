@@ -187,6 +187,8 @@ spec:
       containers:
       - args:
         # - "init-gcloud-creds"
+        - "migrate"
+        - "print-db-revision"
         - "worker"
         env:
         - name: FLASK_APP
