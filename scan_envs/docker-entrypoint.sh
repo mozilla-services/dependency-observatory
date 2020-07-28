@@ -25,6 +25,7 @@ LANGUAGE=${LANGUAGE}
 PACKAGE_MANAGER=${PACKAGE_MANAGER}
 
 JOB_NAME=${JOB_NAME:-"undefined-job"}
+SCAN_ID=${SCAN_ID:-"undefined-scan-id"}
 BUILD_TARGET=${BUILD_TARGET:-""}
 INSTALL_TARGET=${INSTALL_TARGET:-""}
 PACKAGE_NAME=${PACKAGE_NAME:-""}
@@ -50,7 +51,7 @@ function publish_message () {
     # NB: max message size is 10MB https://cloud.google.com/pubsub/quotas#resource_limits
     # NB: max attribute key size is 256 bytes max key value 1024 bytes
     message=$1
-    gcloud pubsub topics publish "$GCP_PUBSUB_TOPIC" --message "$message" --attribute JOB_NAME="$JOB_NAME"
+    gcloud pubsub topics publish "$GCP_PUBSUB_TOPIC" --message "$message" --attribute "JOB_NAME=${JOB_NAME},SCAN_ID=${SCAN_ID}"
 }
 
 message_temp=$(mktemp)

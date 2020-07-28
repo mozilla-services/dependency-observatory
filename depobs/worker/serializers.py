@@ -17,7 +17,18 @@ from typing import (
     Union,
 )
 
-from depobs.database.models import Advisory, NPMRegistryEntry, NPMSIOScore
+from depobs.database.models import (
+    Advisory,
+    JSONResult,
+    NPMRegistryEntry,
+    NPMSIOScore,
+    PackageGraph,
+    PackageLink,
+    PackageVersion,
+    insert_package_graph,
+    insert_advisories,
+    update_advisory_vulnerable_package_versions,
+)
 from depobs.util.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
 from depobs.models.nodejs import NPMPackage, flatten_deps
 from depobs.util.serialize_util import (
@@ -28,7 +39,6 @@ from depobs.util.serialize_util import (
     parse_stdout_as_json,
     parse_stdout_as_jsonlines,
 )
-
 
 log = logging.getLogger(__name__)
 
@@ -263,7 +273,7 @@ def serialize_repo_task(
     task_command = get_in(task_data, ["command"], None)
 
     task_result = extract_fields(
-        task_data, ["command", "container_name", "exit_code", "name", "working_dir",],
+        task_data, ["command", "exit_code", "name", "working_dir",],
     )
 
     updates = parse_command(task_name, task_command, task_data)
@@ -489,3 +499,59 @@ def serialize_advisories(advisories_data: Iterable[Dict]) -> Iterable[Advisory]:
         advisory_fields["language"] = "node"
         advisory_fields["vulnerable_package_version_ids"] = []
         yield Advisory(**advisory_fields)
+
+
+def deserialize_scan_job_results(messages: Iterable[JSONResult],) -> None:
+    """
+    Given an iterable of JSONResults of pubsub messages for a
+    completed scan npm tarball job, parses the output and saves
+    a PackageGraph constituent PackageVersion and PackageLinks, and Advisory models (if any)
+    """
+    # TODO: convert to Generator[Union[PackageGraph, PackageVersion, PackageLink, Advisory], None, None] and inline insert_package_graph
+    for json_result in messages:
+        if json_result.data is None:
+            log.warning(f"json result ID: {json_result.id} null data column")
+            continue
+        if not isinstance(json_result.data, dict):
+            log.warn(f"json result ID: {json_result.id} non-dict data column")
+            continue
+        if (
+            json_result.data.get("type", None)
+            != "google.cloud.pubsub_v1.types.PubsubMessage"
+        ):
+            log.warn(
+                f"json result ID: {json_result.id} invalid type (not PubsubMessage)"
+            )
+            continue
+
+        for line in json_result.data["data"]:
+            if not isinstance(line, dict):
+                continue
+            if line.get("type", None) != "task_result":
+                continue
+
+            task_data: Optional[Dict[str, Any]] = serialize_repo_task(
+                line, {"list_metadata", "audit"}
+            )
+            if not task_data:
+                continue
+
+            task_name = line["name"]
+            if task_name == "list_metadata":
+                insert_package_graph(task_data)
+            elif task_name == "audit":
+                for (
+                    advisory_fields,
+                    impacted_versions,
+                ) in node_repo_task_audit_output_to_advisories_and_impacted_versions(
+                    task_data
+                ):
+                    advisory: Advisory = list(serialize_advisories([advisory_fields]))[
+                        0
+                    ]
+                    insert_advisories([advisory])
+                    update_advisory_vulnerable_package_versions(
+                        advisory, set(impacted_versions)
+                    )
+            else:
+                log.warning(f"skipping unrecognized task {task_name}")
