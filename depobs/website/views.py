@@ -9,6 +9,7 @@ from flask import (
     Response,
     current_app,
     g,
+    jsonify,
     render_template,
     request,
     stream_with_context,
@@ -18,9 +19,14 @@ import graphviz
 from marshmallow import ValidationError
 import networkx as nx
 import urllib3
-from werkzeug.exceptions import BadGateway, BadRequest, NotFound
+from werkzeug.exceptions import BadGateway, BadRequest, NotFound, NotImplemented
 
-from depobs.website.schemas import JobParamsSchema, PackageReportParamsSchema
+from depobs.website.schemas import (
+    JobParamsSchema,
+    JSONResultSchema,
+    PackageReportParamsSchema,
+    ScanSchema,
+)
 from depobs.database import models
 from depobs.util import graph_traversal
 from depobs.util import graph_util
@@ -130,9 +136,9 @@ def index_page() -> Any:
 
 
 @api.route("/api/v1/jobs", methods=["POST"])
-def create_job():
+def queue_scan() -> Tuple[Dict, int]:
     """
-    Creates a k8s job for a package and returns the k8s job object
+    Queues a scan for a package and returns the scan JSON with status 202
     """
     job_body = request.get_json()
     log.debug(f"received job JSON body: {job_body}")
@@ -141,142 +147,54 @@ def create_job():
     except ValidationError as err:
         return err.messages, 422
 
-    app_job_config = current_app.config["WEB_JOB_CONFIGS"].get(
-        web_job_config.name, None
-    )
     log.info(f"deserialized job JSON to {web_job_config.name}: {web_job_config}")
-    if app_job_config is None:
+    if web_job_config.name not in current_app.config["WEB_JOB_NAMES"]:
         raise BadRequest(description="job not allowed or does not exist for app")
 
-    # NB: name must be shorter than 64 chars
-    k8s_job_config: k8s.KubeJobConfig = dict(
-        **app_job_config,
-        name=f"{web_job_config.name.lower().replace('_', '-')}-{hex(randrange(1 << 32))[2:]}",
-        args=app_job_config["base_args"] + web_job_config.args,
+    scan = models.Scan(params=JobParamsSchema().dump(web_job_config), status="queued",)
+    models.db.session.add(scan)
+    models.db.session.commit()
+    log.info(f"queued job {scan.id}")
+
+    return ScanSchema().dump(scan), 202
+
+
+@api.route("/api/v1/jobs/<int:job_id>", methods=["GET"])
+def get_scan(job_id: int) -> Dict:
+    """
+    Returns the scan as JSON
+    """
+    log.info(f"fetching scan {job_id}")
+    return ScanSchema().dump(
+        models.db.session.query(models.Scan).filter_by(id=job_id).one()
     )
-    log.info(f"creating k8s job {k8s_job_config['name']} with config: {k8s_job_config}")
-    return k8s.create_job(k8s_job_config).to_dict()
 
 
-@api.route("/api/v1/jobs/<string:job_name>", methods=["GET"])
-def get_job(job_name: str):
+@api.route("/api/v1/jobs/<int:job_id>/logs", methods=["GET"])
+def read_scan_logs(job_id: int) -> Dict:
     """
-    Returns the k8s job object (including status) in the default app namespace
+    Returns the scan JSONResults
     """
-    log.info(f"fetching k8s job {job_name}")
-    job = k8s.read_job(
-        namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-        name=job_name,
-        context_name=None,
-    )
-    return job.to_dict()
+    json_results = list(models.get_scan_results_by_id(job_id).all())
+    if not json_results:
+        raise NotFound
 
+    serialized = [JSONResultSchema().dump(json_result) for json_result in json_results]
+    log.info(f"got s'd jr {serialized}")
 
-@api.route("/api/v1/jobs/<string:job_name>", methods=["DELETE"])
-def delete_job(job_name: str):
-    """
-    Returns the k8s job object (including status) for the default app namespace
-    """
-    log.info(f"deleting k8s job {job_name}")
-    return k8s.delete_job(
-        namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-        name=job_name,
-        context_name=None,
-    ).to_dict()
-
-
-@api.route("/api/v1/jobs/<string:job_name>/logs", methods=["GET"])
-def read_job_logs(job_name: str):
-    return k8s.read_job_logs(
-        namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-        name=job_name,
-        context_name=None,
-    )
+    return jsonify(serialized)
 
 
 @api.route("/jobs/<string:job_name>/logs", methods=["GET"])
 def render_job_logs(job_name: str):
+    raise NotImplemented
+
     def generate():
         log.info(f"waiting for the job {job_name} container to start")
         yield dict(event_type="new_phase", message="finding job container")
 
-        try:
-            job_pod_name = k8s.get_pod_container_name(
-                k8s.get_job_pod(
-                    namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-                    name=job_name,
-                    context_name=None,
-                )
-            )
-        except urllib3.exceptions.MaxRetryError as err:
-            log.info(f"job pod not ready: {err}")
-            job_pod_name = None
-
-        log.info(f"job {job_name} got pod name {job_pod_name}")
-        if job_pod_name is None:
-            for event in k8s.watch_job_pods(
-                namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-                name=job_name,
-                context_name=None,
-            ):
-                log.info(
-                    f"job {job_name} pod {event['type']} status {event['object'].status.phase} container statuses {event['object'].status.container_statuses}"
-                )
-                yield dict(event_type="k8s_pod_event", k8s_event=event)
-                if event["type"] == "ERROR":
-                    log.error(f"error with job {job_name} pod {event}")
-                    raise StopIteration
-
-                assert event["type"] in {"ADDED", "MODIFIED"}
-                job_pod_name = k8s.get_pod_container_name(event["object"])
-                if job_pod_name is not None:
-                    break
-
         log.info(f"streaming job {job_name} logs for pod {job_pod_name}")
         yield dict(event_type="new_phase", message=f"logs for pod {job_pod_name}")
-        for i, line in enumerate(
-            k8s.tail_job_logs(
-                namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-                name=job_name,
-                context_name=None,
-            )
-        ):
-            if i % 10:
-                log.debug(f"streaming job {job_name} logs line {i}")
-            else:
-                log.info(f"streaming job {job_name} logs line {i}")
-            yield dict(event_type="k8s_container_log_line", log_line=line)
-
-        log.info(f"waiting for job {job_name} completion")
-        for event in k8s.watch_job(
-            namespace=current_app.config["DEFAULT_JOB_NAMESPACE"],
-            name=job_name,
-            context_name=None,
-        ):
-            log.info(f"job {job_name} {event['type']} status {event['object'].status}")
-            job = event["object"]
-            if job.status.succeeded:
-                log.info(f"got finished job {job.status.succeeded} {job}")
-                package_name, package_version = job.spec.template.spec.containers[
-                    0
-                ].args[3:]
-                yield dict(
-                    event_type="new_phase",
-                    message=f"job succeeded! Redirecting to the package report at: ",
-                    redirect_url=url_for(
-                        "views_blueprint.show_package_report",
-                        package_manager="npm",
-                        package_name=package_name,
-                        package_version=package_version,
-                    ),
-                )
-                break
-            elif job.status.failed:
-                log.error(f"job {job_name} failed")
-                yield dict(
-                    event_type="new_phase", message=f"job failed",
-                )
-                break
 
         yield dict(
             event_type="new_phase", message=f"finished",

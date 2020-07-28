@@ -1376,10 +1376,26 @@ def get_scan_job_results(job_name: str) -> sqlalchemy.orm.query.Query:
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
     ...     str(get_scan_job_results('scan-foo'))
-    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data, json_results.url AS json_results_url \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id DESC'
+    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id DESC'
     """
     return (
         db.session.query(JSONResult)
         .filter(JSONResult.data["attributes"]["JOB_NAME"].as_string() == job_name)
+        .order_by(JSONResult.id.desc())
+    )
+
+
+def get_scan_results_by_id(scan_id: int) -> sqlalchemy.orm.query.Query:
+    """
+    Returns query for JSONResults from pubsub with the given scan_id:
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_scan_results_by_id(392))
+    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS INTEGER) = %(param_2)s ORDER BY json_results.id DESC'
+    """
+    return (
+        db.session.query(JSONResult)
+        .filter(JSONResult.data["attributes"]["SCAN_ID"].as_integer() == scan_id)
         .order_by(JSONResult.id.desc())
     )

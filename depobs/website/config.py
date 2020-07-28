@@ -45,60 +45,37 @@ SQLALCHEMY_TRACK_MODIFICATIONS = bool(
 
 DEFAULT_SCORED_AFTER_DAYS = 365 * 10
 
-# k8s jobs configs
+# GCP project id
+GCP_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", None)
 
-# trusted jobs run in the web server k8s context with access to the DB
-# and service accounts creds to spin up untrusted analysis jobs
-DEFAULT_JOB_NAMESPACE = os.environ.get("DEFAULT_JOB_NAMESPACE", "default")
-DEFAULT_JOB_SERVICE_ACCOUNT_NAME = os.environ.get(
-    "DEFAULT_JOB_SERVICE_ACCOUNT_NAME", ""
-)
+# GCP pubsub topic id
+JOB_STATUS_PUBSUB_TOPIC = os.environ.get("JOB_STATUS_PUBSUB_TOPIC", None)
 
-# untrusted jobs run in another cluster to run in a separate k8s context
-# without access to the DB
-UNTRUSTED_JOB_CONTEXT = os.environ.get("UNTRUSTED_JOB_CONTEXT", None)
-UNTRUSTED_JOB_NAMESPACE = os.environ.get("UNTRUSTED_JOB_NAMESPACE", None)
-UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME = os.environ.get(
-    "UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME", ""
-)
+# GCP pubsub subscription id
+JOB_STATUS_PUBSUB_SUBSCRIPTION = os.environ.get("JOB_STATUS_PUBSUB_SUBSCRIPTION", None)
 
-# k8s job configs the flask app can run
-WEB_JOB_CONFIGS = {
-    "scan_score_npm_package": dict(
-        backoff_limit=4,
-        ttl_seconds_after_finished=3600 * 8,  # keeps jobs for 8 hours
-        context_name=None,  # i.e. the in cluster config
-        namespace=DEFAULT_JOB_NAMESPACE,
-        image_name="mozilla/dependency-observatory:latest",
-        base_args=["worker", "npm", "scan"],
-        env={
-            k: os.environ[k]
-            # pass through env vars to run the flask app and untrusted jobs
-            for k in [
-                "FLASK_APP",
-                "FLASK_ENV",
-                "SQLALCHEMY_DATABASE_URI",
-                "UNTRUSTED_JOB_CONTEXT",
-                "UNTRUSTED_JOB_NAMESPACE",
-                "UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME",
-            ]
-            if k in os.environ
-        },
-        service_account_name=DEFAULT_JOB_SERVICE_ACCOUNT_NAME,
-    )
+WEB_JOB_NAMES = {
+    "scan_score_npm_package",
 }
 
 SCAN_NPM_TARBALL_ARGS = dict(
     backoff_limit=4,
     ttl_seconds_after_finished=3600 * 8,  # keeps jobs for 8 hours
-    context_name=UNTRUSTED_JOB_CONTEXT,
-    namespace=UNTRUSTED_JOB_NAMESPACE,
+    context_name=None,
+    namespace="default",
     language="nodejs",
     package_manager="npm",
     image_name="mozilla/dependency-observatory:node-12",
     repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
-    service_account_name=UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME,
+    service_account_name=os.environ.get("JOB_SERVICE_ACCOUNT_NAME", ""),
+    env=dict(GCP_PUBSUB_TOPIC=JOB_STATUS_PUBSUB_TOPIC, GCP_PROJECT_ID=GCP_PROJECT_ID,),
 )
+# for local dev override set job creds
+if "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+    assert isinstance(SCAN_NPM_TARBALL_ARGS["env"], dict)
+    SCAN_NPM_TARBALL_ARGS["env"]["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ[
+        "GOOGLE_APPLICATION_CREDENTIALS"
+    ]
 
 # depobs http client config
 

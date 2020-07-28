@@ -16,7 +16,7 @@ async function startJob(args) {
     console.error(`error POSTing to ${jobURI}: ${err}`);
     throw err;
   });
-  if (response.status !== 200) {
+  if (response.status !== 202) {
     let err = new Error(`${response.status} from ${jobURI}`);
     err.response = response;
     throw err;
@@ -93,15 +93,15 @@ function updateSearchForm(disable) {
 async function scanAndScorePackage(formDataObj) {
   console.debug("starting job with data:", formDataObj);
   let startJobResponseJSON = await startJob(formDataObj);
-  let jobName = startJobResponseJSON.metadata.labels["job-name"];
+  let jobID = startJobResponseJSON.id;
   console.log(
-    `created job with name: ${jobName} and URL: ${window.location.origin}/api/v1/jobs/${jobName}`
+    `created job with name: ${jobID} and URL: ${window.location.origin}/api/v1/jobs/${jobID}`
   );
-  return jobName;
+  return jobID;
 }
 
-function redirectToJobLogs(jobName) {
-  let jobLogsURI = `/jobs/${jobName}/logs`;
+function redirectToJobLogs(jobID) {
+  let jobLogsURI = `/jobs/${jobID}/logs`;
   console.log(
     `redirecting to tail logs at ${window.location.origin}${jobLogsURI}`
   );
