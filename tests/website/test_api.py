@@ -78,9 +78,3 @@ def test_valid_create_job_and_get(models, client):
     ]
     # clean up
     delete_scan_results(models, scan_id)
-
-
-@pytest.mark.unit
-def test_render_job_logs_not_implemented(client):
-    response = client.get(f"/jobs/1/logs",)
-    assert response.status == "501 NOT IMPLEMENTED"

@@ -6,13 +6,11 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 
 from flask import (
     Blueprint,
-    Response,
     current_app,
     g,
     jsonify,
     render_template,
     request,
-    stream_with_context,
     url_for,
 )
 import graphviz
@@ -183,25 +181,23 @@ def read_scan_logs(scan_id: int) -> Dict:
     return jsonify(serialized)
 
 
-@api.route("/jobs/<string:job_name>/logs", methods=["GET"])
-def render_job_logs(job_name: str):
-    raise NotImplemented
+@api.route("/scans/<int:scan_id>/logs", methods=["GET"])
+def render_scan_logs(scan_id: int):
+    """Renders the scan status and job JSONResults
 
-    def generate():
-        log.info(f"waiting for the job {job_name} container to start")
-        yield dict(event_type="new_phase", message="finding job container")
+    When refresh is True (the default) the scan page will refresh and
+    redirect to the package report page if the scan completes
+    successfully.
+    """
+    refresh = request.args.get("refresh", True, bool)
+    log.info(f"rendering job logs for scan {scan_id} with refresh {refresh}")
+    scan = models.db.session.query(models.Scan).filter_by(id=scan_id).one_or_none()
+    json_results = []
+    if scan is not None:
+        json_results = list(models.get_scan_results_by_id_on_job_name(scan_id).all())
 
-        log.info(f"streaming job {job_name} logs for pod {job_pod_name}")
-        yield dict(event_type="new_phase", message=f"logs for pod {job_pod_name}")
-
-        yield dict(
-            event_type="new_phase", message=f"finished",
-        )
-
-    return Response(
-        stream_with_context(
-            stream_template("job_logs.html", job_name=job_name, events=generate())
-        )
+    return render_template(
+        "scan_job_logs.html", scan=scan, results=json_results, refresh=refresh
     )
 
 

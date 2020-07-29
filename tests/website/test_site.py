@@ -81,3 +81,19 @@ def test_missing_package_report_returns_404(client):
         "/package_report?package_name=%40hapi%2Fbounceee&package_version=0.0.2&package_manager=npm"
     )
     assert response.status == "404 NOT FOUND"
+
+
+def test_scan_logs_returns_200(models, client):
+    scan_response = client.post(
+        "/api/v1/scans",
+        json={
+            "name": "scan_score_npm_package",
+            "args": ["temp-package", "temp-package-version"],
+            "kwargs": {},
+        },
+    )
+    assert scan_response.status == "202 ACCEPTED"
+    scan_id = scan_response.json["id"]
+
+    response = client.get(f"/scans/{scan_id}/logs",)
+    assert response.status == "200 OK"
