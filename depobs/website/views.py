@@ -135,7 +135,7 @@ def index_page() -> Any:
     )
 
 
-@api.route("/api/v1/jobs", methods=["POST"])
+@api.route("/api/v1/scans", methods=["POST"])
 def queue_scan() -> Tuple[Dict, int]:
     """
     Queues a scan for a package and returns the scan JSON with status 202
@@ -159,23 +159,23 @@ def queue_scan() -> Tuple[Dict, int]:
     return ScanSchema().dump(scan), 202
 
 
-@api.route("/api/v1/jobs/<int:job_id>", methods=["GET"])
-def get_scan(job_id: int) -> Dict:
+@api.route("/api/v1/scans/<int:scan_id>", methods=["GET"])
+def get_scan(scan_id: int) -> Dict:
     """
     Returns the scan as JSON
     """
-    log.info(f"fetching scan {job_id}")
+    log.info(f"fetching scan {scan_id}")
     return ScanSchema().dump(
-        models.db.session.query(models.Scan).filter_by(id=job_id).one()
+        models.db.session.query(models.Scan).filter_by(id=scan_id).one()
     )
 
 
-@api.route("/api/v1/jobs/<int:job_id>/logs", methods=["GET"])
-def read_scan_logs(job_id: int) -> Dict:
+@api.route("/api/v1/scans/<int:scan_id>/logs", methods=["GET"])
+def read_scan_logs(scan_id: int) -> Dict:
     """
     Returns the scan JSONResults
     """
-    json_results = list(models.get_scan_results_by_id(job_id).all())
+    json_results = list(models.get_scan_results_by_id(scan_id).all())
     if not json_results:
         raise NotFound
 
