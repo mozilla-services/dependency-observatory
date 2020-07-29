@@ -1411,6 +1411,20 @@ def get_scan_results_by_id(scan_id: int) -> sqlalchemy.orm.query.Query:
     )
 
 
+def get_scan_results_by_id_on_job_name(scan_id: int) -> sqlalchemy.orm.query.Query:
+    """
+    Returns query for JSONResults from pubsub with the given scan_id grouped by job name:
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_scan_results_by_id_on_job_name(392))
+    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s GROUP BY json_results.id, CAST((json_results.data -> %(data_2)s) ->> %(param_3)s AS VARCHAR) ORDER BY json_results.id ASC'
+    """
+    return get_scan_results_by_id(scan_id).group_by(
+        JSONResult.id, JSONResult.data["attributes"]["SCAN_ID"].as_string()
+    )
+
+
 def package_name_and_version_to_scan(
     package_name: str, package_version: Optional[str]
 ) -> Scan:
