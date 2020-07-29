@@ -75,7 +75,7 @@ def test_found_package_report_returns_200(models, client):
     assert response.status == "200 OK"
 
 
-def test_missing_package_report_returns_404(client):
+def test_missing_package_report_returns_404(models, client):
     delete_reports(models, "@hapi/bounceee", "0.0.2")
     response = client.get(
         "/package_report?package_name=%40hapi%2Fbounceee&package_version=0.0.2&package_manager=npm"
