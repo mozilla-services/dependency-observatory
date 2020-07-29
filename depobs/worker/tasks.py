@@ -1,4 +1,6 @@
 import asyncio
+import concurrent.futures
+import functools
 import logging
 import requests
 from random import randrange
@@ -12,10 +14,12 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Set,
     Tuple,
     TypedDict,
 )
 
+import flask
 from flask import current_app
 import kubernetes
 
@@ -46,28 +50,15 @@ from depobs.clients.npm_registry import fetch_npm_registry_metadata
 from depobs.database.models import (
     PackageGraph,
     PackageVersion,
-    insert_package_graph,
 )
 from depobs.util.type_util import Result
+from depobs.worker import gcp
 from depobs.worker import k8s
 
 log = logging.getLogger(__name__)
 
 
-class RunRepoTasksConfig(TypedDict):
-    # k8s config context name to use (to access other clusters)
-    context_name: str
-
-    # k8s namespace to create pods e.g. "default"
-    namespace: str
-
-    # number of retries before marking this job failed
-    backoff_limit: int
-
-    # number of seconds the job completes or fails to delete it
-    # 0 to delete immediately, None to never delete the job
-    ttl_seconds_after_finished: Optional[int]
-
+class RunRepoTasksConfig(k8s.KubeJobConfig, total=True):
     # Language to run commands for
     language: str
 
@@ -78,120 +69,85 @@ class RunRepoTasksConfig(TypedDict):
     # provided
     repo_tasks: List[str]
 
-    # Docker image to run
-    image_name: str
-
-    # k8s service account name to run the job pod with
-    service_account_name: str
-
 
 async def scan_tarball_url(
     config: RunRepoTasksConfig,
     tarball_url: str,
-    package_name: Optional[str] = None,
+    scan_id: int,
+    package_name: str,
     package_version: Optional[str] = None,
-) -> Dict[str, Any]:
+) -> kubernetes.client.models.v1_job.V1Job:
     """
     Takes a run_repo_tasks config, tarball url, and optional package
-    name and version
+    name and version.
 
-    returns
+    Returns the k8s job
     """
-    job_name = f"scan-tarball-url-{hex(randrange(1 << 32))[2:]}"
+    job_name = config["name"]
     job_config: k8s.KubeJobConfig = {
         "backoff_limit": config["backoff_limit"],
         "ttl_seconds_after_finished": config["ttl_seconds_after_finished"],
         "context_name": config["context_name"],
-        "name": job_name,
+        "name": config["name"],
         "namespace": config["namespace"],
         "image_name": config["image_name"],
         "args": config["repo_tasks"],
         "env": {
+            **config["env"],
             "LANGUAGE": config["language"],
             "PACKAGE_MANAGER": config["package_manager"],
             "PACKAGE_NAME": package_name or "unknown-package-name",
             "PACKAGE_VERSION": package_version or "unknown-package-version",
             # see: https://github.com/mozilla-services/dependency-observatory/issues/280#issuecomment-641588717
             "INSTALL_TARGET": ".",
+            "JOB_NAME": config["name"],
+            "SCAN_ID": str(scan_id),
         },
+        "secrets": config["secrets"],
         "service_account_name": config["service_account_name"],
+        "volume_mounts": config["volume_mounts"],
     }
     log.info(f"starting job {job_name} with config {job_config}")
+    status = None
     with k8s.run_job(job_config) as job:
         log.info(f"started job {job}")
         await asyncio.sleep(1)
-
-        status = k8s.read_job_status(
+        job = k8s.read_job(
             job_config["namespace"], job_name, context_name=job_config["context_name"]
         )
-        log.info(f"got job status {status}")
+        log.info(f"got initial job status {job.status}")
         while True:
-            if status.failed:
+            if job.status.failed:
                 log.error(f"k8s job {job_name} failed")
-                raise Exception(f"k8s job {job_name} failed")
-                break
-            if status.succeeded:
+                return job
+            if job.status.succeeded:
                 log.info(f"k8s job {job_name} succeeded")
-                stdout = k8s.read_job_logs(
-                    job_config["namespace"],
-                    job_name,
-                    context_name=job_config["context_name"],
+                return job
+            if not job.status.active:
+                log.error(
+                    f"k8s job {job_name} stopped/not active (did not fail or succeed)"
                 )
-                break
-            if not status.active:
-                log.error(f"k8s job {job_name} stopped")
-                raise Exception(
-                    f"k8s job {job_name} not active (did not fail or succeed)"
-                )
-                break
+                return job
 
-            await asyncio.sleep(1)
-            status = k8s.read_job_status(
+            await asyncio.sleep(5)
+            job = k8s.read_job(
                 job_config["namespace"],
                 job_name,
                 context_name=job_config["context_name"],
             )
-            log.info(f"got job status {status}")
-
-    versions: Optional[Dict[str, str]] = None
-    task_results: List[Dict[str, Any]] = []
-    for stdout_line in stdout.split("\n"):
-        line = serializers.parse_stdout_as_json(stdout_line.strip("\r"))
-        if not isinstance(line, dict):
-            continue
-        if line.get("type", None) != "task_result":
-            continue
-        versions = versions or line.get("versions", None)
-        line["container_name"] = job_name
-        task_results.append(line)
-
-    return dict(versions=versions, task_results=task_results)
+            log.info(f"got job status {job.status}")
 
 
-def scan_npm_package_then_build_report_tree(
-    package_name: str, package_version: Optional[str] = None, **kwargs,
-) -> None:
-    package_name_validation_error = validators.get_npm_package_name_validation_error(
-        package_name
-    )
-    if package_name_validation_error is not None:
-        raise package_name_validation_error
+def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, None]:
+    """Given a scan, uses its package name and optional version params, checks for matching npm
+    registry entries and start k8s jobs to scan the tarball url for
+    each version.
 
-    if package_version:
-        package_version_validation_error = validators.get_npm_package_version_validation_error(
-            package_version
-        )
-        if package_version_validation_error is not None:
-            raise package_version_validation_error
-
-    # TODO: use asyncio.gather to run these concurrently
-    fetch_and_save_registry_entries([package_name])
-
-    fetch_and_save_npmsio_scores([package_name])
-
-    scanned_package_name_and_versions: List[Tuple[str, str]] = []
-
-    log.info(f"scanning {package_name}")
+    Generates scan jobs with format asyncio.Task that terminate when
+    the k8s finishes.
+    """
+    package_name: str = scan.package_name
+    package_version: Optional[str] = scan.package_version
 
     # fetch npm registry entries from DB
     for (
@@ -201,88 +157,117 @@ def scan_npm_package_then_build_report_tree(
         tarball_url,
     ) in models.get_npm_registry_entries_to_scan(package_name, package_version):
         if package_version is None:
-            log.warn(f"skipping npm registry entry with null version {package_name}")
+            log.warn(
+                f"scan: {scan.id} skipping npm registry entry with null version {package_name}"
+            )
             continue
 
-        log.info(f"scanning {package_name}@{package_version}")
-
+        log.info(f"scan: {scan.id} scanning {package_name}@{package_version}")
         # we need a source_url and git_head or a tarball url to install
         if tarball_url:
+            job_name = f"scan-tarball-url-{hex(randrange(1 << 32))[2:]}"
+            config: RunRepoTasksConfig = current_app.config["SCAN_NPM_TARBALL_ARGS"]
+            config["name"] = job_name
+
             log.info(
-                f"scanning {package_name}@{package_version} with {tarball_url} with config {current_app.config['SCAN_NPM_TARBALL_ARGS']}"
+                f"scan: {scan.id} scanning {package_name}@{package_version} with {tarball_url} with config {current_app.config['SCAN_NPM_TARBALL_ARGS']}"
             )
             # start an npm container, install the tarball, run list and audit
             # assert tarball_url == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{package_version}.tgz
-            container_task_results: Dict[str, Any] = asyncio.run(
+            yield asyncio.create_task(
                 scan_tarball_url(
-                    current_app.config["SCAN_NPM_TARBALL_ARGS"],
-                    tarball_url,
-                    package_name,
-                    package_version,
-                )
+                    config, tarball_url, scan.id, package_name, package_version
+                ),
+                name=job_name,
             )
-            log.info(f"got container task results for {package_name}@{package_version}")
-            log.debug(f"got container task results:\n{container_task_results}")
-            for task_result in container_task_results["task_results"]:
-                serialized_container_task_result: Optional[
-                    Dict[str, Any]
-                ] = serializers.serialize_repo_task(
-                    task_result, {"list_metadata", "audit"}
-                )
-                if not serialized_container_task_result:
-                    continue
-
-                task_data = serialized_container_task_result
-                task_name = task_data["name"]
-                if task_name == "list_metadata":
-                    insert_package_graph(task_data)
-                elif task_name == "audit":
-                    for (
-                        advisory_fields,
-                        impacted_versions,
-                    ) in serializers.node_repo_task_audit_output_to_advisories_and_impacted_versions(
-                        task_data
-                    ):
-                        advisory: models.Advisory = list(
-                            serializers.serialize_advisories([advisory_fields])
-                        )[0]
-                        models.insert_advisories([advisory])
-                        models.update_advisory_vulnerable_package_versions(
-                            advisory, set(impacted_versions)
-                        )
-                else:
-                    log.warning(f"skipping unrecognized task {task_name}")
-
-            scanned_package_name_and_versions.append((package_name, package_version))
         elif source_url and git_head:
             # TODO: port scanner find_dep_files and run_repo_tasks pipelines as used in analyze_package.sh
             log.info(
-                f"scanning {package_name}@{package_version} from {source_url}#{git_head} not implemented"
+                f"scan: {scan.id} scanning {package_name}@{package_version} from {source_url}#{git_head} not implemented"
             )
             log.error(
-                f"Installing from VCS source and ref not implemented to scan {package_name}@{package_version}"
+                f"scan: {scan.id} Installing from VCS source and ref not implemented to scan {package_name}@{package_version}"
             )
 
-    # fetch missing registry entries and scores
-    # TODO: use asyncio.gather to run these concurrently
-    log.info(f"fetching missing npms.io scores")
-    fetch_and_save_npmsio_scores(
-        row[0]
-        for row in models.get_package_names_with_missing_npms_io_scores()
-        if row is not None
+
+async def scan_score_npm_package(scan: models.Scan) -> None:
+    """
+    Scan and score an npm package using params from the provided Scan model
+    """
+    package_name: str = scan.package_name
+    package_version: Optional[str] = scan.package_version
+    log.info(
+        f"scan: {scan.id} fetching npms.io score and npm registry entry for {package_name}"
     )
-    log.info(f"fetching missing npm registry entries")
-    fetch_and_save_registry_entries(
-        row[0]
-        for row in models.get_package_names_with_missing_npm_entries()
-        if row is not None
+    await asyncio.gather(
+        fetch_and_save_registry_entries([package_name]),
+        fetch_and_save_npmsio_scores([package_name]),
     )
 
-    log.info(f"scoring package versions")
-    for package_name, package_version in scanned_package_name_and_versions:
-        log.info(f"scoring package version {package_name}@{package_version}")
+    tarball_scans: List[asyncio.Task] = list(scan_package_tarballs(scan))
+    log.info(f"scan: {scan.id} scanning {package_name} {len(tarball_scans)} versions")
+    k8s_jobs: List[kubernetes.client.models.v1_job.V1Job] = await asyncio.gather(
+        *tarball_scans
+    )
+    successful_jobs = [job for job in k8s_jobs if job.status.succeeded]
+    log.info(
+        f"scan: {scan.id} {len(k8s_jobs)} k8s jobs finished, {len(successful_jobs)}) succeeded"
+    )
 
-        # build_report_tree(package_name, package_version)
+    # wait for logs to show up from pubsub
+    successful_job_names = {
+        k8s.get_job_env_var(job, "JOB_NAME") for job in successful_jobs
+    }
+    while True:
+        jobs_completed = {
+            job_name: any(
+                result.data["data"][-1]["type"] == "task_complete"
+                for result in models.get_scan_job_results(job_name)
+            )
+            for job_name in successful_job_names
+        }
+        log.info(
+            f"scan: {scan.id} {jobs_completed.keys()} finished; waiting for pubsub logs from {successful_job_names - set(jobs_completed.keys())}"
+        )
+        if set(jobs_completed.keys()) == successful_job_names:
+            break
+        await asyncio.sleep(5)
+
+    log.info("scan: {scan.id} saving logs from {len(successful_jobs)} successful jobs")
+    for job in successful_jobs:
+        log.info(
+            f"scan: {scan.id} saving job results for {k8s.get_job_env_var(job, 'PACKAGE_NAME')}@{k8s.get_job_env_var(job, 'PACKAGE_VERSION')}"
+        )
+        serializers.deserialize_scan_job_results(
+            models.get_scan_job_results(k8s.get_job_env_var(job, "JOB_NAME"))
+        )
+
+    log.info(
+        f"scan: {scan.id} fetching missing npms.io scores and npm registry entries for scoring"
+    )
+    await asyncio.gather(
+        fetch_and_save_npmsio_scores(
+            row[0]
+            for row in models.get_package_names_with_missing_npms_io_scores()
+            if row is not None
+        ),
+        fetch_and_save_registry_entries(
+            row[0]
+            for row in models.get_package_names_with_missing_npm_entries()
+            if row is not None
+        ),
+    )
+
+    log.info(f"scan: {scan.id} scoring {len(successful_jobs)} package versions")
+    for job in successful_jobs:
+        package_name, package_version = (
+            k8s.get_job_env_var(job, "PACKAGE_NAME"),
+            k8s.get_job_env_var(job, "PACKAGE_VERSION"),
+        )
+        log.info(
+            f"scan: {scan.id} scoring package version {package_name}@{package_version}"
+        )
+
         package: Optional[
             PackageVersion
         ] = get_most_recently_inserted_package_from_name_and_version(
@@ -290,7 +275,7 @@ def scan_npm_package_then_build_report_tree(
         )
         if package is None:
             log.error(
-                f"PackageVersion not found for {package_name} {package_version}. Skipping scoring."
+                f"scan: {scan.id} PackageVersion not found for {package_name} {package_version}. Skipping scoring."
             )
             continue
 
@@ -298,7 +283,9 @@ def scan_npm_package_then_build_report_tree(
             package
         )
         if db_graph is None:
-            log.info(f"{package.name} {package.version} has no children")
+            log.info(
+                f"scan: {scan.id} {package.name} {package.version} has no children"
+            )
             db_graph = PackageGraph(id=None, link_ids=[])
             db_graph.distinct_package_ids = set([package.id])
 
@@ -323,15 +310,15 @@ async def fetch_package_data(
     return package_results
 
 
-def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
+async def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
     package_names = list(package_names)
     log.info(f"fetching npmsio scores for {len(package_names)} package names")
     log.debug(f"fetching npmsio scores for package names: {list(package_names)}")
-    npmsio_scores: List[Dict] = asyncio.run(
+    npmsio_scores: List[Dict] = await asyncio.create_task(
         fetch_package_data(
             fetch_npmsio_scores, current_app.config["NPMSIO_CLIENT"], package_names,
         ),
-        debug=False,
+        name=f"fetch_npmsio_scores",
     )
     if len(npmsio_scores) != len(package_names):
         log.warn(
@@ -352,17 +339,17 @@ def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dict]:
     return npmsio_scores
 
 
-def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
+async def fetch_and_save_registry_entries(package_names: Iterable[str]) -> List[Dict]:
     package_names = list(package_names)
     log.info(f"fetching registry entries for {len(package_names)} package names")
     log.debug(f"fetching registry entries for package names: {list(package_names)}")
-    npm_registry_entries = asyncio.run(
+    npm_registry_entries = await asyncio.create_task(
         fetch_package_data(
             fetch_npm_registry_metadata,
             current_app.config["NPM_CLIENT"],
             package_names,
         ),
-        debug=False,
+        name=f"fetch_and_save_registry_entries",
     )
     if len(npm_registry_entries) != len(package_names):
         log.warn(
@@ -592,3 +579,190 @@ def fetch_breaches(emails: List[str]) -> List[Dict[str, str]]:
     )
 
     return breaches
+
+
+def save_pubsub_message(
+    app: flask.Flask, message: gcp.pubsub_v1.types.PubsubMessage
+) -> None:
+    """
+    Saves a pubsub message data to the JSONResult table and acks it.
+
+    nacks it if saving fails.
+
+    Requires depobs flask app context.
+    """
+    with app.app_context():
+        try:
+            # TODO: set job status when it finishes? No, do this in the runner.
+            log.info(
+                f"received pubsub message {message.message_id} published at {message.publish_time} with attrs {message.attributes}"
+            )
+            save_json_results(
+                [
+                    {
+                        "type": "google.cloud.pubsub_v1.types.PubsubMessage",
+                        "id": message.message_id,
+                        "publish_time": flask.json.dumps(
+                            message.publish_time
+                        ),  # convert datetime
+                        "attributes": dict(
+                            message.attributes
+                        ),  # convert from ScalarMapContainer
+                        "data": flask.json.loads(message.data),
+                        "size": message.size,
+                    }
+                ]
+            )
+            message.ack()
+        except Exception as err:
+            message.nack()
+            log.error(
+                f"error saving pubsub message {message} to json results table: {err}"
+            )
+
+
+def run_pubsub_thread(app: flask.Flask, timeout=30):
+    """
+    Runs a thread that:
+
+    * subscribes to GCP pubsub output
+    * saves the job output to the JSONResult table
+
+    Requires depobs flask app context.
+    """
+    with app.app_context():
+        # create the topic if it doesn't exist
+        gcp.create_pubsub_topic(
+            current_app.config["GCP_PROJECT_ID"],
+            current_app.config["JOB_STATUS_PUBSUB_TOPIC"],
+        )
+        future: gcp.pubsub_v1.subscriber.futures.StreamingPullFuture = gcp.receive_pubsub_messages(
+            current_app.config["GCP_PROJECT_ID"],
+            current_app.config["JOB_STATUS_PUBSUB_TOPIC"],
+            current_app.config["JOB_STATUS_PUBSUB_SUBSCRIPTION"],
+            functools.partial(save_pubsub_message, app),
+        )
+        while True:
+            try:
+                future.result(timeout=timeout)
+            except concurrent.futures.TimeoutError:
+                log.debug(f"{timeout}s timeout for pubsub receiving exceeded")
+            except KeyboardInterrupt:  # stop the thread on keyboard interrupt
+                future.cancel()
+
+
+async def save_pubsub(app: flask.Flask) -> None:
+    loop = asyncio.get_running_loop()
+
+    # run in the default loop executor
+    await loop.run_in_executor(None, functools.partial(run_pubsub_thread, app))
+
+
+async def run_next_scan(app: flask.Flask) -> Optional[models.Scan]:
+    """
+    Async task that:
+
+    * fetches the next scan job (returns None when one isn't found)
+
+    Returns the updated scan or None (when one isn't found to run).
+    """
+    # try to read the next queued scan from the scans table if we weren't given one
+    log.debug("checking for a scan in the DB to run")
+    maybe_next_scan: Optional[models.Scan] = models.get_next_queued_scan().one_or_none()
+    if maybe_next_scan is None:
+        log.debug("could not find a scan in the DB to run")
+        await asyncio.sleep(5)
+        return None
+    return await run_scan(app, maybe_next_scan)
+
+
+async def run_scan(app: flask.Flask, scan: models.Scan,) -> models.Scan:
+    """
+    Async task that:
+
+    * takes a scan job
+    * starts a k8s job in the untrusted jobs cluster
+    * updates the scan status from 'queued' to 'started'
+    * watches the k8s job and sets the scan status to 'failed' or 'succeeded' when the k8s job finishes
+
+    Returns the updated scan.
+    """
+    log.info(f"starting a k8s job for scan {scan.id} with params {scan.params}")
+    if (
+        isinstance(scan.params, dict)
+        and all(k in scan.params.keys() for k in {"name", "args", "kwargs"})
+        and scan.params["name"] == "scan_score_npm_package"
+    ):
+        args = scan.params["args"]
+        package_name = args[0]
+        package_version = args[1] if len(args) > 1 else None
+
+        with app.app_context():
+            scan = models.save_scan_with_status(scan, "started")
+            # scan fails if any of its tarball scan jobs, data fetching, or scoring steps fail
+            try:
+                await scan_score_npm_package(scan)
+                new_scan_status = "succeeded"
+            except Exception as err:
+                log.error(f"{scan.id} error scanning and scoring: {err}")
+                new_scan_status = "failed"
+            scan = models.save_scan_with_status(scan, new_scan_status)
+    else:
+        log.info("ignoring pending scan {scan.id} with params {scan.params}")
+
+    return scan
+
+
+async def run_background_tasks(app: flask.Flask, task_fns: Iterable[Callable]) -> None:
+    """
+    Repeatedly runs one or more tasks with the param task_name until
+    the shutdown event fires.
+    """
+    shutdown = asyncio.Event()
+
+    task_fns_by_name = {
+        task_fn.__name__: functools.partial(task_fn, app) for task_fn in task_fns
+    }
+    tasks: Set[asyncio.Task] = {
+        asyncio.create_task(fn(), name=name) for name, fn in task_fns_by_name.items()
+    }
+    log.info(f"starting initial background tasks {tasks}")
+    while True:
+        done, pending = await asyncio.wait(
+            tasks, timeout=5, return_when=asyncio.FIRST_COMPLETED
+        )
+        assert all(isinstance(task, asyncio.Task) for task in pending)
+        if len(done) == 0:
+            log.debug(
+                f"background task {done} completed, running: {[task.get_name() for task in pending]}"  # type: ignore
+            )
+        else:
+            log.info(
+                f"background task {done} completed, running: {[task.get_name() for task in pending]}"  # type: ignore
+            )
+        if shutdown.is_set():
+            # wait for everything to finish
+            await asyncio.wait(pending, return_when=asyncio.ALL_COMPLETED)
+            log.info("all background tasks finished exiting")
+            break
+
+        for task in tasks:
+            if task.done():
+                if task.cancelled():
+                    log.warn(f"task {task.get_name()} was cancelled")
+                elif task.exception():
+                    log.error(f"task {task.get_name()} errored")
+                    task.print_stack()
+                elif task.result() is None:
+                    log.debug(f"task {task.get_name()} finished with result: None")
+                else:
+                    log.info(
+                        f"task {task.get_name()} finished with result: {task.result()}"
+                    )
+                log.debug(f"queuing a new {task.get_name()} task")
+                tasks.remove(task)
+                tasks.add(
+                    asyncio.create_task(
+                        task_fns_by_name[task.get_name()](), name=task.get_name()
+                    )
+                )

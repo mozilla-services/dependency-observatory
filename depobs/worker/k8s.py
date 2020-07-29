@@ -8,6 +8,20 @@ import kubernetes
 log = logging.getLogger(__name__)
 
 
+class KubeSecretVolume(TypedDict):
+
+    secret_name: str
+
+    name: str
+
+
+class KubeVolumeMount(TypedDict):
+
+    mount_path: str
+
+    name: str
+
+
 class KubeJobConfig(TypedDict):
     """
     A subset of options to run a k8s Job:
@@ -46,6 +60,12 @@ class KubeJobConfig(TypedDict):
     # service account name to run the job pod with
     service_account_name: str
 
+    # container volume_mounts
+    volume_mounts: List[KubeVolumeMount]
+
+    # volumes with secret sources
+    secrets: List[KubeSecretVolume]
+
 
 def get_api_client(context_name: Optional[str] = None) -> kubernetes.client.ApiClient:
     """
@@ -75,11 +95,27 @@ def create_job(job_config: KubeJobConfig,) -> kubernetes.client.V1Job:
         image_pull_policy="IfNotPresent",
         args=job_config["args"],
         env=[dict(name=k, value=v) for (k, v) in job_config["env"].items()],
+        volume_mounts=[
+            kubernetes.client.V1VolumeMount(
+                mount_path=volume_mount["mount_path"], name=volume_mount["name"]
+            )
+            for volume_mount in job_config["volume_mounts"]
+        ],
     )
+
     pod_spec_kwargs = dict(
         restart_policy="Never",
         containers=[container],
         service_account_name=job_config["service_account_name"],
+        volumes=[
+            kubernetes.client.V1Volume(
+                name=secret["name"],
+                secret=kubernetes.client.V1SecretVolumeSource(
+                    secret_name=secret["secret_name"],
+                ),
+            )
+            for secret in job_config["secrets"]
+        ],
     )
 
     # Create and configurate a spec section
@@ -123,6 +159,15 @@ def read_job(
         .list_namespaced_job(namespace=namespace, label_selector=f"job-name={name}",)
         .items[0]
     )
+
+
+def get_job_env_var(
+    job: kubernetes.client.models.v1_job.V1Job, env_var_name: str
+) -> str:
+    for env_var in job.spec.template.spec.containers[0].env:
+        if env_var.name == env_var_name:
+            return env_var.value
+    raise ValueError(f"env var {env_var_name} not found in k8s job config")
 
 
 def read_job_status(
@@ -169,22 +214,6 @@ def get_pod_container_name(pod: kubernetes.client.V1Pod) -> Optional[str]:
         log.error(f"job pod lifecycle phase is Unknown")
         raise Exception("Unable to fetch pod status for job")
     return None
-
-
-def read_job_logs(
-    namespace: str,
-    name: str,
-    context_name: Optional[str] = None,
-    read_logs_kwargs: Optional[Dict] = None,
-) -> str:
-    api_client = get_api_client(context_name)
-    read_logs_kwargs = dict() if read_logs_kwargs is None else read_logs_kwargs
-    job_pod_name = get_job_pod(namespace, name).metadata.name
-
-    log.info(f"reading logs from pod {job_pod_name} for job {namespace} {name}")
-    return kubernetes.client.CoreV1Api(api_client=api_client).read_namespaced_pod_log(
-        name=job_pod_name, namespace=namespace, **read_logs_kwargs
-    )
 
 
 def watch_job(

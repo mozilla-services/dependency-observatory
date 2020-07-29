@@ -1,14 +1,38 @@
-import click
-from flask import Flask
-from flask.cli import AppGroup
+import asyncio
+import logging
+from typing import List
 
+import click
+from flask import Flask, current_app
+from flask.cli import AppGroup, with_appcontext
+
+from depobs.database import models
 from depobs.website.do import create_app
 from depobs.worker import tasks
 
+log = logging.getLogger(__name__)
 
 app = create_app()
-
 npm_cli = AppGroup("npm")
+
+
+TASK_NAMES = ["save_pubsub", "run_next_scan"]
+assert all(getattr(tasks, task_name) for task_name in TASK_NAMES)
+
+
+@app.cli.command("run")
+@click.option(
+    "--task-name", required=True, type=click.Choice(TASK_NAMES), multiple=True,
+)
+@with_appcontext
+def listen_and_run(task_name: List[str]) -> None:
+    """
+    Run one or more background tasks
+    """
+    log.info(f"starting background tasks: {task_name}")
+    asyncio.run(
+        tasks.run_background_tasks(app, [getattr(tasks, name) for name in task_name])
+    )
 
 
 @npm_cli.command("scan")
@@ -18,7 +42,11 @@ def scan_npm_package(package_name: str, package_version: str) -> None:
     """
     Scan and score an npm package name and version
     """
-    tasks.scan_npm_package_then_build_report_tree(package_name, package_version)
+    scan = models.save_scan_with_status(
+        models.package_name_and_version_to_scan(package_name, package_version), "queued"
+    )
+    log.info(f"running npm package scan with id {scan.id}")
+    asyncio.run(tasks.run_scan(app, scan))
 
 
 @npm_cli.command("package-advisories")
