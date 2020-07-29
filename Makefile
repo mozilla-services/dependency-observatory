@@ -48,3 +48,6 @@ db-save-json-results:
 
 shellcheck:
 	shellcheck bin/*.sh util/*.sh scan_envs/*.sh
+
+unit-test:
+	./util/run_tests.sh
