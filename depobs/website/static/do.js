@@ -1,30 +1,30 @@
-async function startJob(args) {
-  let jobURI = "/api/v1/jobs";
+async function startScan(args) {
+  let scanURI = "/api/v1/scans";
   let body = {
     name: "scan_score_npm_package",
     args: [args["package_name"], args["package_version"]],
   };
-  console.debug("starting job with req body:", body);
+  console.debug("starting scan with req body:", body);
 
-  let response = await fetch(jobURI, {
+  let response = await fetch(scanURI, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
   }).catch((err) => {
-    console.error(`error POSTing to ${jobURI}: ${err}`);
+    console.error(`error POSTing to ${scanURI}: ${err}`);
     throw err;
   });
   if (response.status !== 202) {
-    let err = new Error(`${response.status} from ${jobURI}`);
+    let err = new Error(`${response.status} from ${scanURI}`);
     err.response = response;
     throw err;
   }
-  console.log("start job response: ", response);
+  console.log("start scan response: ", response);
   let responseJSON = await response.json();
 
-  console.log("start job response JSON: ", responseJSON);
+  console.log("start scan response JSON: ", responseJSON);
   return responseJSON;
 }
 
@@ -91,21 +91,21 @@ function updateSearchForm(disable) {
 }
 
 async function scanAndScorePackage(formDataObj) {
-  console.debug("starting job with data:", formDataObj);
-  let startJobResponseJSON = await startJob(formDataObj);
-  let jobID = startJobResponseJSON.id;
+  console.debug("starting scan with data:", formDataObj);
+  let startScanResponseJSON = await startScan(formDataObj);
+  let scanID = startScanResponseJSON.id;
   console.log(
-    `created job with name: ${jobID} and URL: ${window.location.origin}/api/v1/jobs/${jobID}`
+    `created scan with name: ${scanID} and URL: ${window.location.origin}/api/v1/scans/${scanID}`
   );
-  return jobID;
+  return scanID;
 }
 
-function redirectToJobLogs(jobID) {
-  let jobLogsURI = `/jobs/${jobID}/logs`;
+function redirectToScanLogs(scanID) {
+  let scanLogsURI = `/scans/${scanID}/logs`;
   console.log(
-    `redirecting to tail logs at ${window.location.origin}${jobLogsURI}`
+    `redirecting to tail logs at ${window.location.origin}${scanLogsURI}`
   );
-  window.location.assign(jobLogsURI);
+  window.location.assign(scanLogsURI);
 }
 
 function onSubmit(event) {
@@ -120,7 +120,7 @@ function onSubmit(event) {
   if (formDataObj.force_rescan === "on") {
     console.debug("skipping report check since rescan requested");
     scanAndScorePackage(formDataObj)
-      .then(redirectToJobLogs)
+      .then(redirectToScanLogs)
       .catch((err) => {
         console.error(`error starting rescan: ${err}`);
         updateSearchError(err, "rescanning a package");
@@ -150,7 +150,7 @@ function onSubmit(event) {
           updateSearchError(err, "checking a package report exists");
         } else {
           scanAndScorePackage(formDataObj)
-            .then(redirectToJobLogs)
+            .then(redirectToScanLogs)
             .catch((err) => {
               console.error(`error starting scan: ${err}`);
               updateSearchError(err, "scanning a package");

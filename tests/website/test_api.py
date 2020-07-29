@@ -3,22 +3,22 @@ import pytest
 
 @pytest.mark.unit
 def test_invalid_create_job_params(client):
-    response = client.post("/api/v1/jobs",)
+    response = client.post("/api/v1/scans",)
     assert response.status == "422 UNPROCESSABLE ENTITY"
     assert response.json == {"_schema": ["Invalid input type."]}
 
     # missing name
-    response = client.post("/api/v1/jobs", json={},)
+    response = client.post("/api/v1/scans", json={},)
     assert response.status == "422 UNPROCESSABLE ENTITY"
     assert response.json == {"name": ["Missing data for required field."]}
 
     # invalid name
-    response = client.post("/api/v1/jobs", json={"name": "foo"},)
+    response = client.post("/api/v1/scans", json={"name": "foo"},)
     assert response.status == "400 BAD REQUEST"
     assert response.json == {"description": "job not allowed or does not exist for app"}
 
     response = client.post(
-        "/api/v1/jobs", json={"name": "foo", "args": [], "kwargs": {}, "extra": -1},
+        "/api/v1/scans", json={"name": "foo", "args": [], "kwargs": {}, "extra": -1},
     )
     assert response.status == "422 UNPROCESSABLE ENTITY"
     assert response.json == {"extra": ["Unknown field."]}
@@ -32,18 +32,18 @@ def delete_scan_results(models, scan_id: int):
 
 def test_valid_create_job_and_get(models, client):
     scan_response = client.post(
-        "/api/v1/jobs",
+        "/api/v1/scans",
         json={"name": "scan_score_npm_package", "args": [], "kwargs": {}},
     )
     assert scan_response.status == "202 ACCEPTED"
     assert "id" in scan_response.json
     scan_id = scan_response.json["id"]
 
-    response = client.get(f"/api/v1/jobs/{scan_id}",)
+    response = client.get(f"/api/v1/scans/{scan_id}",)
     assert response.status == "200 OK"
 
     delete_scan_results(models, scan_id)
-    response = client.get(f"/api/v1/jobs/{scan_id}/logs",)
+    response = client.get(f"/api/v1/scans/{scan_id}/logs",)
     assert response.status == "404 NOT FOUND"
 
     # insert fake scan results
@@ -61,9 +61,13 @@ def test_valid_create_job_and_get(models, client):
     models.db.session.add_all(results)
     models.db.session.commit()
 
-    response = client.get(f"/api/v1/jobs/{scan_id}/logs",)
+    response = client.get(f"/api/v1/scans/{scan_id}/logs",)
     assert response.status == "200 OK"
     assert response.json == [
+        {
+            "id": results[0].id,
+            "data": {"data": [{"foo": 0.5}], "attributes": {"SCAN_ID": scan_id}},
+        },
         {
             "id": results[1].id,
             "data": {
@@ -71,16 +75,6 @@ def test_valid_create_job_and_get(models, client):
                 "attributes": {"SCAN_ID": scan_id},
             },
         },
-        {
-            "id": results[0].id,
-            "data": {"data": [{"foo": 0.5}], "attributes": {"SCAN_ID": scan_id}},
-        },
     ]
     # clean up
     delete_scan_results(models, scan_id)
-
-
-@pytest.mark.unit
-def test_render_job_logs_not_implemented(client):
-    response = client.get(f"/jobs/1/logs",)
-    assert response.status == "501 NOT IMPLEMENTED"

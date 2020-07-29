@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div id="job-logs">
+
+    <h3>Scan Logs for {{ scan.package_name }} {{ scan.package_version }}</h3>
+
+    <div>
+        <h4>status: <span class="badge badge-secondary
+                                 {%if scan.status == 'queued' %}badge-secondary
+                                 {% elif scan.status == 'started' %}badge-primary
+                                 {% elif scan.status == 'succeeded' %}badge-success
+                                 {% elif scan.status == 'failed' %}badge-danger
+                                 {% endif %}">{{ scan.status }}</span></h4>
+
+        {%if scan.status == 'succeeded' and scan.package_version %}
+        <div>
+            package report:
+            <a href="/package_report?package_name={{ scan.package_name }}&package_version={{ scan.package_version }}&package_manager=npm">
+            {{ scan.package_name }}@{{ scan.package_version }}</a>
+        </div>
+        {% endif %}
+
+        {%if refresh %}
+            <div>This page will refresh every five seconds until the scan finishes then redirect to the package report.</div>
+            <meta http-equiv="refresh" content="5{%if scan.status == 'succeeded' and scan.package_version %}; url=/package_report?package_name={{ scan.package_name }}&package_version={{ scan.package_version }}&package_manager=npm{% endif %}">
+        {% endif %}
+    </div>
+
+    <dl>
+        <dd>
+            <pre><code>{% for result in results %}{{ result.data }}{% endfor %}</code></pre>
+        </dd>
+    </dl>
+</div>
+{% endblock %}

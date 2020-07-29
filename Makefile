@@ -2,6 +2,9 @@
 format:
 	black .
 
+format-web:
+	docker-compose run format-web
+
 type-check:
 	mypy --config setup.cfg
 
@@ -45,3 +48,6 @@ db-save-json-results:
 
 shellcheck:
 	shellcheck bin/*.sh util/*.sh scan_envs/*.sh
+
+unit-test:
+	./util/run_tests.sh

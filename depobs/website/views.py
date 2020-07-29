@@ -6,13 +6,11 @@ from typing import Any, Dict, List, Optional, Tuple, Type
 
 from flask import (
     Blueprint,
-    Response,
     current_app,
     g,
     jsonify,
     render_template,
     request,
-    stream_with_context,
     url_for,
 )
 import graphviz
@@ -135,7 +133,7 @@ def index_page() -> Any:
     )
 
 
-@api.route("/api/v1/jobs", methods=["POST"])
+@api.route("/api/v1/scans", methods=["POST"])
 def queue_scan() -> Tuple[Dict, int]:
     """
     Queues a scan for a package and returns the scan JSON with status 202
@@ -159,51 +157,47 @@ def queue_scan() -> Tuple[Dict, int]:
     return ScanSchema().dump(scan), 202
 
 
-@api.route("/api/v1/jobs/<int:job_id>", methods=["GET"])
-def get_scan(job_id: int) -> Dict:
+@api.route("/api/v1/scans/<int:scan_id>", methods=["GET"])
+def get_scan(scan_id: int) -> Dict:
     """
     Returns the scan as JSON
     """
-    log.info(f"fetching scan {job_id}")
+    log.info(f"fetching scan {scan_id}")
     return ScanSchema().dump(
-        models.db.session.query(models.Scan).filter_by(id=job_id).one()
+        models.db.session.query(models.Scan).filter_by(id=scan_id).one()
     )
 
 
-@api.route("/api/v1/jobs/<int:job_id>/logs", methods=["GET"])
-def read_scan_logs(job_id: int) -> Dict:
+@api.route("/api/v1/scans/<int:scan_id>/logs", methods=["GET"])
+def read_scan_logs(scan_id: int) -> Dict:
     """
     Returns the scan JSONResults
     """
-    json_results = list(models.get_scan_results_by_id(job_id).all())
+    json_results = list(models.get_scan_results_by_id(scan_id).all())
     if not json_results:
         raise NotFound
 
     serialized = [JSONResultSchema().dump(json_result) for json_result in json_results]
-    log.info(f"got s'd jr {serialized}")
-
     return jsonify(serialized)
 
 
-@api.route("/jobs/<string:job_name>/logs", methods=["GET"])
-def render_job_logs(job_name: str):
-    raise NotImplemented
+@api.route("/scans/<int:scan_id>/logs", methods=["GET"])
+def render_scan_logs(scan_id: int):
+    """Renders the scan status and job JSONResults
 
-    def generate():
-        log.info(f"waiting for the job {job_name} container to start")
-        yield dict(event_type="new_phase", message="finding job container")
+    When refresh is True (the default) the scan page will refresh and
+    redirect to the package report page if the scan completes
+    successfully.
+    """
+    refresh = request.args.get("refresh", True, bool)
+    log.info(f"rendering job logs for scan {scan_id} with refresh {refresh}")
+    scan = models.db.session.query(models.Scan).filter_by(id=scan_id).one_or_none()
+    json_results = []
+    if scan is not None:
+        json_results = list(models.get_scan_results_by_id_on_job_name(scan_id).all())
 
-        log.info(f"streaming job {job_name} logs for pod {job_pod_name}")
-        yield dict(event_type="new_phase", message=f"logs for pod {job_pod_name}")
-
-        yield dict(
-            event_type="new_phase", message=f"finished",
-        )
-
-    return Response(
-        stream_with_context(
-            stream_template("job_logs.html", job_name=job_name, events=generate())
-        )
+    return render_template(
+        "scan_job_logs.html", scan=scan, results=json_results, refresh=refresh
     )
 
 

@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 
 
@@ -65,7 +67,26 @@ def test_found_package_report_returns_200(models, client):
     add_report(
         models,
         models.PackageReport(
-            package="dep-obs-internal-wokka-wokka", version="0.0.2", scoring_date=None
+            package="dep-obs-internal-wokka-wokka",
+            version="0.0.2",
+            scoring_date=datetime.datetime.now(),
+            authors=None,
+            contributors=None,
+            all_deps=0,
+            dependencies=[],
+            immediate_deps=0,
+            npmsio_score=0,
+            npmsio_scored_package_version=None,
+            release_date=None,
+            top_score=0,
+            directVulnsCritical_score=0,
+            directVulnsHigh_score=0,
+            directVulnsLow_score=0,
+            directVulnsMedium_score=0,
+            indirectVulnsCritical_score=0,
+            indirectVulnsHigh_score=0,
+            indirectVulnsLow_score=0,
+            indirectVulnsMedium_score=0,
         ),
     )
 
@@ -75,9 +96,25 @@ def test_found_package_report_returns_200(models, client):
     assert response.status == "200 OK"
 
 
-def test_missing_package_report_returns_404(client):
+def test_missing_package_report_returns_404(models, client):
     delete_reports(models, "@hapi/bounceee", "0.0.2")
     response = client.get(
         "/package_report?package_name=%40hapi%2Fbounceee&package_version=0.0.2&package_manager=npm"
     )
     assert response.status == "404 NOT FOUND"
+
+
+def test_scan_logs_returns_200(models, client):
+    scan_response = client.post(
+        "/api/v1/scans",
+        json={
+            "name": "scan_score_npm_package",
+            "args": ["temp-package", "temp-package-version"],
+            "kwargs": {},
+        },
+    )
+    assert scan_response.status == "202 ACCEPTED"
+    scan_id = scan_response.json["id"]
+
+    response = client.get(f"/scans/{scan_id}/logs",)
+    assert response.status == "200 OK"
