@@ -2,6 +2,9 @@
 format:
 	black .
 
+format-web:
+	docker-compose run format-web
+
 type-check:
 	mypy --config setup.cfg
 
