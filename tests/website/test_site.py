@@ -1,3 +1,5 @@
+import datetime
+
 import pytest
 
 
@@ -65,7 +67,7 @@ def test_found_package_report_returns_200(models, client):
     add_report(
         models,
         models.PackageReport(
-            package="dep-obs-internal-wokka-wokka", version="0.0.2", scoring_date=None
+            package="dep-obs-internal-wokka-wokka", version="0.0.2", scoring_date=datetime.datetime.now(),
         ),
     )
 
