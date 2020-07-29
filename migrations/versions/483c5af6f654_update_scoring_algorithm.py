@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '483c5af6f654'
-down_revision = '4a91e0ce58bf'
+revision = "483c5af6f654"
+down_revision = "4a91e0ce58bf"
 branch_labels = None
 depends_on = None
 
@@ -95,6 +95,7 @@ def upgrade():
             JOIN score_view ON reports.id = score_view.id
     """
     )
+
 
 def downgrade():
     pass
