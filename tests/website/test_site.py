@@ -67,7 +67,26 @@ def test_found_package_report_returns_200(models, client):
     add_report(
         models,
         models.PackageReport(
-            package="dep-obs-internal-wokka-wokka", version="0.0.2", scoring_date=datetime.datetime.now(),
+            package="dep-obs-internal-wokka-wokka",
+            version="0.0.2",
+            scoring_date=datetime.datetime.now(),
+            authors=None,
+            contributors=None,
+            all_deps=0,
+            dependencies=[],
+            immediate_deps=0,
+            npmsio_score=0,
+            npmsio_scored_package_version=None,
+            release_date=None,
+            top_score=0,
+            directVulnsCritical_score=0,
+            directVulnsHigh_score=0,
+            directVulnsLow_score=0,
+            directVulnsMedium_score=0,
+            indirectVulnsCritical_score=0,
+            indirectVulnsHigh_score=0,
+            indirectVulnsLow_score=0,
+            indirectVulnsMedium_score=0,
         ),
     )
 
