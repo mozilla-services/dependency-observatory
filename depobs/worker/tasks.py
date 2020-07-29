@@ -233,7 +233,7 @@ async def scan_score_npm_package(scan: models.Scan) -> None:
             break
         await asyncio.sleep(5)
 
-    log.info("scan: {scan.id} saving logs from {len(successful_jobs)} successful jobs")
+    log.info(f"scan: {scan.id} saving logs from {len(successful_jobs)} successful jobs")
     for job in successful_jobs:
         log.info(
             f"scan: {scan.id} saving job results for {k8s.get_job_env_var(job, 'PACKAGE_NAME')}@{k8s.get_job_env_var(job, 'PACKAGE_VERSION')}"
