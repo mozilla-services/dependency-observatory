@@ -180,8 +180,6 @@ def read_scan_logs(job_id: int) -> Dict:
         raise NotFound
 
     serialized = [JSONResultSchema().dump(json_result) for json_result in json_results]
-    log.info(f"got s'd jr {serialized}")
-
     return jsonify(serialized)
 
 
