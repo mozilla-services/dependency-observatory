@@ -65,15 +65,15 @@ def test_valid_create_job_and_get(models, client):
     assert response.status == "200 OK"
     assert response.json == [
         {
+            "id": results[0].id,
+            "data": {"data": [{"foo": 0.5}], "attributes": {"SCAN_ID": scan_id}},
+        },
+        {
             "id": results[1].id,
             "data": {
                 "data": [{"spam": "cheese"}, {"line": 2}],
                 "attributes": {"SCAN_ID": scan_id},
             },
-        },
-        {
-            "id": results[0].id,
-            "data": {"data": [{"foo": 0.5}], "attributes": {"SCAN_ID": scan_id}},
         },
     ]
     # clean up
