@@ -139,6 +139,7 @@ NPMSIO_CLIENT = {
     **_aiohttp_args,
     **dict(
         base_url=os.environ.get("NPMSIO_BASE_URL", "https://api.npms.io/v2/"),
+        additional_headers={"Content-Type": "application/json"},
         max_connections=1,
         package_batch_size=50,
     ),
