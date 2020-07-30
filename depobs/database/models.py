@@ -788,7 +788,9 @@ class Scan(db.Model):
     @cached_property
     def package_version(self,) -> Optional[str]:
         assert isinstance(self.params, dict)
-        return self.params["args"][1]
+        if len(self.params["args"]) > 1:
+            return self.params["args"][1]
+        return None
 
 
 def get_package_report(
