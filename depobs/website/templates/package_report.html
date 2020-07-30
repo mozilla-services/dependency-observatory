@@ -254,6 +254,19 @@
             {% endif %}
         </div>
     </div>
+
+    {%if package_report.graph_id %}
+    <div class="card card-primary mt-4" id="direct-dependencies">
+        <div class="card-header bg-primary text-center text-md-left text-white">
+            <span class="h3">Constraint Graph Scoring Details</span>
+        </div>
+        <div class="card-body pb-1">
+            <ul>
+                <li><a target="_blank" href="/score_details/graphs/{{package_report.graph_id}}">package scores</a>
+            </ul>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% else %}
 <div id="no-package">
