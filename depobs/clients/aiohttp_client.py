@@ -47,7 +47,6 @@ class AIOHTTPClientConfig(TypedDict, total=True):  # require all keys defined be
 def aiohttp_session(config: AIOHTTPClientConfig) -> aiohttp.ClientSession:
     headers = {
         "Accept": "application/json",
-        "Content-Type": "application/json",
         "User-Agent": config["user_agent"],
     }
     if config.get("bearer_auth_token", None):
