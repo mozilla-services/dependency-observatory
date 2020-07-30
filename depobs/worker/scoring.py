@@ -412,6 +412,9 @@ def score_package_graph(
             reports_by_package_version_id[dep_node_id] for dep_node_id in direct_dep_ids
         )
 
+    for report in reports_by_package_version_id.values():
+        report.graph_id = db_graph.id
+
     return reports_by_package_version_id
 
 
