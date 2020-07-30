@@ -115,6 +115,25 @@ def show_package_report() -> Any:
     )
 
 
+@api.route("/package_changelog", methods=["GET", "HEAD"])
+def show_package_changelog() -> Any:
+    try:
+        report = PackageReportParamsSchema().load(data=request.args)
+    except ValidationError as err:
+        return err.messages, 422
+
+    package_reports = get_most_recently_scored_package_report_or_raise(
+        report.package_name, report.package_version
+    )
+    return render_template(
+        "package_changelog.html",
+        name=report.package_name,
+        versions=list(
+            models.get_npm_registry_entries_to_scan(report.package_name, None).all()
+        ),
+    )
+
+
 @api.route("/statistics", methods=["GET"])
 def get_statistics() -> Dict:
     return models.get_statistics()

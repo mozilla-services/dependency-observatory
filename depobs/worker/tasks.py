@@ -1,5 +1,6 @@
 import asyncio
 import concurrent.futures
+import copy
 import functools
 import logging
 import requests
@@ -166,7 +167,9 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
         # we need a source_url and git_head or a tarball url to install
         if tarball_url:
             job_name = f"scan-tarball-url-{hex(randrange(1 << 32))[2:]}"
-            config: RunRepoTasksConfig = current_app.config["SCAN_NPM_TARBALL_ARGS"]
+            config: RunRepoTasksConfig = copy.deepcopy(
+                current_app.config["SCAN_NPM_TARBALL_ARGS"]
+            )
             config["name"] = job_name
 
             log.info(
