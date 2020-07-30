@@ -25,6 +25,7 @@ _default_report_advisories = {
 _default_report_json = {
     **_default_report_advisories,
     "id": None,
+    "graph_id": None,
     "authors": None,
     "contributors": None,
     "all_deps": 0,
@@ -401,6 +402,7 @@ score_package_graph_testcases = {
                 indirectVulnsMedium_score=0,
                 npmsio_score=0.0,
                 npmsio_scored_package_version="0.1.0",
+                graph_id=-1,
             ).json_with_dependencies(depth=0)
         ],
     ),
@@ -429,6 +431,7 @@ score_package_graph_testcases = {
         [
             {
                 **_default_report_json,
+                "graph_id": -1,
                 "npmsio_score": 0.25,
                 "npmsio_scored_package_version": "2.0.0",
                 "package": "test-grandchild-pkg",
@@ -436,10 +439,12 @@ score_package_graph_testcases = {
             },
             {
                 **_default_report_json,
+                "graph_id": -1,
                 "all_deps": 1,
                 "dependencies": [
                     {
                         **_default_report_json,
+                        "graph_id": -1,
                         "npmsio_score": 0.25,
                         "npmsio_scored_package_version": "2.0.0",
                         "package": "test-grandchild-pkg",
@@ -454,11 +459,13 @@ score_package_graph_testcases = {
             },
             {
                 **_default_report_json,
+                "graph_id": -1,
                 "all_deps": 2,
                 "authors": None,
                 "dependencies": [
                     {
                         **_default_report_json,
+                        "graph_id": -1,
                         "all_deps": 1,
                         "immediate_deps": 1,
                         "npmsio_score": 0.9,
@@ -493,6 +500,7 @@ score_package_graph_testcases = {
         [
             {
                 **_default_report_json,
+                "graph_id": -1,
                 "all_deps": 1,
                 "immediate_deps": 1,
                 "npmsio_score": 0.8,
@@ -502,6 +510,7 @@ score_package_graph_testcases = {
                 "dependencies": [
                     {
                         **_default_report_json,
+                        "graph_id": -1,
                         "all_deps": 1,
                         "immediate_deps": 1,
                         "npmsio_score": 0.2,
@@ -513,6 +522,7 @@ score_package_graph_testcases = {
             },
             {
                 **_default_report_json,
+                "graph_id": -1,
                 "all_deps": 1,
                 "immediate_deps": 1,
                 "npmsio_score": 0.2,
@@ -522,6 +532,7 @@ score_package_graph_testcases = {
                 "dependencies": [
                     {
                         **_default_report_json,
+                        "graph_id": -1,
                         "all_deps": 1,
                         "immediate_deps": 1,
                         "npmsio_score": 0.8,

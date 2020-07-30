@@ -89,6 +89,7 @@ class PackageReport(PackageReportColumnsMixin, db.Model):
     def report_json(self) -> Dict:
         return dict(
             id=self.id,
+            graph_id=self.graph_id,
             package=self.package,
             version=self.version,
             release_date=self.release_date,
@@ -156,6 +157,7 @@ class PackageScoreReport(PackageReportColumnsMixin, db.Model):
             score=self.score,
             score_code=self.score_code,
             id=self.id,
+            graph_id=self.graph_id,
             package=self.package,
             version=self.version,
             release_date=self.release_date,
