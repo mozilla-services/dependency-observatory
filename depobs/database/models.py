@@ -760,6 +760,8 @@ class JSONResult(db.Model):
 
     data = Column("data", JSONB)
 
+    url = Column(String)
+
 
 class Scan(db.Model):
     """
