@@ -321,6 +321,11 @@ all_score_components = [
     AdvisoryScoreComponent,
     DependencyCountScoreComponent,
 ]
+all_score_component_fields = [
+    field
+    for component in all_score_components
+    for field in component.package_report_fields
+]
 
 
 def score_package(

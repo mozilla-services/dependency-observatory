@@ -111,6 +111,7 @@ def show_package_report() -> Any:
     return render_template(
         "package_report.html",
         package_report=package_report,
+        package_report_fields=scoring.all_score_component_fields,
         get_direct_vulns=models.get_vulnerabilities_report,
     )
 
