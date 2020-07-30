@@ -966,7 +966,8 @@ def get_npm_registry_entries_to_scan(
     package_name: str, package_version: Optional[str] = None
 ) -> sqlalchemy.orm.query.Query:
     """
-    Returns PackageVersion names not in npmsio_scores.
+    Returns npm registry entries matching the package name and
+    optional package version from most recently published:
 
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
