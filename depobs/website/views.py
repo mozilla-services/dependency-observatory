@@ -284,7 +284,7 @@ def get_condensate_graph(graph_id):
 
 
 @api.route(
-    "/score_details/score_component_graph/<int:graph_id>/<string:package_report_field>",
+    "/score_details/score_component_graphs/<int:graph_id>/<string:package_report_field>",
     methods=["GET"],
 )
 def get_scoring_graph(graph_id: int, package_report_field: str):
