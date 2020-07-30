@@ -111,6 +111,7 @@ def show_package_report() -> Any:
     return render_template(
         "package_report.html",
         package_report=package_report,
+        package_report_fields=scoring.all_score_component_fields,
         get_direct_vulns=models.get_vulnerabilities_report,
     )
 
@@ -208,7 +209,7 @@ def render_scan_logs(scan_id: int):
     redirect to the package report page if the scan completes
     successfully.
     """
-    refresh = request.args.get("refresh", True, bool)
+    refresh = request.args.get("refresh", False, bool)
     log.info(f"rendering job logs for scan {scan_id} with refresh {refresh}")
     scan = models.db.session.query(models.Scan).filter_by(id=scan_id).one_or_none()
     json_results = []
@@ -284,7 +285,7 @@ def get_condensate_graph(graph_id):
 
 
 @api.route(
-    "/score_details/score_component_graph/<int:graph_id>/<string:package_report_field>",
+    "/score_details/score_component_graphs/<int:graph_id>/<string:package_report_field>",
     methods=["GET"],
 )
 def get_scoring_graph(graph_id: int, package_report_field: str):

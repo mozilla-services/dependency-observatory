@@ -42,7 +42,7 @@ views_blueprint.show_package_report     GET, HEAD, OPTIONS  /package_report
 views_blueprint.render_scan_logs        GET, HEAD, OPTIONS  /scans/<int:scan_id>/logs
 views_blueprint.get_condensate_graph    GET, HEAD, OPTIONS  /score_details/condensate_graphs/<int:graph_id>
 views_blueprint.get_graph               GET, HEAD, OPTIONS  /score_details/graphs/<int:graph_id>
-views_blueprint.get_scoring_graph       GET, HEAD, OPTIONS  /score_details/score_component_graph/<int:graph_id>/<string:package_report_field>
+views_blueprint.get_scoring_graph       GET, HEAD, OPTIONS  /score_details/score_component_graphs/<int:graph_id>/<string:package_report_field>
 static                                  GET, HEAD, OPTIONS  /static/<path:filename>
 views_blueprint.get_statistics          GET, HEAD, OPTIONS  /statistics
 ```

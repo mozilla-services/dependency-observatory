@@ -105,7 +105,7 @@ async function scanAndScorePackage(formDataObj) {
 }
 
 function redirectToScanLogs(scanID) {
-  let scanLogsURI = `/scans/${scanID}/logs`;
+  let scanLogsURI = `/scans/${scanID}/logs?refresh=1`;
   console.log(
     `redirecting to tail logs at ${window.location.origin}${scanLogsURI}`
   );

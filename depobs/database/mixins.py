@@ -32,3 +32,4 @@ class PackageReportColumnsMixin:
     contributors = Column(Integer)
     immediate_deps = Column(Integer)
     all_deps = Column(Integer)
+    graph_id = Column(Integer, nullable=True)
