@@ -4,7 +4,7 @@
 
 <div id="job-logs">
 
-    <h3>Scan Logs for {{ scan.package_name }} {{ scan.package_version }}</h3>
+    <h3>Scan Logs for {{ scan.package_name }} {%if scan.package_version %}{{ scan.package_version }}{% else %}all versions{% endif %}</h3>
 
     <div>
         <h4>status: <span class="badge badge-secondary
