@@ -208,7 +208,7 @@ def render_scan_logs(scan_id: int):
     redirect to the package report page if the scan completes
     successfully.
     """
-    refresh = request.args.get("refresh", True, bool)
+    refresh = request.args.get("refresh", False, bool)
     log.info(f"rendering job logs for scan {scan_id} with refresh {refresh}")
     scan = models.db.session.query(models.Scan).filter_by(id=scan_id).one_or_none()
     json_results = []
