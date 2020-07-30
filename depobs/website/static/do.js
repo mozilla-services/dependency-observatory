@@ -4,6 +4,10 @@ async function startScan(args) {
     name: "scan_score_npm_package",
     args: [args["package_name"], args["package_version"]],
   };
+  if (!args["package_version"]) {
+    console.debug("removing version arg for falsy package_version");
+    body.args = [args["package_name"]];
+  }
   console.debug("starting scan with req body:", body);
 
   let response = await fetch(scanURI, {
@@ -119,6 +123,14 @@ function onSubmit(event) {
 
   if (formDataObj.force_rescan === "on") {
     console.debug("skipping report check since rescan requested");
+    scanAndScorePackage(formDataObj)
+      .then(redirectToScanLogs)
+      .catch((err) => {
+        console.error(`error starting rescan: ${err}`);
+        updateSearchError(err, "rescanning a package");
+      });
+  } else if (!formDataObj.package_version) {
+    console.debug("skipping report check since package version not specified");
     scanAndScorePackage(formDataObj)
       .then(redirectToScanLogs)
       .catch((err) => {
