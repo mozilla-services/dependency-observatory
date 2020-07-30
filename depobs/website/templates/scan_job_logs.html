@@ -22,7 +22,7 @@
         </div>
         {% endif %}
 
-        {%if refresh %}
+        {%if refresh and scan.status != 'failed' %}
             <div>This page will refresh every five seconds until the scan finishes then redirect to the package report.</div>
             <meta http-equiv="refresh" content="5{%if scan.status == 'succeeded' and scan.package_version %}; url=/package_report?package_name={{ scan.package_name }}&package_version={{ scan.package_version }}&package_manager=npm{% endif %}">
         {% endif %}
