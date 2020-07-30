@@ -27,23 +27,24 @@ Dependency Observatory consists of:
 ### API and Routes
 
 ```
-Endpoint                              Methods             Rule
-------------------------------------  ------------------  ---------------------------------------------------------------------------------
-views_blueprint.index_page            GET, HEAD, OPTIONS  /
-dockerflow.heartbeat                  GET, HEAD, OPTIONS  /__heartbeat__
-dockerflow.lbheartbeat                GET, HEAD, OPTIONS  /__lbheartbeat__
-dockerflow.version                    GET, HEAD, OPTIONS  /__version__
-views_blueprint.queue_scan            OPTIONS, POST       /api/v1/scans
-views_blueprint.get_scan              GET, HEAD, OPTIONS  /api/v1/scans/<int:scan_id>
-views_blueprint.read_scan_logs        GET, HEAD, OPTIONS  /api/v1/scans/<int:scan_id>/logs
-views_blueprint.faq_page              GET, HEAD, OPTIONS  /faq
-views_blueprint.render_scan_logs      GET, HEAD, OPTIONS  /scans/<int:scan_id>/logs
-views_blueprint.show_package_report   GET, HEAD, OPTIONS  /package_report
-views_blueprint.get_condensate_graph  GET, HEAD, OPTIONS  /score_details/condensate_graphs/<int:graph_id>
-views_blueprint.get_graph             GET, HEAD, OPTIONS  /score_details/graphs/<int:graph_id>
-views_blueprint.get_scoring_graph     GET, HEAD, OPTIONS  /score_details/score_component_graph/<int:graph_id>/<string:package_report_field>
-static                                GET, HEAD, OPTIONS  /static/<path:filename>
-views_blueprint.get_statistics        GET, HEAD, OPTIONS  /statistics
+Endpoint                                Methods             Rule
+--------------------------------------  ------------------  ---------------------------------------------------------------------------------
+views_blueprint.index_page              GET, HEAD, OPTIONS  /
+dockerflow.heartbeat                    GET, HEAD, OPTIONS  /__heartbeat__
+dockerflow.lbheartbeat                  GET, HEAD, OPTIONS  /__lbheartbeat__
+dockerflow.version                      GET, HEAD, OPTIONS  /__version__
+views_blueprint.queue_scan              OPTIONS, POST       /api/v1/scans
+views_blueprint.get_scan                GET, HEAD, OPTIONS  /api/v1/scans/<int:scan_id>
+views_blueprint.read_scan_logs          GET, HEAD, OPTIONS  /api/v1/scans/<int:scan_id>/logs
+views_blueprint.faq_page                GET, HEAD, OPTIONS  /faq
+views_blueprint.show_package_changelog  GET, HEAD, OPTIONS  /package_changelog
+views_blueprint.show_package_report     GET, HEAD, OPTIONS  /package_report
+views_blueprint.render_scan_logs        GET, HEAD, OPTIONS  /scans/<int:scan_id>/logs
+views_blueprint.get_condensate_graph    GET, HEAD, OPTIONS  /score_details/condensate_graphs/<int:graph_id>
+views_blueprint.get_graph               GET, HEAD, OPTIONS  /score_details/graphs/<int:graph_id>
+views_blueprint.get_scoring_graph       GET, HEAD, OPTIONS  /score_details/score_component_graph/<int:graph_id>/<string:package_report_field>
+static                                  GET, HEAD, OPTIONS  /static/<path:filename>
+views_blueprint.get_statistics          GET, HEAD, OPTIONS  /statistics
 ```
 
 ### Analysis UI
