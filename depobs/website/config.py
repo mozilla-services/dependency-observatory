@@ -58,6 +58,7 @@ JOB_STATUS_PUBSUB_SUBSCRIPTION = os.environ.get("JOB_STATUS_PUBSUB_SUBSCRIPTION"
 
 WEB_JOB_NAMES = {
     "scan_score_npm_package",
+    "scan_score_npm_dep_files",
 }
 
 SCAN_NPM_TARBALL_ARGS: Dict[
