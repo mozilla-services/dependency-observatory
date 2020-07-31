@@ -6,12 +6,7 @@
     <h3>Scan Logs for {{ scan.package_name }} {%if scan.package_version %}{{ scan.package_version }}{% else %}all versions{% endif %}</h3>
 
     <div>
-        <h4>status: <span class="badge badge-secondary
-                                 {%if scan.status == 'queued' %}badge-secondary
-                                 {% elif scan.status == 'started' %}badge-primary
-                                 {% elif scan.status == 'succeeded' %}badge-success
-                                 {% elif scan.status == 'failed' %}badge-danger
-                                 {% endif %}">{{ scan.status }}</span></h4>
+        {% include 'scan_status.html' %}
 
         {%if scan.status == 'succeeded' %}
         <div>
