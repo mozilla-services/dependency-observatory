@@ -854,8 +854,14 @@ class Scan(db.Model):
     status = Column(scan_status_enum, nullable=False)
 
     @cached_property
+    def name(self,) -> str:
+        assert isinstance(self.params, dict)
+        return self.params["name"]
+
+    @cached_property
     def package_name(self,) -> str:
         assert isinstance(self.params, dict)
+        assert self.name == "scan_score_npm_package"
         return self.params["args"][0]
 
     @cached_property
