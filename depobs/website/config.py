@@ -80,7 +80,10 @@ SCAN_NPM_TARBALL_ARGS: Dict[
     secrets=[],
 )
 # for local dev override set job creds
-if os.environ.get("FLASK_ENV", "") == "development" and "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+if (
+    os.environ.get("FLASK_ENV", "") == "development"
+    and "GOOGLE_APPLICATION_CREDENTIALS" in os.environ
+):
     assert isinstance(SCAN_NPM_TARBALL_ARGS["env"], dict)
     SCAN_NPM_TARBALL_ARGS["env"]["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ[
         "GOOGLE_APPLICATION_CREDENTIALS"
