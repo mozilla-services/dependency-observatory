@@ -33,10 +33,21 @@ def runner(app):
 
 
 @pytest.fixture
-def valid_scan_payload():
+def valid_package_scan_payload():
     return {
         "scan_type": "scan_score_npm_package",
         "package_name": "@hapi/bounce",
         "package_manager": "npm",
         "package_versions_type": "releases",
+    }
+
+
+@pytest.fixture
+def valid_dep_files_scan_payload():
+    return {
+        "scan_type": "scan_score_npm_dep_files",
+        "package_manager": "npm",
+        "manifest_url": "https://raw.githubusercontent.com/mozilla-services/ip-reputation-js-client/master/package.json",
+        "lockfile_url": "https://raw.githubusercontent.com/mozilla-services/ip-reputation-js-client/master/package-lock.json",
+        # "shrinkwrap_url":
     }

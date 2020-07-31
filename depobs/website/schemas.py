@@ -59,7 +59,7 @@ class JobParams:
         # }
     )
     args: List[str] = field(default_factory=list)
-    kwargs: Dict[str, Union[None, int, float, str]] = field(default_factory=dict)
+    kwargs: Dict[str, Any] = field(default_factory=dict)
 
 
 JobParamsSchema = marshmallow_dataclass.class_schema(JobParams)

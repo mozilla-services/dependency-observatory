@@ -104,8 +104,17 @@ def test_missing_package_report_returns_404(models, client):
     assert response.status == "404 NOT FOUND"
 
 
-def test_scan_logs_returns_200(models, client, valid_scan_payload):
-    scan_response = client.post("/api/v1/scans", json=valid_scan_payload,)
+def test_package_scan_logs_returns_200(models, client, valid_package_scan_payload):
+    scan_response = client.post("/api/v1/scans", json=valid_package_scan_payload,)
+    assert scan_response.status == "202 ACCEPTED"
+    scan_id = scan_response.json["id"]
+
+    response = client.get(f"/scans/{scan_id}/logs",)
+    assert response.status == "200 OK"
+
+
+def test_dep_files_scan_logs_returns_200(models, client, valid_dep_files_scan_payload):
+    scan_response = client.post("/api/v1/scans", json=valid_dep_files_scan_payload,)
     assert scan_response.status == "202 ACCEPTED"
     scan_id = scan_response.json["id"]
 
