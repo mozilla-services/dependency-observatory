@@ -1,3 +1,4 @@
+from base64 import b64encode
 from datetime import datetime
 from functools import cached_property
 import logging
@@ -1529,6 +1530,21 @@ def package_name_and_version_to_scan(
     return Scan(
         params=JobParamsSchema().dump(
             {"name": "scan_score_npm_package", "args": [package_name, package_version],}
+        ),
+        status="queued",
+    )
+
+
+def dependency_files_to_scan(dep_file_urls: List[ScanFileURL],) -> Scan:
+    """
+    Return a scan model for the npm dependency files.
+    """
+    return Scan(
+        params=JobParamsSchema().dump(
+            {
+                "name": "scan_score_npm_dep_files",
+                "kwargs": {"dep_file_urls": dep_file_urls},
+            }
         ),
         status="queued",
     )
