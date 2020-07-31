@@ -3,6 +3,7 @@ import logging
 from random import randrange
 import time
 from typing import Any, Dict, List, Optional, Tuple, Type
+from io import BytesIO
 
 from flask import (
     Blueprint,
@@ -12,12 +13,15 @@ from flask import (
     render_template,
     request,
     url_for,
+    Response
 )
 import graphviz
 from marshmallow import ValidationError
 import networkx as nx
 import urllib3
 from werkzeug.exceptions import BadGateway, BadRequest, NotFound, NotImplemented
+import seaborn as sb
+import numpy as np # TODO: remove this after testing
 
 from depobs.website.schemas import (
     JobParamsSchema,
@@ -135,9 +139,17 @@ def show_package_changelog() -> Any:
     )
 
 
+@api.route("/histogram.png")
+def get_histogram() -> Any:
+    img = BytesIO()
+    data = np.random.normal(size=100)
+    fig = sb.distplot(data).get_figure()
+    fig.savefig(img, format="png")
+    return Response(img.getvalue(), mimetype="image/png")
+
 @api.route("/statistics", methods=["GET"])
-def get_statistics() -> Dict:
-    return models.get_statistics()
+def get_statistics() -> Any:
+    return render_template("statistics.html")
 
 
 @api.route("/faq")
