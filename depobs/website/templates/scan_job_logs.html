@@ -3,6 +3,7 @@
 {% block content %}
 
 <div>
+    {% if scan.name == 'scan_score_npm_package' %}
     <h3>Scan Logs for {{ scan.package_name }} {%if scan.package_version %}{{ scan.package_version }}{% else %}releases{% endif %}</h3>
 
     <div>
@@ -45,6 +46,13 @@
         </div>
         {% endif %}
     </div>
+    {% else %}
+    <div>
+        <h3>Scan Logs for {{ scan.name }} {{ scan.id }}</h3>
+
+        {% include 'scan_status.html' %}
+    </div>
+    {% endif %}
 
     <dl>
         <dd>
