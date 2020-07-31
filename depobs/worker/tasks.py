@@ -634,11 +634,6 @@ def run_pubsub_thread(app: flask.Flask, timeout=30):
     Requires depobs flask app context.
     """
     with app.app_context():
-        # create the topic if it doesn't exist
-        gcp.create_pubsub_topic(
-            current_app.config["GCP_PROJECT_ID"],
-            current_app.config["JOB_STATUS_PUBSUB_TOPIC"],
-        )
         future: gcp.pubsub_v1.subscriber.futures.StreamingPullFuture = gcp.receive_pubsub_messages(
             current_app.config["GCP_PROJECT_ID"],
             current_app.config["JOB_STATUS_PUBSUB_TOPIC"],
