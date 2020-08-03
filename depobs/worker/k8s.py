@@ -76,7 +76,7 @@ def get_api_client(context_name: Optional[str] = None) -> kubernetes.client.ApiC
     if context_name is None:
         kubernetes.config.load_incluster_config()
     else:
-        kubernetes.config.load_kube_config(context_name=context_name)
+        kubernetes.config.load_kube_config(context=context_name)
     return kubernetes.client.ApiClient(configuration=kubernetes.client.Configuration())
 
 
