@@ -144,13 +144,14 @@ def get_histogram() -> Any:
     scores = models.get_statistics()
     counts = scores["score_codes_histogram"]
 
+    # Required to pass typing CI test
     assert isinstance(counts, dict)
+
+    # This is a workaround to get the data into a format that seaborn will accept
     letters = list()
     for letter in counts:
         for i in range(counts[letter]):
             letters.append(letter)
-
-    letters = ["A", "B", "B", "C", "C", "D", "E", "E"]
 
     data = {"score_code": letters}
 
