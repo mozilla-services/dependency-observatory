@@ -730,14 +730,9 @@ async def run_background_tasks(app: flask.Flask, task_fns: Iterable[Callable]) -
             tasks, timeout=5, return_when=asyncio.FIRST_COMPLETED
         )
         assert all(isinstance(task, asyncio.Task) for task in pending)
-        if len(done) == 0:
-            log.debug(
-                f"background task {done} completed, running: {[task.get_name() for task in pending]}"  # type: ignore
-            )
-        else:
-            log.info(
-                f"background task {done} completed, running: {[task.get_name() for task in pending]}"  # type: ignore
-            )
+        log.debug(
+            f"background task {done} completed, running: {[task.get_name() for task in pending]}"  # type: ignore
+        )
         if shutdown.is_set():
             # wait for everything to finish
             await asyncio.wait(pending, return_when=asyncio.ALL_COMPLETED)
