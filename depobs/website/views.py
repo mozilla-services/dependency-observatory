@@ -3,7 +3,7 @@ import logging
 from random import randrange
 import time
 from typing import Any, Dict, List, Optional, Tuple, Type
-from io import BytesIO
+from io import BytesIO, StringIO
 
 from flask import (
     Blueprint,
@@ -13,7 +13,7 @@ from flask import (
     render_template,
     request,
     url_for,
-    Response
+    Response,
 )
 import graphviz
 from marshmallow import ValidationError
@@ -21,7 +21,6 @@ import networkx as nx
 import urllib3
 from werkzeug.exceptions import BadGateway, BadRequest, NotFound, NotImplemented
 import seaborn as sb
-import numpy as np # TODO: remove this after testing
 
 from depobs.website.schemas import (
     JobParamsSchema,
@@ -143,13 +142,32 @@ def show_package_changelog() -> Any:
 def get_histogram() -> Any:
 
     scores = models.get_statistics()
-    data = scores["score_codes_histogram"]
-    print(list(data.keys()))
+    counts = scores["score_codes_histogram"]
+
+    letters = list()
+    for letter in counts:
+        for i in range(counts[letter]):
+            letters.append(letter)
+    data = {"score_code": letters}
 
     img = BytesIO()
-    fig = sb.countplot(x=list(data.keys()), data=data).get_figure()
+    fig = sb.countplot(x="score_code", data=data).get_figure()
     fig.savefig(img, format="png")
+    fig.clf()
     return Response(img.getvalue(), mimetype="image/png")
+
+
+@api.route("/distribution.png")
+def get_distribution() -> Any:
+
+    scores = models.get_statistics_scores()
+
+    img = BytesIO()
+    fig = sb.distplot(scores, bins=12).get_figure()
+    fig.savefig(img, format="png")
+    fig.clf()
+    return Response(img.getvalue(), mimetype="image/png")
+
 
 @api.route("/statistics", methods=["GET"])
 def get_statistics() -> Any:

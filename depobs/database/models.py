@@ -1148,6 +1148,12 @@ def get_statistics() -> Dict[str, Union[int, Dict[str, int]]]:
     )
 
 
+def get_statistics_scores() -> List[int]:
+    scores = db.session.query(PackageScoreReport.score).all()
+    scores = [int(score[0]) for score in scores]
+    return scores
+
+
 def store_package_report(pr: PackageReport) -> None:
     db.session.add(pr)
     db.session.commit()
