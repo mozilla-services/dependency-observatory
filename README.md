@@ -89,8 +89,9 @@ mozilla/dependency-observatory:node-12
 See [`README.md` in `kubernetes/`](kubernetes/README.md) to run the
 service on a local minikube cluster.
 
-We also use `docker-compose` to build images, write unit tests, and
-create database migrations.
+We also use `docker-compose` to write unit tests and create database
+migrations (pending removal for
+[#397](https://github.com/mozilla-services/dependency-observatory/issues/397)).
 
 ### Running tests
 
