@@ -148,10 +148,15 @@ def get_histogram() -> Any:
     for letter in counts:
         for i in range(counts[letter]):
             letters.append(letter)
+
+    letters = ["A", "B", "B", "C", "C", "D", "E", "E"]
+
     data = {"score_code": letters}
 
     img = BytesIO()
-    fig = sb.countplot(x="score_code", data=data).get_figure()
+    fig = sb.countplot(
+        x="score_code", data=data, order=["A", "B", "C", "D", "E"]
+    ).get_figure()
     fig.savefig(img, format="png")
     fig.clf()
     return Response(img.getvalue(), mimetype="image/png")
