@@ -173,7 +173,7 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
             config["name"] = job_name
 
             log.info(
-                f"scan: {scan.id} scanning {package_name}@{package_version} with {tarball_url} with config {current_app.config['SCAN_NPM_TARBALL_ARGS']}"
+                f"scan: {scan.id} scanning {package_name}@{package_version} with {tarball_url} with config {config}"
             )
             # start an npm container, install the tarball, run list and audit
             # assert tarball_url == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{package_version}.tgz
