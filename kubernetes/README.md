@@ -32,6 +32,11 @@ kubectl create secret generic dev-local-service-account --from-file=key.json=<pa
 
 1. Change the `GCP_PROJECT_ID` from `replaceme` in the worker deployment
 
+1. Set unique values for `JOB_STATUS_PUBSUB_TOPIC` and
+   `JOB_STATUS_PUBSUB_SUBSCRIPTION` and run `gcloud pubsub topics
+   create $JOB_STATUS_PUBSUB_TOPIC` and `gcloud pubsub subscriptions
+   create $JOB_STATUS_PUBSUB_SUBSCRIPTION` with the values.
+
 1. From the project root, run `kubectl create -f kubernetes/` to start DO (use `kubectl delete -f kubernetes/` to remote it):
 
 ```console

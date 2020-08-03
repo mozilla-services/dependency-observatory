@@ -7,6 +7,7 @@ ENV PYTHONUNBUFFERED 1
 
 ENV HOST 0.0.0.0
 ENV PORT 8000
+ENV FLASK_APP "depobs.website.wsgi:app"
 ENV FLASK_ENV "production"
 ENV SQLALCHEMY_DATABASE_URI postgresql+psycopg2://pguser:pgpass@pghost/dbname
 

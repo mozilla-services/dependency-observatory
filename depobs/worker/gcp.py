@@ -66,9 +66,8 @@ def receive_pubsub_messages(
     * not raise exceptions unless it wants to stop receiving messages
 
     """
-    subscriber, subscription_path = subscribe_to_pubsub_topic(
-        project_id, topic_id, subscription_id,
-    )
+    subscriber = pubsub_v1.SubscriberClient()
+    subscription_path = subscriber.subscription_path(project_id, subscription_id)
     log.info(
         f"starting thread to receive messages from {subscription_path} and call {callback} on them"
     )
