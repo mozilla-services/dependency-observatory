@@ -89,7 +89,8 @@ jobs:
           command: make build-image build-scan-images
       - run:
           name: save built images to cache
-          command: docker save "${DOCKERHUB_REPO}:latest" "${DOCKERHUB_REPO}:node-10" "${DOCKERHUB_REPO}:node-12" "${DOCKERHUB_REPO}:rust-1" | gzip -c > /tmp/docker.tgz
+          # "${DOCKERHUB_REPO}:node-10"  "${DOCKERHUB_REPO}:rust-1"
+          command: docker save "${DOCKERHUB_REPO}:latest" "${DOCKERHUB_REPO}:node-12" | gzip -c > /tmp/docker.tgz
       - save_cache:
           key: v1-{{ .Branch }}-{{ epoch }}
           paths:
@@ -154,7 +155,8 @@ jobs:
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               # push master tags
               docker login -u $DOCKER_USER -p $DOCKER_PASS
-              for tag in latest node-10 node-12 rust-1; do
+              # node-10 rust-1
+              for tag in latest node-12; do
                   echo "${DOCKERHUB_REPO}:${tag}"
                   docker push "${DOCKERHUB_REPO}:${tag}"
               done;
