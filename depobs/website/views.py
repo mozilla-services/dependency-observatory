@@ -141,9 +141,13 @@ def show_package_changelog() -> Any:
 
 @api.route("/histogram.png")
 def get_histogram() -> Any:
+
+    scores = models.get_statistics()
+    data = scores["score_codes_histogram"]
+    print(list(data.keys()))
+
     img = BytesIO()
-    data = np.random.normal(size=100)
-    fig = sb.distplot(data).get_figure()
+    fig = sb.countplot(x=list(data.keys()), data=data).get_figure()
     fig.savefig(img, format="png")
     return Response(img.getvalue(), mimetype="image/png")
 
