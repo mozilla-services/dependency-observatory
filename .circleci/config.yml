@@ -85,8 +85,8 @@ jobs:
           command: |
             CI=1 ./util/write_version_json.sh > version.json
       - run:
-          name: docker-compose build
-          command: docker-compose build
+          name: build images
+          command: make build-image build-scan-images
       - run:
           name: save built image to cache
           command: docker save "${DOCKERHUB_REPO}:latest" "mozilla/dependency-observatory:node-10" "mozilla/dependency-observatory:node-12" "mozilla/dependency-observatory:rust-1" | gzip -c > /tmp/docker.tgz
