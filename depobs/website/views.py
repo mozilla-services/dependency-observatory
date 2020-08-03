@@ -144,6 +144,7 @@ def get_histogram() -> Any:
     scores = models.get_statistics()
     counts = scores["score_codes_histogram"]
 
+    counts = dict(counts)
     letters = list()
     for letter in counts:
         for i in range(counts[letter]):
