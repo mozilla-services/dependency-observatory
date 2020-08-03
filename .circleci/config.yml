@@ -152,8 +152,12 @@ jobs:
           command: |
             # deploy master and scan envs
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
+              # push master tags
               docker login -u $DOCKER_USER -p $DOCKER_PASS
-              docker-compose push api node-10 node-12 rust-1
+              for tag in latest node-10 node-12 rust-1; do
+                  echo "${DOCKERHUB_REPO}:${tag}"
+                  docker push "${DOCKERHUB_REPO}:${tag}"
+              done;
             elif  [ ! -z "${CIRCLE_TAG}" ]; then
               # deploy a release tag
               docker login -u $DOCKER_USER -p $DOCKER_PASS
