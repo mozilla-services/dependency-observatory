@@ -69,21 +69,15 @@ class KubeJobConfig(TypedDict):
 
 def get_api_client(context_name: Optional[str] = None) -> kubernetes.client.ApiClient:
     """
-    Returns the k8s ApiClient using the provided context name.
+    Returns the k8s ApiClient using the provided context name
 
-    Defaults to the in cluster config when None is provided.
+    Defaults to the in cluster config when context_name is None.
     """
     if context_name is None:
         kubernetes.config.load_incluster_config()
-        return kubernetes.client.ApiClient(
-            configuration=kubernetes.client.Configuration()
-        )
     else:
-        contexts, _ = kubernetes.config.list_kube_config_contexts()
-        for context in contexts:
-            if context_name == context["name"]:
-                return kubernetes.config.new_client_from_config(context=context)
-        raise Exception(f"Failed to find k8s context with name {context_name}")
+        kubernetes.config.load_kube_config(context_name=context_name)
+    return kubernetes.client.ApiClient(configuration=kubernetes.client.Configuration())
 
 
 def create_job(job_config: KubeJobConfig,) -> kubernetes.client.V1Job:
