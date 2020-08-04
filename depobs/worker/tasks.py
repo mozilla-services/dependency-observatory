@@ -108,25 +108,25 @@ async def scan_tarball_url(
         "service_account_name": config["service_account_name"],
         "volume_mounts": config["volume_mounts"],
     }
-    log.info(f"starting job {job_name} with config {job_config}")
+    log.info(f"scan {scan_id} starting job {job_name} with config {job_config}")
     status = None
     with k8s.run_job(job_config) as job:
-        log.info(f"started job {job}")
+        log.info(f"scan {scan_id} started job {job}")
         await asyncio.sleep(1)
         job = k8s.read_job(
             job_config["namespace"], job_name, context_name=job_config["context_name"]
         )
-        log.info(f"got initial job status {job.status}")
+        log.info(f"scan {scan_id} got initial job status {job.status}")
         while True:
             if job.status.failed:
-                log.error(f"k8s job {job_name} failed")
+                log.error(f"scan {scan_id} k8s job {job_name} failed")
                 return job
             if job.status.succeeded:
-                log.info(f"k8s job {job_name} succeeded")
+                log.info(f"scan {scan_id} k8s job {job_name} succeeded")
                 return job
             if not job.status.active:
                 log.error(
-                    f"k8s job {job_name} stopped/not active (did not fail or succeed)"
+                    f"scan {scan_id} k8s job {job_name} stopped/not active (did not fail or succeed)"
                 )
                 return job
 
@@ -136,7 +136,7 @@ async def scan_tarball_url(
                 job_name,
                 context_name=job_config["context_name"],
             )
-            log.info(f"got job status {job.status}")
+            log.info(f"scan {scan_id} got job status {job.status}")
 
 
 def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, None]:
