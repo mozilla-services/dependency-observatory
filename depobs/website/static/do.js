@@ -1,12 +1,19 @@
 async function startScan(formData) {
+  console.debug("starting scan with formData:", formData);
   let scanURI = "/api/v1/scans";
   let body = {
     name: "scan_score_npm_package",
     args: [formData["package_name"]],
+    kwargs: {
+      package_versions_type: formData.package_versions_type,
+    },
   };
-  if (formData["package_version"]) {
+  if (
+    formData.package_versions_type === "specific-version" &&
+    formData.package_version
+  ) {
     console.debug("adding version arg for truthy package_version");
-    body.args.push(formData["package_version"]);
+    body.args.push(formData.package_version);
   }
   console.debug("starting scan with req body:", body);
 
@@ -32,9 +39,13 @@ async function startScan(formData) {
   return responseJSON;
 }
 
-async function checkReportExists(formData) {
+async function checkReportExists(formDataObj) {
   // check for a package report
-  let queryParams = new URLSearchParams(formData);
+  let queryParams = new URLSearchParams({
+    package_name: formDataObj.package_name,
+    package_version: formDataObj.package_version,
+    package_manager: formDataObj.package_manager,
+  });
   let reportURI = `/package_report?${queryParams}`;
   let response = await fetch(reportURI, {
     method: "HEAD",
@@ -46,6 +57,10 @@ async function checkReportExists(formData) {
 
 const formEl = document.getElementById("search-form");
 const formFieldsetEls = formEl.querySelectorAll("fieldset");
+const formPackageVersionTypeEl = document.getElementById(
+  "package-versions-type"
+);
+const formPackageVersionEl = document.getElementById("packageVersion");
 
 function updateSearchError(err, errContextMessage) {
   // takes an Error with an optional .response property set and
@@ -84,7 +99,7 @@ function updateSearchForm(disable) {
   if (disable) {
     console.debug("disabling search form");
     formFieldsetEls.forEach((fieldsetEl) =>
-      fieldsetEl.setAttribute("disabled", "disabled")
+      fieldsetEl.setAttribute("disabled", "")
     );
   } else {
     console.debug("enabling search form");
@@ -117,8 +132,7 @@ function onSubmit(event) {
   event.preventDefault();
   updateSearchError(null); // clear error display
 
-  let formData = new FormData(formEl);
-  let formDataObj = Object.fromEntries(formData);
+  let formDataObj = Object.fromEntries(new FormData(formEl));
   console.debug("have formdata", formDataObj);
 
   if (formDataObj.force_rescan === "on") {
@@ -139,7 +153,7 @@ function onSubmit(event) {
       });
   } else {
     updateSearchForm(true); // disable the search form
-    checkReportExists(formData)
+    checkReportExists(formDataObj)
       .catch((err) => {
         updateSearchForm(false); // enable the search form
         console.error(`error checking report exists: ${err}`);
@@ -172,9 +186,21 @@ function onSubmit(event) {
   }
 }
 
+function updatePackageVersionInput(e) {
+  // enable the package version text input when package versions type is specific-version
+  if (e.target.value === "specific-version") {
+    formPackageVersionEl.removeAttribute("disabled");
+  } else {
+    formPackageVersionEl.setAttribute("disabled", "");
+  }
+}
+
 window.addEventListener("DOMContentLoaded", (event) => {
   console.debug("DOM fully loaded and parsed");
 
-  // bind
+  formPackageVersionTypeEl.addEventListener(
+    "change",
+    updatePackageVersionInput
+  );
   formEl.addEventListener("submit", onSubmit);
 });
