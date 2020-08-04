@@ -52,6 +52,19 @@ async function checkReportExists(formDataObj) {
   return response;
 }
 
+async function checkChangelogExists(formDataObj) {
+  // check for a package report
+  let queryParams = new URLSearchParams({
+    package_name: formDataObj.package_name,
+    package_manager: formDataObj.package_manager,
+  });
+  let reportURI = `/package_changelog?${queryParams}`;
+  let response = await fetch(reportURI, {
+    method: "HEAD",
+  });
+  return response;
+}
+
 // view / UI code
 
 const formEl = document.getElementById("search-form");
@@ -143,12 +156,35 @@ function onSubmit(event) {
         updateSearchError(err, "rescanning a package");
       });
   } else if (!formDataObj.package_version) {
-    console.debug("skipping report check since package version not specified");
-    scanAndScorePackage(formDataObj)
-      .then(redirectToScanLogs)
+    console.debug(
+      "checking for package changelog since package version not specified"
+    );
+    updateSearchForm(true); // disable the search form
+    checkChangelogExists(formDataObj)
       .catch((err) => {
-        console.error(`error starting rescan: ${err}`);
-        updateSearchError(err, "rescanning a package");
+        updateSearchForm(false); // enable the search form
+        console.error(`error checking changelog exists: ${err}`);
+        updateSearchError(err, "checking a package changelog exists");
+      })
+      .then((response) => {
+        updateSearchForm(false); // enable the search form
+        if (response.status === 200) {
+          // redirect to changelog if it exists
+          console.debug(`changelog exists redirecting to ${response.url}`);
+          window.location.assign(response.url);
+        } else if (response.status !== 404) {
+          // something unexpected display an error for non-404 errors
+          let err = new Error();
+          err.response = response;
+          updateSearchError(err, "checking a package changelog exists");
+        } else {
+          scanAndScorePackage(formDataObj)
+            .then(redirectToScanLogs)
+            .catch((err) => {
+              console.error(`error starting scan: ${err}`);
+              updateSearchError(err, "scanning a package");
+            });
+        }
       });
   } else {
     updateSearchForm(true); // disable the search form
