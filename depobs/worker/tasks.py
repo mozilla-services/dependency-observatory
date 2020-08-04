@@ -162,6 +162,11 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
                 f"scan: {scan.id} skipping npm registry entry with null version {package_name}"
             )
             continue
+        elif not validators.is_npm_release_package_version(package_version):
+            log.warn(
+                f"scan: {scan.id} {package_name} skipping npm registry entry with pre-release version {package_version!r}"
+            )
+            continue
 
         log.info(f"scan: {scan.id} scanning {package_name}@{package_version}")
         # we need a source_url and git_head or a tarball url to install
