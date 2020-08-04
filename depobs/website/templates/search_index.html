@@ -16,16 +16,24 @@
                 <div class="card-body no-popover-mobile pb-4">
                     <form id="search-form" method="GET" action="/package_report">
                         <fieldset class="form-group">
-                            <div class="input-group mt-2 mb-3">
-                                <select id="manager" name="package_manager">
+			    <div class="form-group">
+				<label for="packageManager">Package Manager</label>
+
+				<select class="form-control" id="packageManager" name="package_manager">
                                     <option value="npm">NPM</option>
-                                </select>
-                                <input type="text" class="form-control" id="packageName" name="package_name" placeholder="enter package name here" aria-label="package name" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+				</select>
                             </div>
 
-                            <div class="input-group mt-2 mb-3">
-				<input type="text" class="form-control" id="versionName" name="package_version" placeholder="enter optional package version here" aria-label="package version" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+			    <div class="form-group">
+				<label for="packageName">Package Name</label>
+				<input type="text" class="form-control" id="packageName" name="package_name" placeholder="@hapi/bounce" aria-label="package name" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
                             </div>
+
+			    <div class="form-group">
+				<label for="packageVersion">Package Version (optional defaults to most recently published)</label>
+				<input type="text" class="form-control" id="packageVersion" name="package_version" placeholder="1.0.0" aria-label="package version" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                            </div>
+
                             <div class="input-group mt-2 mb-3">
 				<button class="btn btn-primary btn-large btn-block" type="submit">Scan Package</button>
                             </div>
