@@ -2,18 +2,17 @@ async function startScan(formData) {
   console.debug("starting scan with formData:", formData);
   let scanURI = "/api/v1/scans";
   let body = {
-    name: "scan_score_npm_package",
-    args: [formData["package_name"]],
-    kwargs: {
-      package_versions_type: formData.package_versions_type,
-    },
+    scan_type: "scan_score_npm_package",
+    package_manager: formData.package_manager,
+    package_name: formData.package_name,
+    package_versions_type: formData.package_versions_type,
   };
   if (
     formData.package_versions_type === "specific-version" &&
     formData.package_version
   ) {
-    console.debug("adding version arg for truthy package_version");
-    body.args.push(formData.package_version);
+    console.debug("adding package_version to body");
+    body.package_version = formData.package_version;
   }
   console.debug("starting scan with req body:", body);
 

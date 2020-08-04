@@ -23,10 +23,11 @@ from werkzeug.exceptions import BadGateway, BadRequest, NotFound, NotImplemented
 import seaborn as sb
 
 from depobs.website.schemas import (
-    JobParamsSchema,
     JSONResultSchema,
+    JobParamsSchema,
     PackageReportParamsSchema,
     ScanSchema,
+    ScanScoreNPMPackageRequestParamsSchema,
 )
 from depobs.database import models
 from depobs.util import graph_traversal
@@ -199,24 +200,34 @@ def index_page() -> Any:
 @api.route("/api/v1/scans", methods=["POST"])
 def queue_scan() -> Tuple[Dict, int]:
     """
-    Queues a scan for a package and returns the scan JSON with status 202
+    Queues a scan for package version or versions and returns the scan
+    JSON with status 202
     """
-    job_body = request.get_json()
-    log.debug(f"received job JSON body: {job_body}")
+    body = request.get_json()
+    log.debug(f"received scan JSON body: {body}")
     try:
-        web_job_config = JobParamsSchema().load(data=job_body)
+        scan_config = ScanScoreNPMPackageRequestParamsSchema().load(data=body)
     except ValidationError as err:
         return err.messages, 422
 
-    log.info(f"deserialized job JSON to {web_job_config.name}: {web_job_config}")
-    if web_job_config.name not in current_app.config["WEB_JOB_NAMES"]:
-        raise BadRequest(description="job not allowed or does not exist for app")
+    log.info(f"deserialized scan JSON to {scan_config.scan_type}: {scan_config}")
+    if scan_config.scan_type not in current_app.config["WEB_JOB_NAMES"]:
+        raise BadRequest(description="scan type not allowed or does not exist for app")
 
-    scan = models.Scan(params=JobParamsSchema().dump(web_job_config), status="queued",)
-    models.db.session.add(scan)
-    models.db.session.commit()
-    log.info(f"queued job {scan.id}")
+    if scan_config.package_versions_type == "specific-version":
+        version = scan_config.package_version
+    elif scan_config.package_versions_type == "releases":
+        version = None
+    elif scan_config.package_versions_type == "latest":
+        version = "latest"
+    else:
+        raise NotImplementedError()
 
+    scan = models.save_scan_with_status(
+        models.package_name_and_version_to_scan(scan_config.package_name, version,),
+        "queued",
+    )
+    log.info(f"queued scan {scan.id}")
     return ScanSchema().dump(scan), 202
 
 

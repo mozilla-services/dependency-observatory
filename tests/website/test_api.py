@@ -2,7 +2,7 @@ import pytest
 
 
 @pytest.mark.unit
-def test_invalid_create_job_params(client):
+def test_invalid_create_scan_params(client):
     response = client.post("/api/v1/scans",)
     assert response.status == "422 UNPROCESSABLE ENTITY"
     assert response.json == {"_schema": ["Invalid input type."]}
@@ -10,15 +10,35 @@ def test_invalid_create_job_params(client):
     # missing name
     response = client.post("/api/v1/scans", json={},)
     assert response.status == "422 UNPROCESSABLE ENTITY"
-    assert response.json == {"name": ["Missing data for required field."]}
+    assert response.json == {
+        "package_manager": ["Missing data for required field."],
+        "package_name": ["Missing data for required field."],
+        "package_versions_type": ["Missing data for required field."],
+        "scan_type": ["Missing data for required field."],
+    }
 
-    # invalid name
-    response = client.post("/api/v1/scans", json={"name": "foo"},)
-    assert response.status == "400 BAD REQUEST"
-    assert response.json == {"description": "job not allowed or does not exist for app"}
+    # invalid scan_type
+    response = client.post(
+        "/api/v1/scans",
+        json={
+            "scan_type": "foo",
+            "package_name": "test",
+            "package_manager": "npm",
+            "package_versions_type": "releases",
+        },
+    )
+    assert response.status == "422 UNPROCESSABLE ENTITY"
+    assert response.json == {"scan_type": ["Must be equal to scan_score_npm_package."]}
 
     response = client.post(
-        "/api/v1/scans", json={"name": "foo", "args": [], "kwargs": {}, "extra": -1},
+        "/api/v1/scans",
+        json={
+            "scan_type": "scan_score_npm_package",
+            "package_name": "test",
+            "package_manager": "npm",
+            "package_versions_type": "releases",
+            "extra": -1,
+        },
     )
     assert response.status == "422 UNPROCESSABLE ENTITY"
     assert response.json == {"extra": ["Unknown field."]}
@@ -30,11 +50,8 @@ def delete_scan_results(models, scan_id: int):
     models.db.session.commit()
 
 
-def test_valid_create_job_and_get(models, client):
-    scan_response = client.post(
-        "/api/v1/scans",
-        json={"name": "scan_score_npm_package", "args": [], "kwargs": {}},
-    )
+def test_valid_create_job_and_get(models, client, valid_scan_payload):
+    scan_response = client.post("/api/v1/scans", json=valid_scan_payload,)
     assert scan_response.status == "202 ACCEPTED"
     assert "id" in scan_response.json
     scan_id = scan_response.json["id"]

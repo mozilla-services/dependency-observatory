@@ -9,6 +9,42 @@ from depobs.worker import validators
 
 
 @dataclass
+class ScanScoreNPMPackageRequestParams:
+    """
+    create_job request params for a scan_score_npm_package job
+    """
+
+    scan_type: str = field(
+        metadata={"validate": marshmallow.validate.Equal("scan_score_npm_package"),}
+    )
+    package_manager: str = field(
+        metadata={"validate": marshmallow.validate.Equal("npm")}
+    )
+    package_name: str = field(
+        metadata={
+            "validate": marshmallow.validate.Regexp(validators.NPM_PACKAGE_NAME_RE)
+        }
+    )
+    package_versions_type: str = field(
+        metadata={
+            "validate": marshmallow.validate.OneOf(
+                choices=["specific-version", "releases", "latest"]
+            ),
+        }
+    )
+    package_version: Optional[str] = field(
+        metadata={
+            "validate": marshmallow.validate.Regexp(validators.NPM_PACKAGE_VERSION_RE)
+        }
+    )
+
+
+ScanScoreNPMPackageRequestParamsSchema = marshmallow_dataclass.class_schema(
+    ScanScoreNPMPackageRequestParams
+)
+
+
+@dataclass
 class JobParams:
     """
     create_job request params
