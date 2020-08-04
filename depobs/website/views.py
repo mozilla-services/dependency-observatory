@@ -3,6 +3,7 @@ import logging
 from random import randrange
 import time
 from typing import Any, Dict, List, Optional, Tuple, Type
+from io import BytesIO, StringIO
 
 from flask import (
     Blueprint,
@@ -12,12 +13,14 @@ from flask import (
     render_template,
     request,
     url_for,
+    Response,
 )
 import graphviz
 from marshmallow import ValidationError
 import networkx as nx
 import urllib3
 from werkzeug.exceptions import BadGateway, BadRequest, NotFound, NotImplemented
+import seaborn as sb
 
 from depobs.website.schemas import (
     JobParamsSchema,
@@ -135,9 +138,47 @@ def show_package_changelog() -> Any:
     )
 
 
+@api.route("/histogram.png")
+def get_histogram() -> Any:
+
+    scores = models.get_statistics()
+    counts = scores["score_codes_histogram"]
+
+    # Required to pass typing CI test
+    assert isinstance(counts, dict)
+
+    # This is a workaround to get the data into a format that seaborn will accept
+    letters = list()
+    for letter in counts:
+        for i in range(counts[letter]):
+            letters.append(letter)
+
+    data = {"score_code": letters}
+
+    img = BytesIO()
+    fig = sb.countplot(
+        x="score_code", data=data, order=["A", "B", "C", "D", "E"]
+    ).get_figure()
+    fig.savefig(img, format="png")
+    fig.clf()
+    return Response(img.getvalue(), mimetype="image/png")
+
+
+@api.route("/distribution.png")
+def get_distribution() -> Any:
+
+    scores = models.get_statistics_scores()
+
+    img = BytesIO()
+    fig = sb.distplot(scores, bins=12).get_figure()
+    fig.savefig(img, format="png")
+    fig.clf()
+    return Response(img.getvalue(), mimetype="image/png")
+
+
 @api.route("/statistics", methods=["GET"])
-def get_statistics() -> Dict:
-    return models.get_statistics()
+def get_statistics() -> Any:
+    return render_template("statistics.html")
 
 
 @api.route("/faq")
