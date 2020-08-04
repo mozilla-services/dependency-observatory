@@ -3,7 +3,7 @@
 {% block content %}
 
 <div>
-    <h3>Scan Logs for {{ scan.package_name }} {%if scan.package_version %}{{ scan.package_version }}{% else %}all versions{% endif %}</h3>
+    <h3>Scan Logs for {{ scan.package_name }} {%if scan.package_version %}{{ scan.package_version }}{% else %}releases{% endif %}</h3>
 
     <div>
         {% include 'scan_status.html' %}
