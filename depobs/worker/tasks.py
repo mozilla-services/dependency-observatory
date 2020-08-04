@@ -146,17 +146,22 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
 
     Generates scan jobs with format asyncio.Task that terminate when
     the k8s finishes.
+
+    When the version is 'latest' only scans the most recently published version of the package.
     """
     package_name: str = scan.package_name
     package_version: Optional[str] = scan.package_version
+    if package_version == "latest":
+        versions_query = models.get_npm_registry_entries_to_scan(
+            package_name, None
+        ).limit(1)
+    else:
+        versions_query = models.get_npm_registry_entries_to_scan(
+            package_name, package_version
+        )
 
     # fetch npm registry entries from DB
-    for (
-        package_version,
-        source_url,
-        git_head,
-        tarball_url,
-    ) in models.get_npm_registry_entries_to_scan(package_name, package_version):
+    for (package_version, source_url, git_head, tarball_url,) in versions_query:
         if package_version is None:
             log.warn(
                 f"scan: {scan.id} skipping npm registry entry with null version {package_name}"
