@@ -1,12 +1,18 @@
-async function startScan(args) {
+async function startScan(formData) {
+  console.debug("starting scan with formData:", formData);
   let scanURI = "/api/v1/scans";
   let body = {
-    name: "scan_score_npm_package",
-    args: [args["package_name"], args["package_version"]],
+    scan_type: "scan_score_npm_package",
+    package_manager: formData.package_manager,
+    package_name: formData.package_name,
+    package_versions_type: formData.package_versions_type,
   };
-  if (!args["package_version"]) {
-    console.debug("removing version arg for falsy package_version");
-    body.args = [args["package_name"]];
+  if (
+    formData.package_versions_type === "specific-version" &&
+    formData.package_version
+  ) {
+    console.debug("adding package_version to body");
+    body.package_version = formData.package_version;
   }
   console.debug("starting scan with req body:", body);
 
@@ -32,10 +38,27 @@ async function startScan(args) {
   return responseJSON;
 }
 
-async function checkReportExists(formData) {
+async function checkReportExists(formDataObj) {
   // check for a package report
-  let queryParams = new URLSearchParams(formData);
+  let queryParams = new URLSearchParams({
+    package_name: formDataObj.package_name,
+    package_version: formDataObj.package_version,
+    package_manager: formDataObj.package_manager,
+  });
   let reportURI = `/package_report?${queryParams}`;
+  let response = await fetch(reportURI, {
+    method: "HEAD",
+  });
+  return response;
+}
+
+async function checkChangelogExists(formDataObj) {
+  // check for a package report
+  let queryParams = new URLSearchParams({
+    package_name: formDataObj.package_name,
+    package_manager: formDataObj.package_manager,
+  });
+  let reportURI = `/package_changelog?${queryParams}`;
   let response = await fetch(reportURI, {
     method: "HEAD",
   });
@@ -46,6 +69,10 @@ async function checkReportExists(formData) {
 
 const formEl = document.getElementById("search-form");
 const formFieldsetEls = formEl.querySelectorAll("fieldset");
+const formPackageVersionTypeEl = document.getElementById(
+  "package-versions-type"
+);
+const formPackageVersionEl = document.getElementById("packageVersion");
 
 function updateSearchError(err, errContextMessage) {
   // takes an Error with an optional .response property set and
@@ -84,7 +111,7 @@ function updateSearchForm(disable) {
   if (disable) {
     console.debug("disabling search form");
     formFieldsetEls.forEach((fieldsetEl) =>
-      fieldsetEl.setAttribute("disabled", "disabled")
+      fieldsetEl.setAttribute("disabled", "")
     );
   } else {
     console.debug("enabling search form");
@@ -117,8 +144,7 @@ function onSubmit(event) {
   event.preventDefault();
   updateSearchError(null); // clear error display
 
-  let formData = new FormData(formEl);
-  let formDataObj = Object.fromEntries(formData);
+  let formDataObj = Object.fromEntries(new FormData(formEl));
   console.debug("have formdata", formDataObj);
 
   if (formDataObj.force_rescan === "on") {
@@ -130,16 +156,39 @@ function onSubmit(event) {
         updateSearchError(err, "rescanning a package");
       });
   } else if (!formDataObj.package_version) {
-    console.debug("skipping report check since package version not specified");
-    scanAndScorePackage(formDataObj)
-      .then(redirectToScanLogs)
+    console.debug(
+      "checking for package changelog since package version not specified"
+    );
+    updateSearchForm(true); // disable the search form
+    checkChangelogExists(formDataObj)
       .catch((err) => {
-        console.error(`error starting rescan: ${err}`);
-        updateSearchError(err, "rescanning a package");
+        updateSearchForm(false); // enable the search form
+        console.error(`error checking changelog exists: ${err}`);
+        updateSearchError(err, "checking a package changelog exists");
+      })
+      .then((response) => {
+        updateSearchForm(false); // enable the search form
+        if (response.status === 200) {
+          // redirect to changelog if it exists
+          console.debug(`changelog exists redirecting to ${response.url}`);
+          window.location.assign(response.url);
+        } else if (response.status !== 404) {
+          // something unexpected display an error for non-404 errors
+          let err = new Error();
+          err.response = response;
+          updateSearchError(err, "checking a package changelog exists");
+        } else {
+          scanAndScorePackage(formDataObj)
+            .then(redirectToScanLogs)
+            .catch((err) => {
+              console.error(`error starting scan: ${err}`);
+              updateSearchError(err, "scanning a package");
+            });
+        }
       });
   } else {
     updateSearchForm(true); // disable the search form
-    checkReportExists(formData)
+    checkReportExists(formDataObj)
       .catch((err) => {
         updateSearchForm(false); // enable the search form
         console.error(`error checking report exists: ${err}`);
@@ -172,9 +221,21 @@ function onSubmit(event) {
   }
 }
 
+function updatePackageVersionInput(e) {
+  // enable the package version text input when package versions type is specific-version
+  if (e.target.value === "specific-version") {
+    formPackageVersionEl.removeAttribute("disabled");
+  } else {
+    formPackageVersionEl.setAttribute("disabled", "");
+  }
+}
+
 window.addEventListener("DOMContentLoaded", (event) => {
   console.debug("DOM fully loaded and parsed");
 
-  // bind
+  formPackageVersionTypeEl.addEventListener(
+    "change",
+    updatePackageVersionInput
+  );
   formEl.addEventListener("submit", onSubmit);
 });

@@ -1,0 +1,6 @@
+<h4>status: <span class="badge badge-secondary
+                         {%if scan.status == 'queued' %}badge-secondary
+                         {% elif scan.status == 'started' %}badge-primary
+                         {% elif scan.status == 'succeeded' %}badge-success
+                         {% elif scan.status == 'failed' %}badge-danger
+                         {% endif %}">{{ scan.status }}</span></h4>

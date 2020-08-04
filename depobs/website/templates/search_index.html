@@ -12,20 +12,53 @@
                 Welcome to Mozilla's Dependency Observatory. This service is in <strong>alpha</strong> state and may contain inaccurate results.
             </h1>
             <div class="card mt-3">
-                <div class="card-header bg-primary text-white"><span class="h3">Find a package</span></div>
+                <div class="card-header bg-primary text-white"><span class="h3">Scan a package</span></div>
                 <div class="card-body no-popover-mobile pb-4">
                     <form id="search-form" method="GET" action="/package_report">
                         <fieldset class="form-group">
-                            <div class="input-group mt-2 mb-3">
-                                <select id="manager" name="package_manager">
+			    <div class="form-group">
+				<label for="packageManager">Package Manager</label>
+
+				<select class="form-control form-control-lg" id="packageManager" name="package_manager">
                                     <option value="npm">NPM</option>
-                                </select>
-                                <input type="text" class="form-control" id="packageName" name="package_name" placeholder="enter package name here" aria-label="package name" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
-                                <input type="text" class="form-control" id="versionName" name="package_version" placeholder="enter optional package version here" aria-label="package version" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
-                                <button class="btn btn-primary" type="submit">Find Now</button>
+				</select>
                             </div>
 
-                            <div class="form-check" title="" data-toggle="popover" data-content="By default, any reports from the last {{ scored_after_days }} will be returned." data-original-title="Published a new version?">
+			    <div class="form-group">
+				<label for="packageName">Package Name</label>
+				<input type="text" class="form-control form-control-lg" id="packageName" name="package_name" placeholder="@hapi/bounce" aria-label="package name" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                            </div>
+
+			    <div class="form-group" id="package-versions-type">
+				<label for="packageVersionType">Package Versions</label>
+
+				<div class="form-check">
+				    <input class="form-check-input" type="radio" name="package_versions_type" id="package-versions-latest" value="latest" checked>
+				    <label class="form-check-label" for="package-versions-latest">
+					latest
+				    </label>
+				</div>
+				<div class="form-check">
+				    <input class="form-check-input" type="radio" name="package_versions_type" id="package-versions-releases" value="releases">
+				    <label class="form-check-label" for="package-versions-releases">
+					all releases
+				    </label>
+				</div>
+				<div class="form-check">
+				    <input class="form-check-input" type="radio" name="package_versions_type" id="package-versions-specific-version" value="specific-version">
+				    <label class="form-check-label" for="package-versions-specific-version">
+					specific version
+				    </label>
+				    <label class="d-none" for="packageVersion">Package Version</label>
+				    <input type="text" class="form-control" id="packageVersion" name="package_version" placeholder="1.0.0" aria-label="package version" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus disabled>
+				</div>
+			    </div>
+
+                            <div class="input-group mt-2 mb-3">
+				<button class="btn btn-primary btn-large btn-block" type="submit">Scan Package</button>
+                            </div>
+
+                            <div class="form-check" title="">
                                 <input class="form-check-input" type="checkbox" name="force_rescan" id="scan-btn-rescan">
                                 <label class="form-check-label" for="scan-btn-rescan">
                                     Force a rescan instead of returning cached results
