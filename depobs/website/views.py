@@ -157,7 +157,7 @@ def get_histogram() -> Any:
 
     img = BytesIO()
     fig = sb.countplot(
-        x="score_code", data=data, order=["A", "B", "C", "D", "E"]
+        x="score_code", data=data, order=["A", "B", "C", "D", "E"],
     ).get_figure()
     fig.savefig(img, format="png")
     fig.clf()
@@ -170,7 +170,9 @@ def get_distribution() -> Any:
     scores = models.get_statistics_scores()
 
     img = BytesIO()
-    fig = sb.distplot(scores, bins=12).get_figure()
+    fig = sb.distplot(
+        scores, bins=15, kde=False, norm_hist=False, axlabel="package score"
+    ).get_figure()
     fig.savefig(img, format="png")
     fig.clf()
     return Response(img.getvalue(), mimetype="image/png")
