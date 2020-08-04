@@ -10,6 +10,7 @@ from flask import (
     current_app,
     g,
     jsonify,
+    redirect,
     render_template,
     request,
     url_for,
@@ -104,14 +105,29 @@ def handle_bad_request(e):
 
 @api.route("/package_report", methods=["GET", "HEAD"])
 def show_package_report() -> Any:
+    """Returns a report for the provided package, name, version, and manager.
+
+    When version is 'latest' redirects to the most recently scored
+    report for that package_name.
+    """
     try:
         report = PackageReportParamsSchema().load(data=request.args)
     except ValidationError as err:
         return err.messages, 422
 
     package_report = get_most_recently_scored_package_report_or_raise(
-        report.package_name, report.package_version
+        report.package_name,
+        report.package_version if report.package_version != "latest" else None,
     )
+    if report.package_version == "latest":
+        return redirect(
+            url_for(
+                ".show_package_report",
+                package_name=report.package_name,
+                package_version=package_report.version,
+                package_manager=report.package_manager,
+            )
+        )
     return render_template(
         "package_report.html",
         package_report=package_report,

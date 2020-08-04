@@ -81,7 +81,8 @@ class PackageReportParams:
     )
     package_version: Optional[str] = field(
         metadata={
-            "validate": marshmallow.validate.Regexp(validators.NPM_PACKAGE_VERSION_RE)
+            "validate": lambda v: v == "latest"
+            or marshmallow.validate.Regexp(validators.NPM_PACKAGE_VERSION_RE)(v)
         }
     )
 
