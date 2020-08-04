@@ -1,12 +1,12 @@
-async function startScan(args) {
+async function startScan(formData) {
   let scanURI = "/api/v1/scans";
   let body = {
     name: "scan_score_npm_package",
-    args: [args["package_name"], args["package_version"]],
+    args: [formData["package_name"]],
   };
-  if (!args["package_version"]) {
-    console.debug("removing version arg for falsy package_version");
-    body.args = [args["package_name"]];
+  if (formData["package_version"]) {
+    console.debug("adding version arg for truthy package_version");
+    body.args.push(formData["package_version"]);
   }
   console.debug("starting scan with req body:", body);
 
