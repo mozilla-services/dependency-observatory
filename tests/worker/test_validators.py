@@ -2,7 +2,7 @@ from typing import Optional
 
 import pytest
 
-import depobs.worker.validators as validators
+import depobs.worker.validators as m
 
 
 @pytest.mark.parametrize(
@@ -25,9 +25,9 @@ def test_get_npm_package_name_validation_error(
     package_name: str, expected_validation_error: Optional[Exception]
 ) -> None:
     if expected_validation_error is None:
-        assert validators.get_npm_package_name_validation_error(package_name) is None
+        assert m.get_npm_package_name_validation_error(package_name) is None
     else:
-        err = validators.get_npm_package_name_validation_error(package_name)
+        err = m.get_npm_package_name_validation_error(package_name)
         print(f"got {err} {expected_validation_error}")
         assert isinstance(err, Exception)
         assert str(err) == str(expected_validation_error)
@@ -60,11 +60,38 @@ def test_get_npm_package_version_validation_error(
     package_version: str, expected_validation_error: Optional[Exception]
 ) -> None:
     if expected_validation_error is None:
-        assert (
-            validators.get_npm_package_version_validation_error(package_version) is None
-        )
+        assert m.get_npm_package_version_validation_error(package_version) is None
     else:
-        err = validators.get_npm_package_version_validation_error(package_version)
+        err = m.get_npm_package_version_validation_error(package_version)
         print(f"got {err} {expected_validation_error}")
         assert isinstance(err, Exception)
         assert str(err) == str(expected_validation_error)
+
+
+@pytest.mark.parametrize(
+    "package_version,is_release_version",
+    [
+        ("0.0.0", True),
+        ("v0.0.0", True),
+        ("0.0.0+exp.sha.5114f85", True),
+        ("v0.0.0-rc.1", False),
+        ("v0.0.0-rc1", False),
+        ("1.2.3-alpha.1+exp.sha.5114f85", False),
+        ("#!/usr/bin/env", False,),
+        ("1.0.0-rc.3", False),
+        ("1.0.0-beta", False),
+        ("1.0.0-beta2", False),
+        ("2.0.0-beta", False),
+        ("2.0.0-beta2", False),
+        ("2.0.0-beta3", False),
+        ("2.0.0-rc2", False),
+        ("3.0.0-alpha5", False),
+        ("3.0.0-beta7", False),
+        ("5.0.0-alpha.1", False),
+    ],
+)
+@pytest.mark.unit
+def test_get_npm_package_version_validation_error(
+    package_version: str, is_release_version: bool
+) -> None:
+    assert m.is_npm_release_package_version(package_version) == is_release_version
