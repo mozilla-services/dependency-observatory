@@ -1,17 +1,123 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <div>
-        <h1 class="mb-4">Frequently Asked Questions</h1>
-    </div>
+<div>
+  <h1 class="mb-4">Frequently Asked Questions</h1>
+</div>
 
-    <div id="faq">
-        <h2 class="h3 border-bottom border-light mb-3 pb-2" id="faq-general">General</h2>
+<div id="faq">
+  <h2 class="h3 border-bottom border-light mb-3 pb-2" id="faq-general">General</h2>
 
-        <div class="question">
-            <h3 class="h4">Why are there no questions?</h3>
-
-            <p>Unfortunately, we haven't written any yet...</p>
-        </div>
-    </div>
+  <div class="question">
+    <h3 class="h4">How are packages scored?</h3>
+    Packages are scored based on
+    <ul>
+      <li>their <a href="https://npms.io/">npms.io</a> scores</li>
+      <li>the number of packages they depend on</li>
+      <li>the number of active vulnerabilities in the package</li>
+      <li>the number of active vulnerabilities in the package's dependencies</li>
+      <li>the number of package maintainers</li>
+      <li>the number of package contributors</li>
+    </ul>
+    You can see the detailed breakdown of the point values for each attribute below:
+    <table>
+      <thead>
+        <tr>
+          <th>Attribute</th>
+          <th>Points</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>npms.io score (0-1)</td>
+          <td>*100</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>All dependencies &lt;= 5</td>
+          <td>+10</td>
+        </tr>
+        <tr>
+          <td>All dependencies &lt;= 20</td>
+          <td>+5</td>
+        </tr>
+        <tr>
+          <td>All dependencies &gt;= 100</td>
+          <td>-5</td>
+        </tr>
+        <tr>
+          <td>All dependencies &gt;= 500</td>
+          <td>-10</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Open critical vuln in package</td>
+          <td>-30 per vuln</td>
+        </tr>
+        <tr>
+          <td>Open high vuln in package</td>
+          <td>-15 per vuln</td>
+        </tr>
+        <tr>
+          <td>Open medium vuln in package</td>
+          <td>-7 per vuln</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Open critical vuln in dependency</td>
+          <td>-15 per vuln</td>
+        </tr>
+        <tr>
+          <td>Open high vuln in dependency</td>
+          <td>-7 per vuln</td>
+        </tr>
+        <tr>
+          <td>Open medium vuln in dependency</td>
+          <td>-4 per vuln</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Only one maintainer</td>
+          <td>-10</td>
+        </tr>
+        <tr>
+          <td>5 or more maintainers</td>
+          <td>+10</td>
+        </tr>
+        <tr>
+          <td>15 or more maintainers</td>
+          <td>-10</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td></td>
+        </tr>
+        <tr>
+          <td>Fewer than 3 contributors</td>
+          <td>-5</td>
+        </tr>
+        <tr>
+          <td>10 or more contributors</td>
+          <td>+5</td>
+        </tr>
+        <tr>
+          <td>20 or more contributors</td>
+          <td>-5</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}
