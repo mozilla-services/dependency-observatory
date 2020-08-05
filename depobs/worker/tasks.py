@@ -182,7 +182,7 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
         log.info(f"scan: {scan.id} scanning {package_name}@{package_version}")
         # we need a source_url and git_head or a tarball url to install
         if tarball_url:
-            job_name = f"scan-tarball-url-{hex(randrange(1 << 32))[2:]}"
+            job_name = f"scan-{scan.id}-pkg-{hex(randrange(1 << 32))[2:]}"
             config: RunRepoTasksConfig = copy.deepcopy(
                 current_app.config["SCAN_NPM_TARBALL_ARGS"]
             )
