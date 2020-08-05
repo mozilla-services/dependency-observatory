@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '170fd1b3769a'
-down_revision = '41041467b091'
+revision = "170fd1b3769a"
+down_revision = "41041467b091"
 branch_labels = None
 depends_on = None
 
@@ -60,7 +60,7 @@ def upgrade():
         CASE
         WHEN contributors < 3 THEN -5
         WHEN contributors >= 10 THEN 5
-        WHEN contributors >= 10 THEN -5
+        WHEN contributors >= 20 THEN -5
         ELSE 0
         END +
         CASE
