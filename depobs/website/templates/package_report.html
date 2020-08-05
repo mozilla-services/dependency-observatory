@@ -109,28 +109,39 @@
                             <td>All dependencies >= 100</td><td class="text-right">-5</td>
                             {% endif %}
                         </tr>
-                        {%if package_report['directVulnsCritical_score'] > 0 %}
+                        {%if package_report['directVulnsCritical_score'] > 1 %}
+                        <tr><td>Critical vulnerability in package (x{{ package_report['directVulnsCritical_score'] }})</td><td class="text-right">{{ package_report['directVulnsCritical_score'] * -30 }}</td></tr>
+                        {%elif package_report['directVulnsCritical_score'] > 0 %}
                         <tr><td>Critical vulnerability in package</td><td class="text-right">-30</td></tr>
                         {% endif %}
 
-                        {%if package_report['directVulnsHigh_score'] > 0 %}
+                        {%if package_report['directVulnsHigh_score'] > 1 %}
+                        <tr><td>High vulnerability in package (x{{ package_report['directVulnsHigh_score'] }})</td><td class="text-right">{{ package_report['directVulnsHigh_score'] * -15 }}</td></tr>
+                        {%elif package_report['directVulnsHigh_score'] > 0 %}
                         <tr><td>High vulnerability in package</td><td class="text-right">-15</td></tr>
                         {% endif %}
 
-                        {%if package_report['directVulnsMedium_score'] > 0 %}
+                        {%if package_report['directVulnsMedium_score'] > 1 %}
+                        <tr><td>Medium vulnerability in package (x{{ package_report['directVulnsMedium_score'] }})</td><td class="text-right">{{ package_report['directVulnsMedium_score'] * -7 }}</td></tr>
+                        {%elif package_report['directVulnsMedium_score'] > 0 %}
                         <tr><td>Medium vulnerability in package</td><td class="text-right">-7</td></tr>
                         {% endif %}
 
-
-                        {%if package_report['indirectVulnsCritical_score'] > 0 %}
+                        {%if package_report['indirectVulnsCritical_score'] > 1 %}
+                        <tr><td>Critical vulnerability in dependency (x{{ package_report['indirectVulnsCritical_score'] }})</td><td class="text-right">{{ package_report['indirectVulnsCritical_score'] * -15 }}</td></tr>
+                        {%elif package_report['indirectVulnsCritical_score'] > 0 %}
                         <tr><td>Critical vulnerability in dependency</td><td class="text-right">-15</td></tr>
                         {% endif %}
 
-                        {%if package_report['indirectVulnsHigh_score'] > 0 %}
+                        {%if package_report['indirectVulnsHigh_score'] > 1 %}
+                        <tr><td>High vulnerability in dependency (x{{ package_report['indirectVulnsHigh_score'] }})</td><td class="text-right">{{ package_report['indirectVulnsHigh_score'] * -7 }}</td></tr>
+                        {%elif package_report['indirectVulnsHigh_score'] > 0 %}
                         <tr><td>High vulnerability in dependency</td><td class="text-right">-7</td></tr>
                         {% endif %}
 
                         {%if package_report['indirectVulnsMedium_score'] > 0 %}
+                        <tr><td>Medium vulnerability in dependency (x{{ package_report['indirectVulnsMedium_score'] }})</td><td class="text-right">{{ package_report['indirectVulnsMedium_score'] * -4 }}</td></tr>
+                        {%elif package_report['indirectVulnsMedium_score'] > 0 %}
                         <tr><td>Medium vulnerability in dependency</td><td class="text-right">-4</td></tr>
                         {% endif %}
 
