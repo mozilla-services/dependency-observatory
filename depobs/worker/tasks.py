@@ -108,25 +108,25 @@ async def scan_tarball_url(
         "service_account_name": config["service_account_name"],
         "volume_mounts": config["volume_mounts"],
     }
-    log.info(f"starting job {job_name} with config {job_config}")
+    log.info(f"scan {scan_id} starting job {job_name} with config {job_config}")
     status = None
     with k8s.run_job(job_config) as job:
-        log.info(f"started job {job}")
+        log.info(f"scan {scan_id} started job {job}")
         await asyncio.sleep(1)
         job = k8s.read_job(
             job_config["namespace"], job_name, context_name=job_config["context_name"]
         )
-        log.info(f"got initial job status {job.status}")
+        log.info(f"scan {scan_id} got initial job status {job.status}")
         while True:
             if job.status.failed:
-                log.error(f"k8s job {job_name} failed")
+                log.error(f"scan {scan_id} k8s job {job_name} failed")
                 return job
             if job.status.succeeded:
-                log.info(f"k8s job {job_name} succeeded")
+                log.info(f"scan {scan_id} k8s job {job_name} succeeded")
                 return job
             if not job.status.active:
                 log.error(
-                    f"k8s job {job_name} stopped/not active (did not fail or succeed)"
+                    f"scan {scan_id} k8s job {job_name} stopped/not active (did not fail or succeed)"
                 )
                 return job
 
@@ -136,7 +136,7 @@ async def scan_tarball_url(
                 job_name,
                 context_name=job_config["context_name"],
             )
-            log.info(f"got job status {job.status}")
+            log.info(f"scan {scan_id} got job status {job.status}")
 
 
 def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, None]:
@@ -146,20 +146,30 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
 
     Generates scan jobs with format asyncio.Task that terminate when
     the k8s finishes.
+
+    When the version is 'latest' only scans the most recently published version of the package.
     """
     package_name: str = scan.package_name
     package_version: Optional[str] = scan.package_version
+    if package_version == "latest":
+        versions_query = models.get_npm_registry_entries_to_scan(
+            package_name, None
+        ).limit(1)
+    else:
+        versions_query = models.get_npm_registry_entries_to_scan(
+            package_name, package_version
+        )
 
     # fetch npm registry entries from DB
-    for (
-        package_version,
-        source_url,
-        git_head,
-        tarball_url,
-    ) in models.get_npm_registry_entries_to_scan(package_name, package_version):
+    for (package_version, source_url, git_head, tarball_url,) in versions_query:
         if package_version is None:
             log.warn(
                 f"scan: {scan.id} skipping npm registry entry with null version {package_name}"
+            )
+            continue
+        elif not validators.is_npm_release_package_version(package_version):
+            log.warn(
+                f"scan: {scan.id} {package_name} skipping npm registry entry with pre-release version {package_version!r}"
             )
             continue
 

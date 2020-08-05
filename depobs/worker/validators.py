@@ -32,11 +32,11 @@ def get_npm_package_name_validation_error(package_name: str) -> Optional[Excepti
 #
 # https://docs.npmjs.com/misc/semver#versions
 NPM_PACKAGE_VERSION_RE = re.compile(
-    r"""(=v)?           # strip leading = and v
+    r"""^([=v])?           # strip leading = and v
 [0-9]+\.[0-9]+\.[0-9]+  # major minor and patch versions (TODO: check if positive ints)
 [-]?[-\.0-9A-Za-z]*       # optional pre-release version e.g. -alpha.1 (TODO: split out identifiers)
 [+]?[-\.0-9A-Za-z]*       # optional build metadata e.g. +exp.sha.5114f85
-""",
+$""",
     re.VERBOSE,
 )
 
@@ -52,3 +52,21 @@ def get_npm_package_version_validation_error(package_name: str) -> Optional[Exce
         )
 
     return None
+
+
+# Version must be parseable by node-semver, which is bundled with npm as a dependency.
+#
+# https://docs.npmjs.com/files/package.json#version
+#
+# https://docs.npmjs.com/misc/semver#versions
+NPM_PACKAGE_RELEASE_VERSION_RE = re.compile(
+    r"""^([=v])?           # strip leading = and v
+[0-9]+\.[0-9]+\.[0-9]+  # major minor and patch versions (TODO: check if positive ints)
+([+][-\.0-9A-Za-z]*)?     # optional build metadata e.g. 3+exp.sha.5114f85
+$""",
+    re.VERBOSE,
+)
+
+
+def is_npm_release_package_version(package_version: str) -> bool:
+    return bool(re.match(NPM_PACKAGE_RELEASE_VERSION_RE, package_version))

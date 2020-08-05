@@ -30,3 +30,13 @@ def client(app):
 @pytest.fixture
 def runner(app):
     return app.test_cli_runner()
+
+
+@pytest.fixture
+def valid_scan_payload():
+    return {
+        "scan_type": "scan_score_npm_package",
+        "package_name": "@hapi/bounce",
+        "package_manager": "npm",
+        "package_versions_type": "releases",
+    }
