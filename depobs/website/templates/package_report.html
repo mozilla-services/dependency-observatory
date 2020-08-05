@@ -134,6 +134,30 @@
                         <tr><td>Medium vulnerability in dependency</td><td class="text-right">-4</td></tr>
                         {% endif %}
 
+                        <tr>
+                          {%if package_report['authors'] %}
+                            {%if package_report['authors'] <= 1 %}
+                            <td>One maintainer</td><td class="text-right">-10</td>
+                            {% elif package_report['authors'] >= 5 %}
+                            <td>5 or more maintainers</td><td class="text-right">+10</td>
+                            {% elif package_report['authors'] >= 15 %}
+                            <td>15 or more maintainers</td><td class="text-right">-10</td>
+                            {% endif %}
+                          {% endif %}
+                        </tr>
+
+                        <tr>
+                          {%if package_report['contributors'] %}
+                            {%if package_report['contributors'] <= 2 %}
+                            <td>Less than 3 contributors</td><td class="text-right">-5</td>
+                            {% elif package_report['contributors'] >= 10 %}
+                            <td>10 or more contributors</td><td class="text-right">+5</td>
+                            {% elif package_report['contributors'] >= 20 %}
+                            <td>20 or more contributors</td><td class="text-right">-5</td>
+                            {% endif %}
+                          {% endif %}
+                        </tr>
+
                         <tr><td>Total</td><td class="text-right">+{{package_report['score'] | round(0) | int}}</td></tr>
                     </table>
                 </div>
