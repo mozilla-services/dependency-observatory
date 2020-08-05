@@ -1,8 +1,19 @@
-from base64 import b64encode
 from datetime import datetime
 from functools import cached_property
 import logging
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypedDict,
+    Union,
+)
 
 import flask
 from flask_migrate import Migrate
@@ -46,6 +57,16 @@ migrate = Migrate()
 # define type aliases to make ints distinguishable in type annotations
 PackageLinkID = int
 PackageVersionID = int
+
+
+class ScanFileURL(TypedDict):
+    """
+    A filename and URL to use in a scan
+    """
+
+    filename: str
+
+    url: str
 
 
 class utcnow(expression.FunctionElement):
@@ -870,6 +891,11 @@ class Scan(db.Model):
         if len(self.params["args"]) > 1:
             return self.params["args"][1]
         return None
+
+    def dep_file_urls(self,) -> Generator[ScanFileURL, None, None]:
+        assert isinstance(self.params, dict)
+        for file_config in self.params["kwargs"]["dep_file_urls"]:
+            yield file_config
 
 
 def get_package_report(
