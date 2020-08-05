@@ -97,7 +97,7 @@ async def scan_tarball_url(
             **config["env"],
             "LANGUAGE": config["language"],
             "PACKAGE_MANAGER": config["package_manager"],
-            "PACKAGE_NAME": package_name or "unknown-package-name",
+            "PACKAGE_NAME": package_name,
             "PACKAGE_VERSION": package_version or "unknown-package-version",
             # see: https://github.com/mozilla-services/dependency-observatory/issues/280#issuecomment-641588717
             "INSTALL_TARGET": ".",
