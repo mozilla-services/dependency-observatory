@@ -244,20 +244,6 @@ def watch_job_pods(
         yield event
 
 
-def tail_job_logs(
-    namespace: str, name: str, context_name: Optional[str] = None
-) -> Generator[str, None, None]:
-    api_client = get_api_client(context_name)
-    job_pod_name = get_job_pod(namespace, name).metadata.name
-    log.info(f"tailing logs from pod {job_pod_name} for job {namespace} {name}")
-    for line in kubernetes.watch.Watch().stream(
-        kubernetes.client.CoreV1Api(api_client=api_client).read_namespaced_pod_log,
-        namespace=namespace,
-        name=job_pod_name,
-    ):
-        yield line
-
-
 @contextlib.contextmanager
 def run_job(
     job_config: KubeJobConfig,
