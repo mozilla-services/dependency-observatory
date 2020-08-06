@@ -9,6 +9,34 @@ from depobs.worker import validators
 
 
 @dataclass
+class ScanScoreNPMDepFilesRequestParams:
+    """
+    create_job request params for a scan_score_npm_dep_files job
+    """
+
+    scan_type: str = field(
+        metadata={"validate": marshmallow.validate.Equal("scan_score_npm_dep_files"),}
+    )
+    package_manager: str = field(
+        metadata={"validate": marshmallow.validate.Equal("npm")}
+    )
+    manifest_url: str = field(
+        metadata={"validate": marshmallow.validate.URL(schemes={"http", "https"},),}
+    )
+    lockfile_url: Optional[str] = field(
+        metadata={"validate": marshmallow.validate.URL(schemes={"http", "https"},),}
+    )
+    shrinkwrap_url: Optional[str] = field(
+        metadata={"validate": marshmallow.validate.URL(schemes={"http", "https"},),}
+    )
+
+
+ScanScoreNPMDepFilesRequestParamsSchema = marshmallow_dataclass.class_schema(
+    ScanScoreNPMDepFilesRequestParams
+)
+
+
+@dataclass
 class ScanScoreNPMPackageRequestParams:
     """
     create_job request params for a scan_score_npm_package job
