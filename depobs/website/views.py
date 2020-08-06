@@ -66,14 +66,6 @@ views_blueprint = api = Blueprint(
 )
 
 
-def stream_template(template_name, **context):
-    current_app.update_template_context(context)
-    t = current_app.jinja_env.get_template(template_name)
-    rv = t.stream(context)
-    rv.enable_buffering(5)
-    return rv
-
-
 def get_most_recently_scored_package_report_or_raise(
     package_name: str, package_version: str, scored_after: Optional[datetime] = None
 ) -> models.PackageReport:
