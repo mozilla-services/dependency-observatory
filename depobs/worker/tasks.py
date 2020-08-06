@@ -71,43 +71,10 @@ class RunRepoTasksConfig(k8s.KubeJobConfig, total=True):
     repo_tasks: List[str]
 
 
-async def scan_tarball_url(
-    config: RunRepoTasksConfig,
-    tarball_url: str,
-    scan_id: int,
-    package_name: str,
-    package_version: Optional[str] = None,
+async def run_job_to_completion(
+    job_config: k8s.KubeJobConfig, scan_id: int,
 ) -> kubernetes.client.models.v1_job.V1Job:
-    """
-    Takes a run_repo_tasks config, tarball url, and optional package
-    name and version.
-
-    Returns the k8s job
-    """
-    job_name = config["name"]
-    job_config: k8s.KubeJobConfig = {
-        "backoff_limit": config["backoff_limit"],
-        "ttl_seconds_after_finished": config["ttl_seconds_after_finished"],
-        "context_name": config["context_name"],
-        "name": config["name"],
-        "namespace": config["namespace"],
-        "image_name": config["image_name"],
-        "args": config["repo_tasks"],
-        "env": {
-            **config["env"],
-            "LANGUAGE": config["language"],
-            "PACKAGE_MANAGER": config["package_manager"],
-            "PACKAGE_NAME": package_name or "unknown-package-name",
-            "PACKAGE_VERSION": package_version or "unknown-package-version",
-            # see: https://github.com/mozilla-services/dependency-observatory/issues/280#issuecomment-641588717
-            "INSTALL_TARGET": ".",
-            "JOB_NAME": config["name"],
-            "SCAN_ID": str(scan_id),
-        },
-        "secrets": config["secrets"],
-        "service_account_name": config["service_account_name"],
-        "volume_mounts": config["volume_mounts"],
-    }
+    job_name = job_config["name"]
     log.info(f"scan {scan_id} starting job {job_name} with config {job_config}")
     status = None
     with k8s.run_job(job_config) as job:
@@ -137,6 +104,45 @@ async def scan_tarball_url(
                 context_name=job_config["context_name"],
             )
             log.info(f"scan {scan_id} got job status {job.status}")
+
+
+async def scan_tarball_url(
+    config: RunRepoTasksConfig,
+    tarball_url: str,
+    scan_id: int,
+    package_name: str,
+    package_version: Optional[str] = None,
+) -> kubernetes.client.models.v1_job.V1Job:
+    """
+    Takes a run_repo_tasks config, tarball url, and optional package
+    name and version.
+
+    Returns the k8s job when it finishes
+    """
+    job_config: k8s.KubeJobConfig = {
+        "backoff_limit": config["backoff_limit"],
+        "ttl_seconds_after_finished": config["ttl_seconds_after_finished"],
+        "context_name": config["context_name"],
+        "name": config["name"],
+        "namespace": config["namespace"],
+        "image_name": config["image_name"],
+        "args": config["repo_tasks"],
+        "env": {
+            **config["env"],
+            "LANGUAGE": config["language"],
+            "PACKAGE_MANAGER": config["package_manager"],
+            "PACKAGE_NAME": package_name,
+            "PACKAGE_VERSION": package_version or "unknown-package-version",
+            # see: https://github.com/mozilla-services/dependency-observatory/issues/280#issuecomment-641588717
+            "INSTALL_TARGET": ".",
+            "JOB_NAME": config["name"],
+            "SCAN_ID": str(scan_id),
+        },
+        "secrets": config["secrets"],
+        "service_account_name": config["service_account_name"],
+        "volume_mounts": config["volume_mounts"],
+    }
+    return await run_job_to_completion(job_config, scan_id)
 
 
 def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, None]:
@@ -176,7 +182,7 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
         log.info(f"scan: {scan.id} scanning {package_name}@{package_version}")
         # we need a source_url and git_head or a tarball url to install
         if tarball_url:
-            job_name = f"scan-tarball-url-{hex(randrange(1 << 32))[2:]}"
+            job_name = f"scan-{scan.id}-pkg-{hex(randrange(1 << 32))[2:]}"
             config: RunRepoTasksConfig = copy.deepcopy(
                 current_app.config["SCAN_NPM_TARBALL_ARGS"]
             )
