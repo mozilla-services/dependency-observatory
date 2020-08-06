@@ -33,6 +33,7 @@ PACKAGE_VERSION=${PACKAGE_VERSION:-""}
 GCP_PUBSUB_TOPIC=${GCP_PUBSUB_TOPIC:-""}
 GCP_PROJECT_ID=${GCP_PROJECT_ID:-""}
 REPO_URL=${REPO_URL:-""}
+DEP_FILE_URLS_JSON=${DEP_FILE_URLS_JSON:-""}
 
 echo "starting job ${JOB_NAME}"
 
@@ -154,6 +155,10 @@ while (( $# )); do
         nodejs-npm-write_manifest)
             # write a package.json file to so npm audit doesn't error out
             TASK_COMMAND="jq -cnM --arg name \"$PACKAGE_NAME\" --arg version \"$PACKAGE_VERSION\" '{dependencies: {}} | .dependencies[\$name] = \$version' | tee -a package.json"
+            ;;
+        nodejs-npm-write_dep_files)
+            # write manifest and other files
+            TASK_COMMAND=$(echo "$DEP_FILE_URLS_JSON" | jq -rc '.[] |  ("curl -s \"" + .url + "\" | tee \"" + .filename + "\"")' | tr '\n' ';')
             ;;
 
         nodejs-yarn-audit)
