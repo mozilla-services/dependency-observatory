@@ -197,14 +197,12 @@ while (( $# )); do
     stderr=$(eval "$TASK_COMMAND" 2>&1 >"$stdout_temp")
     status=$?
     set -e
-    stdout=$(cat "$stdout_temp")
-
     jq -cnM \
        --arg name "$TASK_NAME" \
        --arg command "$TASK_COMMAND" \
        --arg working_dir "$(pwd)" \
        --argjson exit_code "$status" \
-       --arg stdout "$stdout" \
+       --rawfile stdout "$stdout_temp" \
        --arg stderr "$stderr" \
        --argjson versions "$VERSIONS" \
        --argjson envvar_args "$ENVVAR_ARGS" \
