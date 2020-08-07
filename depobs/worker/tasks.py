@@ -244,6 +244,21 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
             )
 
 
+async def fetch_missing_npm_data():
+    await asyncio.gather(
+        fetch_and_save_npmsio_scores(
+            row[0]
+            for row in models.get_package_names_with_missing_npms_io_scores()
+            if row is not None
+        ),
+        fetch_and_save_registry_entries(
+            row[0]
+            for row in models.get_package_names_with_missing_npm_entries()
+            if row is not None
+        ),
+    )
+
+
 async def scan_score_npm_dep_files(scan: models.Scan,) -> None:
     """
     Scan and score dependencies from a manifest file and one or more optional lockfiles
@@ -353,18 +368,7 @@ async def scan_score_npm_package(scan: models.Scan) -> None:
     log.info(
         f"scan: {scan.id} fetching missing npms.io scores and npm registry entries for scoring"
     )
-    await asyncio.gather(
-        fetch_and_save_npmsio_scores(
-            row[0]
-            for row in models.get_package_names_with_missing_npms_io_scores()
-            if row is not None
-        ),
-        fetch_and_save_registry_entries(
-            row[0]
-            for row in models.get_package_names_with_missing_npm_entries()
-            if row is not None
-        ),
-    )
+    await fetch_missing_npm_data()
 
     log.info(f"scan: {scan.id} scoring {len(successful_jobs)} package versions")
     for job in successful_jobs:
