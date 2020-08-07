@@ -19,6 +19,7 @@ from typing import (
     Set,
     Tuple,
     TypedDict,
+    Union,
 )
 
 import flask
@@ -287,24 +288,13 @@ async def scan_score_npm_dep_files(scan: models.Scan,) -> None:
     log.info(
         f"scan: {scan.id} fetching missing npms.io scores and npm registry entries for scoring"
     )
-    await asyncio.gather(
-        fetch_and_save_npmsio_scores(
-            row[0]
-            for row in models.get_package_names_with_missing_npms_io_scores()
-            if row is not None
-        ),
-        fetch_and_save_registry_entries(
-            row[0]
-            for row in models.get_package_names_with_missing_npm_entries()
-            if row is not None
-        ),
-    )
+    await fetch_missing_npm_data()
 
-    # TODO: score the graph without a root package_name and version
-    # instead list all top level packages and score them on the graph?
-    # or return the graph from deserialize?
-    # db_graph: PackageGraph
-    # store_package_reports(list(scoring.score_package_graph(db_graph).values()))
+    # TODO: handle non-lib package; list all top level packages and score them on the graph?
+    # TODO: handle a library package score as usual (make sure we don't pollute the package version entry)
+    # TODO: score the graph without a root package_version
+    assert db_graph
+    store_package_reports(list(scoring.score_package_graph(db_graph).values()))
 
 
 async def scan_score_npm_package(scan: models.Scan) -> None:
@@ -355,9 +345,10 @@ async def scan_score_npm_package(scan: models.Scan) -> None:
         log.info(
             f"scan: {scan.id} saving job results for {k8s.get_job_env_var(job, 'PACKAGE_NAME')}@{k8s.get_job_env_var(job, 'PACKAGE_VERSION')}"
         )
-        serializers.deserialize_scan_job_results(
+        for deserialized in serializers.deserialize_scan_job_results(
             models.get_scan_job_results(k8s.get_job_env_var(job, "JOB_NAME"))
-        )
+        ):
+            models.save_deserialized(deserialized)
 
     log.info(
         f"scan: {scan.id} fetching missing npms.io scores and npm registry entries for scoring"
