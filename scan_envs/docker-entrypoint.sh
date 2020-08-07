@@ -53,7 +53,15 @@ function publish_message () {
     # NB: max message size is 10MB https://cloud.google.com/pubsub/quotas#resource_limits
     # NB: max attribute key size is 256 bytes max key value 1024 bytes
     message=$1
-    gcloud pubsub topics publish "$GCP_PUBSUB_TOPIC" --message "$message" --attribute "JOB_NAME=${JOB_NAME},SCAN_ID=${SCAN_ID}"
+    # gcloud pubsub topics publish "$GCP_PUBSUB_TOPIC" --message "$message" --attribute "JOB_NAME=${JOB_NAME},SCAN_ID=${SCAN_ID}"
+
+    data_temp=$(mktemp)
+    echo -n "$message" | jq -rcM '@base64' | tr -d '\n' > "$data_temp"
+    jq -rcn --arg JOB_NAME "$JOB_NAME" \
+       --arg SCAN_ID "$SCAN_ID" \
+       --rawfile data "$data_temp" \
+       '{"messages": [{"attributes": {$JOB_NAME, $SCAN_ID}, $data}]}' \
+	| curl -X POST --data-binary @- -H "Content-Type: application/json" -H "Authorization: Bearer $(gcloud auth application-default print-access-token)" "https://pubsub.googleapis.com/v1/projects/${GCP_PROJECT_ID}/topics/${GCP_PUBSUB_TOPIC}:publish"
 }
 
 message_temp=$(mktemp)
