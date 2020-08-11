@@ -156,9 +156,9 @@ def show_package_changelog() -> Any:
 
 
 @api.route("/histogram.png")
-def get_histogram() -> Any:
+def get_histogram(scoring_algorithm: str = None) -> Any:
 
-    scores = models.get_statistics()
+    scores = models.get_statistics(scoring_algorithm)
     counts = scores["score_codes_histogram"]
 
     # Required to pass typing CI test
@@ -180,6 +180,10 @@ def get_histogram() -> Any:
     fig.clf()
     return Response(img.getvalue(), mimetype="image/png")
 
+
+@api.route("/histogram_old.png")
+def get_histogram_old() -> Any:
+    return get_histogram("old")
 
 @api.route("/distribution.png")
 def get_distribution() -> Any:
