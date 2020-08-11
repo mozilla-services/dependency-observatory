@@ -54,6 +54,7 @@ from depobs.database.models import (
     PackageGraph,
     PackageVersion,
 )
+from depobs.util.traceback_util import exc_to_str
 from depobs.util.type_util import Result
 from depobs.worker import gcp
 from depobs.worker import k8s
@@ -819,7 +820,7 @@ async def run_scan(app: flask.Flask, scan: models.Scan,) -> models.Scan:
             await scan_fn(scan)
             new_scan_status = "succeeded"
         except Exception as err:
-            log.error(f"{scan.id} error scanning and scoring: {err}")
+            log.error(f"{scan.id} error scanning and scoring: {err}\n{exc_to_str()}")
             new_scan_status = "failed"
         return models.save_scan_with_status(scan, new_scan_status)
 
