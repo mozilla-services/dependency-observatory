@@ -181,9 +181,10 @@ def get_histogram(scoring_algorithm: str = None) -> Any:
     return Response(img.getvalue(), mimetype="image/png")
 
 
-@api.route("/histogram_old.png")
-def get_histogram_old() -> Any:
-    return get_histogram("old")
+@api.route("/histogram_v0.png")
+def get_histogram_v0() -> Any:
+    return get_histogram("v0")
+
 
 @api.route("/distribution.png")
 def get_distribution() -> Any:

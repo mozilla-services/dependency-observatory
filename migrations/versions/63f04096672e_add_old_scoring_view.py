@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '63f04096672e'
-down_revision = '170fd1b3769a'
+revision = "63f04096672e"
+down_revision = "170fd1b3769a"
 branch_labels = None
 depends_on = None
 
@@ -19,7 +19,7 @@ depends_on = None
 def upgrade():
     op.execute(
         """
-        CREATE OR REPLACE VIEW score_view_old AS
+        CREATE OR REPLACE VIEW score_view_v0 AS
         SELECT reports.package,
            reports.version,
            reports.release_date,
@@ -60,7 +60,7 @@ def upgrade():
     )
     op.execute(
         """
-        CREATE OR REPLACE VIEW report_score_view_old AS
+        CREATE OR REPLACE VIEW report_score_view_v0 AS
         SELECT reports.package,
            reports.version,
            reports.release_date,
@@ -81,20 +81,20 @@ def upgrade():
            reports.immediate_deps,
            reports.all_deps,
            reports.id,
-           score_view_old.score,
+           score_view_v0.score,
                CASE
-                   WHEN score_view_old.score >= 80::double precision THEN 'A'::text
-                   WHEN score_view_old.score >= 60::double precision THEN 'B'::text
-                   WHEN score_view_old.score >= 40::double precision THEN 'C'::text
-                   WHEN score_view_old.score >= 20::double precision THEN 'D'::text
+                   WHEN score_view_v0.score >= 80::double precision THEN 'A'::text
+                   WHEN score_view_v0.score >= 60::double precision THEN 'B'::text
+                   WHEN score_view_v0.score >= 40::double precision THEN 'C'::text
+                   WHEN score_view_v0.score >= 20::double precision THEN 'D'::text
                    ELSE 'E'::text
                END AS score_code
           FROM reports
-            JOIN score_view_old ON reports.id = score_view_old.id
+            JOIN score_view_v0 ON reports.id = score_view_v0.id
     """
     )
 
 
 def downgrade():
-    op.execute("DROP VIEW report_score_view_old")
-    op.execute("DROP VIEW score_view_old")
+    op.execute("DROP VIEW report_score_view_v0")
+    op.execute("DROP VIEW score_view_v0")
