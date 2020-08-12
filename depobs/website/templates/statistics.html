@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <div>
-        <h1 class="mb-4">Statistics</h1>
-    </div>
+      <div>
+          <h1 class="mb-4">Statistics</h1>
+      </div>
 
+<<<<<<< HEAD
     <div id="histogram">
         <h2 class="h3 border-bottom border-light mb-3 pb-2" id="letter-scores">Distribution of letter scores</h2>
         <img src="/histogram.png">
@@ -17,9 +18,28 @@
           {% endfor %}
         </table>
     </div>
+=======
+      <div id="histogram">
+          <h2 class="h3 border-bottom border-light mb-3 pb-2" id="letter-scores">Distribution of letter scores</h2>
+          <select class="form-s" id="histScoringView" name="hist_scoring_view">
+            <option value="latest" select="selected">Latest</option>
+            <option value="v0">V0</option>
+      		</select>
+          <br>
+          <img id="histogram_image" src="/histogram.png">
+      </div>
 
-    <div id="distribution">
-        <h2 class="h3 border-bottom border-light mb-3 pb-2" id="numerical-scores">Distribution of numerical scores</h2>
-        <img src="/distribution.png">
-    </div>
+      <div id="distribution">
+          <h2 class="h3 border-bottom border-light mb-3 pb-2" id="numerical-scores">Distribution of numerical scores</h2>
+          <select class="form-s" id="distScoringView" name="dist_scoring_view">
+            <option value="latest" select="selected">Latest</option>
+            <option value="v0">V0</option>
+      		</select>
+          <br>
+          <img id="distribution_image" src="/distribution.png">
+      </div>
+
+      <script src="/static/graph.js"></script>
+>>>>>>> ceaac28a999ab55d42f17d58e8e46227e7f00168
+
 {% endblock %}
