@@ -197,7 +197,8 @@ def get_distribution() -> Any:
 
 @api.route("/statistics", methods=["GET"])
 def get_statistics() -> Any:
-    return render_template("statistics.html")
+    scores = models.get_statistics()["score_codes_histogram"]
+    return render_template("statistics.html", scores=scores)
 
 
 @api.route("/faq")

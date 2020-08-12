@@ -8,6 +8,14 @@
     <div id="histogram">
         <h2 class="h3 border-bottom border-light mb-3 pb-2" id="letter-scores">Distribution of letter scores</h2>
         <img src="/histogram.png">
+        <table>
+          {% for score, count in scores.items() %}
+            <tr>
+              <th> {{ score }} </th>
+              <td> {{ count }} </td>
+            </tr>
+          {% endfor %}
+        </table>
     </div>
 
     <div id="distribution">
