@@ -156,9 +156,9 @@ def show_package_changelog() -> Any:
 
 
 @api.route("/histogram.png")
-def get_histogram() -> Any:
+def get_histogram(scoring_algorithm: str = None) -> Any:
 
-    scores = models.get_statistics()
+    scores = models.get_statistics(scoring_algorithm)
     counts = scores["score_codes_histogram"]
 
     # Required to pass typing CI test
@@ -181,18 +181,35 @@ def get_histogram() -> Any:
     return Response(img.getvalue(), mimetype="image/png")
 
 
-@api.route("/distribution.png")
-def get_distribution() -> Any:
+@api.route("/histogram_v0.png")
+def get_histogram_v0() -> Any:
+    return get_histogram("v0")
 
-    scores = models.get_statistics_scores()
+
+@api.route("/distribution.png")
+def get_distribution(scoring_algorithm: str = None) -> Any:
+
+    scores = models.get_statistics_scores(scoring_algorithm)
 
     img = BytesIO()
-    fig = sb.distplot(
-        scores, bins=15, kde=False, norm_hist=False, axlabel="package score"
-    ).get_figure()
+    plot = sb.distplot(
+        scores,
+        bins=12,
+        kde=False,
+        norm_hist=False,
+        axlabel="package score",
+        hist_kws={"range": (0, 120)},
+    )
+    plot.set_xlim(0, 120)
+    fig = plot.get_figure()
     fig.savefig(img, format="png")
     fig.clf()
     return Response(img.getvalue(), mimetype="image/png")
+
+
+@api.route("/distribution_v0.png")
+def get_distribution_v0() -> Any:
+    return get_distribution("v0")
 
 
 @api.route("/statistics", methods=["GET"])
