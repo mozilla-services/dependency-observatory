@@ -215,17 +215,24 @@ def get_distribution_v0() -> Any:
 
 @api.route("/statistics", methods=["GET"])
 def get_statistics() -> Any:
-    scores = models.get_statistics()["score_codes_histogram"]
 
-    # Required to pass typing CI test
-    assert isinstance(scores, dict)
+    scoring_algorithms = ["v0", "latest"]
+    table_data = dict()
 
-    # Sort the dictionary alphabetically by key
-    sorted_scores = OrderedDict()
-    for key, value in sorted(scores.items()):
-        sorted_scores[key] = value
+    for algorithm in scoring_algorithms:
+        scores = models.get_statistics(algorithm)["score_codes_histogram"]
 
-    return render_template("statistics.html", scores=sorted_scores)
+        # Required to pass typing CI test
+        assert isinstance(scores, dict)
+
+        # Sort the dictionary alphabetically by key
+        sorted_scores = OrderedDict()
+        for key, value in sorted(scores.items()):
+            sorted_scores[key] = value
+
+        table_data[algorithm] = sorted_scores
+
+    return render_template("statistics.html", table_data=table_data)
 
 
 @api.route("/faq")
