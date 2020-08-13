@@ -4,6 +4,7 @@ from random import randrange
 import time
 from typing import Any, Dict, List, Optional, Tuple, Type
 from io import BytesIO, StringIO
+from collections import OrderedDict
 
 from flask import (
     Blueprint,
@@ -215,7 +216,13 @@ def get_distribution_v0() -> Any:
 @api.route("/statistics", methods=["GET"])
 def get_statistics() -> Any:
     scores = models.get_statistics()["score_codes_histogram"]
-    return render_template("statistics.html", scores=scores)
+
+    # Sort the dictionary alphabetically by key
+    sorted_scores = OrderedDict()
+    for key, value in sorted(scores.items()):
+        sorted_scores[key] = value
+
+    return render_template("statistics.html", scores=sorted_scores)
 
 
 @api.route("/faq")
