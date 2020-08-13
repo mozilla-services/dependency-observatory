@@ -10,9 +10,23 @@
           <select class="form-s" id="histScoringView" name="hist_scoring_view">
             <option value="latest" select="selected">Latest</option>
             <option value="v0">V0</option>
-      		</select>
+          </select>
           <br>
-          <img id="histogram_image" src="/histogram.png">
+          <div class="flex-container">
+            <div>
+              <img id="histogram_image" src="/histogram.png">
+            </div>
+            <div>
+              <table>
+                {% for score, count in scores.items() %}
+                  <tr>
+                    <th> {{ score }} </th>
+                    <td> {{ count }} </td>
+                  </tr>
+                {% endfor %}
+              </table>
+            </div>
+          </div>
       </div>
 
       <div id="distribution">

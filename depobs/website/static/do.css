@@ -434,3 +434,8 @@ header {
 .text-prewrap {
   white-space: pre-wrap;
 }
+
+.flex-container {
+  display: flex;
+  align-items: center;
+}
