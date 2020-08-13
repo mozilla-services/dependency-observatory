@@ -198,7 +198,7 @@ spec:
         - name: SQLALCHEMY_DATABASE_URI
           value: postgresql+psycopg2://postgres:postgres@db/dependency_observatory
         - name: GCP_PROJECT_ID
-          value: moz-fx-depobs-nonprod-b54b
+          value: replaceme
         - name: JOB_STATUS_PUBSUB_TOPIC
           value: job-status-dev
         - name: JOB_STATUS_PUBSUB_SUBSCRIPTION
