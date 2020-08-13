@@ -217,6 +217,9 @@ def get_distribution_v0() -> Any:
 def get_statistics() -> Any:
     scores = models.get_statistics()["score_codes_histogram"]
 
+    # Required to pass typing CI test
+    assert isinstance(scores, dict)
+
     # Sort the dictionary alphabetically by key
     sorted_scores = OrderedDict()
     for key, value in sorted(scores.items()):
