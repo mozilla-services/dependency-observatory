@@ -18,8 +18,16 @@
               <img id="histogram_image" src="/histogram.png">
             </div>
             <div>
-              <table>
-                {% for score, count in scores.items() %}
+              <table id="score_table_latest">
+                {% for score, count in table_data["latest"].items() %}
+                  <tr>
+                    <th> {{ score }} </th>
+                    <td> {{ count }} </td>
+                  </tr>
+                {% endfor %}
+              </table>
+              <table hidden id="score_table_v0">
+                {% for score, count in table_data["v0"].items() %}
                   <tr>
                     <th> {{ score }} </th>
                     <td> {{ count }} </td>
