@@ -1,0 +1,341 @@
+{
+  "github": [
+    {
+      "description": "Bower before 1.8.8 has a path traversal vulnerability permitting file write in arbitrary locations via install command, which allows attackers to write arbitrary files when a malicious package is extracted.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLXA2bXItcHhnNC02OGh4",
+      "package": "bower",
+      "permalink": "https://github.com/advisories/GHSA-p6mr-pxg4-68hx",
+      "publishedAt": "2019-09-17T23:21:34Z",
+      "severity": "HIGH",
+      "summary": "High severity vulnerability that affects bower",
+      "updatedAt": "2019-09-17T23:21:34Z",
+      "withdrawnAt": null
+    },
+    {
+      "description": "The debug module is vulnerable to regular expression denial of service when untrusted user input is passed into the o formatter. It takes around 50k characters to block for 2 seconds making this a low severity issue.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLWd4cGotY3g3Zy04NThj",
+      "package": "debug",
+      "permalink": "https://github.com/advisories/GHSA-gxpj-cx7g-858c",
+      "publishedAt": "2018-08-09T20:18:07Z",
+      "severity": "LOW",
+      "summary": "Low severity vulnerability that affects debug",
+      "updatedAt": "2019-07-03T21:02:02Z",
+      "withdrawnAt": null
+    },
+    {
+      "description": "The Express web framework before 3.11 and 4.x before 4.5 for Node.js does not provide a charset field in HTTP Content-Type headers in 400 level responses, which might allow remote attackers to conduct cross-site scripting (XSS) attacks via characters in a non-standard encoding.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLWdwdnItZzZnaC05bWMy",
+      "package": "express",
+      "permalink": "https://github.com/advisories/GHSA-gpvr-g6gh-9mc2",
+      "publishedAt": "2018-10-23T17:22:54Z",
+      "severity": "MODERATE",
+      "summary": "Moderate severity vulnerability that affects express",
+      "updatedAt": "2019-07-03T21:02:05Z",
+      "withdrawnAt": null
+    },
+    {
+      "description": "Minimatch is a minimal matching utility that works by converting glob expressions into JavaScript `RegExp` objects. The primary function, `minimatch(path, pattern)` in Minimatch 3.0.1 and earlier is vulnerable to ReDoS in the `pattern` parameter.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLWh4bTItcjM0Zi1xbWM1",
+      "package": "minimatch",
+      "permalink": "https://github.com/advisories/GHSA-hxm2-r34f-qmc5",
+      "publishedAt": "2018-10-09T00:40:41Z",
+      "severity": "HIGH",
+      "summary": "High severity vulnerability that affects minimatch",
+      "updatedAt": "2019-07-03T21:02:03Z",
+      "withdrawnAt": null
+    },
+    {
+      "description": "A prototype pollution vulnerability was found in module extend <2.0.2, ~<3.0.2 that allows an attacker to inject arbitrary properties onto Object.prototype.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLXFybWMtZmo0NS1xZmMy",
+      "package": "extend",
+      "permalink": "https://github.com/advisories/GHSA-qrmc-fj45-qfc2",
+      "publishedAt": "2019-02-07T18:03:28Z",
+      "severity": "LOW",
+      "summary": "Low severity vulnerability that affects extend",
+      "updatedAt": "2019-07-03T21:02:06Z",
+      "withdrawnAt": null
+    },
+    {
+      "description": "In jsonwebtoken node module before 4.2.2 it is possible for an attacker to bypass verification when a token digitally signed with an asymmetric key (RS/ES family) of algorithms but instead the attacker send a token digitally signed with a symmetric algorithm (HS* family).",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLWM3aHItajRtai1qMnc2",
+      "package": "jsonwebtoken",
+      "permalink": "https://github.com/advisories/GHSA-c7hr-j4mj-j2w6",
+      "publishedAt": "2018-10-09T00:38:30Z",
+      "severity": "HIGH",
+      "summary": "High severity vulnerability that affects jsonwebtoken",
+      "updatedAt": "2019-07-03T21:02:03Z",
+      "withdrawnAt": null
+    }
+  ],
+  "npm": [
+    {
+      "access": "public",
+      "created": "2019-01-30T00:22:48.341Z",
+      "cves": [],
+      "cwe": "CWE-59",
+      "deleted": null,
+      "found_by": {
+        "link": "",
+        "name": "skyn3t"
+      },
+      "id": 776,
+      "metadata": {
+        "affected_components": "",
+        "exploitability": 7,
+        "module_type": ""
+      },
+      "module_name": "bower",
+      "overview": "Versions of `bower` prior to 1.8.8 are affected by an arbitrary file write vulnerability. The vulnerability occurs because `bower` does not verify that extracted symbolic links do not resolve to targets outside of the extraction root directory.\n",
+      "patched_versions": ">=1.8.8",
+      "recommendation": "Update to version 1.8.8 or later",
+      "references": "- [HackerOne Report](https://hackerone.com/reports/473811)\n- [Node.js Security-wg](https://github.com/nodejs/security-wg/blob/master/vuln/npm/487.json)",
+      "reported_by": {
+        "link": "",
+        "name": "skyn3t"
+      },
+      "severity": "high",
+      "title": "Symlink Arbitrary File Overwrite",
+      "updated": "2019-01-30T00:30:05.223Z",
+      "vulnerable_versions": "<1.8.8"
+    },
+    {
+      "access": "public",
+      "created": "2017-09-25T18:55:55.956Z",
+      "cves": [
+        "CVE-2017-16137"
+      ],
+      "cwe": "CWE-400",
+      "deleted": null,
+      "found_by": {
+        "name": "Cristian-Alexandru Staicu"
+      },
+      "id": 534,
+      "metadata": {
+        "affected_components": "",
+        "exploitability": 5,
+        "module_type": ""
+      },
+      "module_name": "debug",
+      "overview": "Affected versions of `debug` are vulnerable to regular expression denial of service when untrusted user input is passed into the `o` formatter. \n\nAs it takes 50,000 characters to block the event loop for 2 seconds, this issue is a low severity issue.",
+      "patched_versions": ">= 2.6.9 < 3.0.0 || >= 3.1.0",
+      "recommendation": "Version 2.x.x: Update to version 2.6.9 or later.\nVersion 3.x.x: Update to version 3.1.0 or later.\n",
+      "references": "- [Issue #501](https://github.com/visionmedia/debug/issues/501)\n- [PR #504](https://github.com/visionmedia/debug/pull/504)",
+      "reported_by": {
+        "name": "Cristian-Alexandru Staicu"
+      },
+      "severity": "low",
+      "title": "Regular Expression Denial of Service",
+      "updated": "2018-05-16T19:37:43.686Z",
+      "vulnerable_versions": "<= 2.6.8 || >= 3.0.0 <= 3.0.1"
+    },
+    {
+      "access": "public",
+      "created": "2015-10-17T19:41:46.382Z",
+      "cves": [
+        "CVE-2014-6393"
+      ],
+      "cwe": "CWE-79",
+      "deleted": null,
+      "found_by": {
+        "name": "Pawe\u0142 Ha\u0142drzy\u0144ski"
+      },
+      "id": 8,
+      "metadata": {
+        "affected_components": "",
+        "exploitability": 2,
+        "module_type": "Network.Library"
+      },
+      "module_name": "express",
+      "overview": "Vulnerable versions of express do not specify a charset field in the content-type header while displaying 400 level response messages. The lack of enforcing user's browser to set correct charset, could be leveraged by an attacker to perform a cross-site scripting attack, using non-standard encodings, like UTF-7.",
+      "patched_versions": ">=3.11 <4 || >=4.5",
+      "recommendation": "For express 3.x, update express to version 3.11 or later.\nFor express 4.x, update express to version 4.5 or later. ",
+      "references": "",
+      "reported_by": {
+        "name": "Pawe\u0142 Ha\u0142drzy\u0144ski"
+      },
+      "severity": "moderate",
+      "title": "No Charset in Content-Type Header",
+      "updated": "2018-02-22T21:55:47.925Z",
+      "vulnerable_versions": "<3.11 || >= 4 <4.5"
+    },
+    {
+      "access": "public",
+      "created": "2018-04-24T20:25:38.919Z",
+      "cves": [],
+      "cwe": "CWE-20",
+      "deleted": null,
+      "found_by": {
+        "name": "\u0421\u043a\u043e\u0432\u043e\u0440\u043e\u0434\u0430 \u041d\u0438\u043a\u0438\u0442\u0430 \u0410\u043d\u0434\u0440\u0435\u0435\u0432\u0438\u0447"
+      },
+      "id": 597,
+      "metadata": {
+        "affected_components": "",
+        "exploitability": 3,
+        "module_type": ""
+      },
+      "module_name": "concat-stream",
+      "overview": "Versions of `concat-stream` before 1.5.2 are vulnerable to memory exposure if userp provided input is passed into `write()`\n\nVersions <1.3.0 are not affected due to not using unguarded Buffer constructor.\n",
+      "patched_versions": ">=1.5.2 || >=1.4.11 <1.5.0 || >=1.3.2 <1.4.0",
+      "recommendation": "Update to version 1.5.2, 1.4.11, 1.3.2 or later.\n\nIf you are unable to update make sure user provided input into the `write()` function is not a number.",
+      "references": "- [Proof of Concept](https://gist.github.com/ChALkeR/c2d2fd3f1d72d51ad883df195be03a85)\n- [GitHub PR #47](https://github.com/maxogden/concat-stream/pull/47)",
+      "reported_by": {
+        "name": "\u0421\u043a\u043e\u0432\u043e\u0440\u043e\u0434\u0430 \u041d\u0438\u043a\u0438\u0442\u0430 \u0410\u043d\u0434\u0440\u0435\u0435\u0432\u0438\u0447"
+      },
+      "severity": "moderate",
+      "title": "Memory Exposure",
+      "updated": "2018-04-24T20:26:26.842Z",
+      "vulnerable_versions": ">=1.3.0 <1.3.2 || >=1.4.0 <1.4.11 || >=1.5.0 <1.5.2"
+    },
+    {
+      "access": "public",
+      "created": "2016-05-25T16:37:20.000Z",
+      "cves": [
+        "CVE-2016-10540"
+      ],
+      "cwe": "CWE-400",
+      "deleted": null,
+      "found_by": {
+        "name": "Nick Starke"
+      },
+      "id": 118,
+      "metadata": {
+        "affected_components": "Internal::Code::Function::minimatch({type:'args', key:0, vector:{type:'string'}})",
+        "exploitability": 4,
+        "module_type": "Multi.Library"
+      },
+      "module_name": "minimatch",
+      "overview": "Affected versions of `minimatch` are vulnerable to regular expression denial of service attacks when user input is passed into the `pattern` argument of `minimatch(path, pattern)`.\n\n\n## Proof of Concept\n```\nvar minimatch = require(\u201cminimatch\u201d);\n\n// utility function for generating long strings\nvar genstr = function (len, chr) {\n  var result = \u201c\u201d;\n  for (i=0; i<=len; i++) {\n    result = result + chr;\n  }\n  return result;\n}\n\nvar exploit = \u201c[!\u201d + genstr(1000000, \u201c\\\\\u201d) + \u201cA\u201d;\n\n// minimatch exploit.\nconsole.log(\u201cstarting minimatch\u201d);\nminimatch(\u201cfoo\u201d, exploit);\nconsole.log(\u201cfinishing minimatch\u201d);\n```",
+      "patched_versions": ">=3.0.2",
+      "recommendation": "Update to version 3.0.2 or later.",
+      "references": "",
+      "reported_by": {
+        "name": "Nick Starke"
+      },
+      "severity": "high",
+      "title": "Regular Expression Denial of Service",
+      "updated": "2018-03-01T21:58:01.072Z",
+      "vulnerable_versions": "<=3.0.1"
+    },
+    {
+      "access": "public",
+      "created": "2019-06-19T00:18:20.635Z",
+      "cves": [],
+      "cwe": "CWE-471",
+      "deleted": null,
+      "found_by": {
+        "link": "",
+        "name": "asgerf"
+      },
+      "id": 996,
+      "metadata": {
+        "affected_components": "",
+        "exploitability": 4,
+        "module_type": ""
+      },
+      "module_name": "extend",
+      "overview": "Versions of `extend` prior to 3.0.2 (for 3.x) and 2.0.2 (for 2.x) are vulnerable to Prototype Pollution. The `extend()` function allows attackers to modify the prototype of Object causing the addition or modification of an existing property that will exist on all objects.\n\n",
+      "patched_versions": ">=2.0.2 <3.0.0 || >=3.0.2",
+      "recommendation": "If you're using `extend` 3.x upgrade to 3.0.2 or later.\nIf you're using `extend` 2.x upgrade to 2.0.2 or later.",
+      "references": "- [HackerOne Report](https://hackerone.com/reports/381185)",
+      "reported_by": {
+        "link": "",
+        "name": "asgerf"
+      },
+      "severity": "moderate",
+      "title": "Prototype Pollution",
+      "updated": "2019-07-24T18:05:41.047Z",
+      "vulnerable_versions": "<2.0.2 || >=3.0.0 <3.0.2"
+    },
+    {
+      "access": "public",
+      "created": "2015-10-17T19:41:46.382Z",
+      "cves": [
+        "CVE-2015-9235"
+      ],
+      "cwe": "CWE-287",
+      "deleted": null,
+      "found_by": {
+        "name": "Tim McLean"
+      },
+      "id": 17,
+      "metadata": {
+        "affected_components": "",
+        "exploitability": 4,
+        "module_type": "Network.Library"
+      },
+      "module_name": "jsonwebtoken",
+      "overview": "Versions 4.2.1 and earlier of `jsonwebtoken` are affected by a verification bypass vulnerability. This is a result of weak validation of the JWT algorithm type, occuring when an attacker is allowed to arbitrarily specify the JWT algorithm.\n\n",
+      "patched_versions": ">=4.2.2",
+      "recommendation": "Update to version 4.2.2 or later.",
+      "references": "- [1] https://github.com/auth0/node-jsonwebtoken/commit/1bb584bc382295eeb7ee8c4452a673a77a68b687\n- https://www.timmclean.net/2015/02/25/jwt-alg-none.html\n- https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/",
+      "reported_by": {
+        "name": "Tim McLean"
+      },
+      "severity": "critical",
+      "title": "Verification Bypass",
+      "updated": "2018-02-23T00:47:19.284Z",
+      "vulnerable_versions": "<4.2.2"
+    },
+    {
+      "access": "public",
+      "created": "2015-10-17T19:41:46.382Z",
+      "cves": [
+        "CVE-2013-7370",
+        "CVE-2013-7371"
+      ],
+      "cwe": "CWE-79",
+      "deleted": null,
+      "found_by": {
+        "name": "Sergio Arcos"
+      },
+      "id": 3,
+      "metadata": {
+        "affected_components": "Code::methodOverride",
+        "exploitability": 5,
+        "module_type": "Network.Library"
+      },
+      "module_name": "connect",
+      "overview": "Connect is a stack of middleware that is executed in order in each request.\n\nThe \"methodOverride\" middleware allows the http post to override the method of the request with the value of the \"_method\" post key or with the header \"x-http-method-override\".\n\nBecause the user post input was not checked, req.method could contain any kind of value. Because the req.method did not match any common method VERB, connect answered with a 404 page containing the \"Cannot `[method]` `[url]`\" content. The method was not properly encoded for output in the browser.\n\n\n###Example:\n```\n~ curl \"localhost:3000\" -d \"_method=<script src=http://nodesecurity.io/xss.js></script>\"\nCannot <SCRIPT SRC=HTTP://NODESECURITY.IO/XSS.JS></SCRIPT> /\n```\n\n",
+      "patched_versions": ">=2.8.1",
+      "recommendation": "Update to the newest version of Connect or disable methodOverride. It is not possible to avoid the vulnerability if you have enabled this middleware in the top of your stack.",
+      "references": "(2013-06-27) Bug reported:\nhttps://github.com/senchalabs/connect/issues/831\n\n(2013-06-27) First fix: escape req.method output\nhttps://github.com/senchalabs/connect/commit/277e5aad6a95d00f55571a9a0e11f2fa190d8135\n\n(2013-06-27) Second fix: whitelist\nhttps://github.com/senchalabs/connect/commit/126187c4e12162e231b87350740045e5bb06e93a",
+      "reported_by": {
+        "name": "Sergio Arcos"
+      },
+      "severity": "low",
+      "title": "methodOverride Middleware Reflected Cross-Site Scripting",
+      "updated": "2018-02-22T21:47:33.163Z",
+      "vulnerable_versions": "<=2.8.0"
+    },
+    {
+      "access": "public",
+      "created": "2015-10-17T19:41:46.382Z",
+      "cves": [
+        "CVE-2015-1164"
+      ],
+      "cwe": "CWE-601",
+      "deleted": null,
+      "found_by": {
+        "name": "Pierre-\u00c9lie Fauch\u00e9"
+      },
+      "id": 35,
+      "metadata": {
+        "affected_components": "",
+        "exploitability": 1,
+        "module_type": "Network.Application"
+      },
+      "module_name": "serve-static",
+      "overview": "Versions of `serve-static` prior to 1.6.5 ( or 1.7.x prior to 1.7.2 ) are affected by an open redirect vulnerability on some browsers when configured to mount at the root directory.\n\n\n## Proof of Concept\n\nA link to `http://example.com//www.google.com/%2e%2e` will redirect to `//www.google.com/%2e%2e`\n\nSome browsers will interpret this as `http://www.google.com/%2e%2e`, resulting in an external redirect.",
+      "patched_versions": "~1.6.5 || >=1.7.2",
+      "recommendation": "Version 1.7.x: Update to version 1.7.2 or later.\nVersion 1.6.x: Update to version 1.6.5 or later.\n",
+      "references": "[Issue #26](https://github.com/expressjs/serve-static/issues/26)\n",
+      "reported_by": {
+        "name": "Pierre-\u00c9lie Fauch\u00e9"
+      },
+      "severity": "low",
+      "title": "Open Redirect",
+      "updated": "2018-02-23T23:38:12.068Z",
+      "vulnerable_versions": "<1.6.5 || >=1.7.0 <1.7.2"
+    }
+  ]
+}

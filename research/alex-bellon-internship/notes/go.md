@@ -1,0 +1,48 @@
+# Go
+
+## [Minimal Version Selection](https://research.swtch.com/vgo-mvs)
+
+- Version selection problem
+  - Construct the current build list.
+  - Upgrade all modules to their latest versions.
+  - Upgrade one module to a specific newer version.
+  - Downgrade one module to a specific older version.
+- Minimal version selection is easy to understand an implement (only a few hundred lines)
+  - Assumes each module declares its own dependency requirements
+  - Modules only give a minimum version
+- Solutions to version selection problem
+  - To construct the build list for a given target: start the list with the target itself, and then append each requirement's own build list. If a module appears in the list multiple times, keep only the newest version.
+  - To upgrade all modules to their latest versions: construct the build list, but read each requirement as if it requested the latest module version.
+  - To upgrade one module to a specific newer version: construct the non-upgraded build list and then append the new module's build list. If a module appears in the list multiple times, keep only the newest version.
+  - To downgrade one module to a specific older version: rewind the required version of each top-level requirement until that requirement's build list no longer refers to newer versions of the downgraded module.
+- Current behaviors
+  - `got get`: If you have a local version, use that, otherwise get the latest version
+  - `go get -u`: Update everything to the newest version, which could lead to upgrading a dependency to a version that the package did not request
+- Construct Build List
+  - Recursive strategy: Get all of the build lists for all dependencies, combine them, and then simplify them
+    - Literal implementation would be too costly
+  - Path traversal: Follow the path from the original package down along the arrows, making sure not to repeat nodes
+- Upgrade All Modules
+  - Upgrade the module requirement graph, then apply the above algorithm
+  - Visit the nodes in reverse postorder (after considering all the nodes that point into it)
+- Upgrade One Module
+  - Upgrade requirement graph, construct build list, then reduce
+- Downgrade One Module
+  - Try successively older version of dependencies until they are compatible with the downgrade
+  - Can only downgrade packages, not upgrade
+- Theory
+  - [Schaefer's dichotomy theorem](https://en.wikipedia.org/wiki/Schaefer%27s_dichotomy_theorem) states that there are 6 classes of SAT that lie in P rather than NP-complete:
+    - all relations which are not constantly false are true when all its arguments are true;
+    - all relations which are not constantly false are true when all its arguments are false;
+    - all relations are equivalent to a conjunction of binary clauses;
+    - all relations are equivalent to a conjunction of Horn clauses;
+    - all relations are equivalent to a conjunction of dual-Horn clauses;
+    - all relations are equivalent to a conjunction of affine formulae.
+  - Minimal version selection lies in the intersection of 3 of these classes (2SAT, Horn-SAT, Dual-Horn-SAT)
+    - > The formula corresponding to a build in minimal version selection is the AND of a set of clauses, each of which is either a single positive literal (this version must be installed, such as during an upgrade), a single negative literal (this version is not available, such as during a downgrade), or the OR of one negative and one positive literal (an implication: if this version is installed, this other version must also be installed).
+    - **2-CNF** because each clause has at most two variables
+    - **Horn** formula because each clause has at most one positive literal
+    - **Dual-Horn** formula, because each clause has at most one negative literal
+- Excluding Modules
+  - Remove it from the graph, and then change anything that depended on it to depend on the next version
+- A module author is therefore in complete control of that module's build when it is the main program being built, but not in complete control of other users' builds that depend on the module.

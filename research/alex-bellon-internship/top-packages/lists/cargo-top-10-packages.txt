@@ -1,0 +1,10 @@
+serde
+serde_json
+log
+serde_derive
+rand
+libc
+clap
+lazy_static
+futures
+failure

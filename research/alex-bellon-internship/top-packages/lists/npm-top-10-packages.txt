@@ -1,0 +1,10 @@
+eslint
+mocha
+typescript
+webpack
+chai
+babel-core
+react
+babel-loader
+jest
+lodash

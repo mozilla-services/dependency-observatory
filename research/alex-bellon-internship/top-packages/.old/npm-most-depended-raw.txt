@@ -1,0 +1,357 @@
+lodash
+Description
+
+Lodash modular utilities.
+Publisher
+jdalton
+published 4.17.15 • a year ago
+react
+Description
+
+React is a JavaScript library for building user interfaces.
+Publisher
+acdlite
+published 16.13.1 • 3 months ago
+chalk
+Description
+
+Terminal string styling done right
+Publisher
+sindresorhus
+published 4.0.0 • 2 months ago
+request
+Description
+
+Simplified HTTP request client.
+Publisher
+mikeal
+published 2.88.2 • 4 months ago
+commander
+Description
+
+the complete solution for node.js command-line programs
+Publisher
+abetomo
+published 5.1.0 • a month ago
+moment
+Description
+
+Parse, validate, manipulate, and display dates
+Publisher
+marwahaha
+published 2.26.0 • 16 days ago
+express
+Description
+
+Fast, unopinionated, minimalist web framework
+Publisher
+dougwilson
+published 4.17.1 • a year ago
+react-dom
+Description
+
+React package for working with the DOM.
+Publisher
+acdlite
+published 16.13.1 • 3 months ago
+prop-types
+Description
+
+Runtime type checking for React props and similar objects.
+Publisher
+ljharb
+published 15.7.2 • a year ago
+tslib
+Description
+
+Runtime library for TypeScript helper functions
+Publisher
+typescript-bot
+published 2.0.0 • 23 days ago
+axios
+Description
+
+Promise based HTTP client for the browser and node.js
+Publisher
+emilyemorehouse
+published 0.19.2 • 4 months ago
+debug
+Description
+
+small debugging utility
+Publisher
+qix
+published 4.1.1 • a year ago
+fs-extra
+Description
+
+fs-extra contains methods that aren't included in the vanilla Node.js fs package. Such as recursive mkdir, copy, and remove.
+Publisher
+ryanzim
+published 9.0.1 • 2 days ago
+async
+Description
+
+Higher-order functions and common patterns for asynchronous code
+Publisher
+aearly
+published 3.2.0 • 3 months ago
+bluebird
+Description
+
+Full featured Promises/A+ implementation with exceptionally good performance
+Publisher
+esailija
+published 3.7.2 • 6 months ago
+vue
+Description
+
+Reactive, component-oriented view layer for modern web interfaces.
+Publisher
+yyx990803
+published 2.6.11 • 6 months ago
+uuid
+Description
+
+RFC4122 (v1, v4, and v5) UUIDs
+Publisher
+ctavan
+published 8.1.0 • 16 days ago
+classnames
+Description
+
+A simple utility for conditionally joining classNames together
+Publisher
+jedwatson
+published 2.2.6 • 2 years ago
+core-js
+Description
+
+Standard library
+Publisher
+slowcheetah
+published 3.6.5 • 2 months ago
+underscore
+Description
+
+JavaScript's functional programming helper library.
+Publisher
+jashkenas
+published 1.10.2 • 2 months ago
+inquirer
+Description
+
+A collection of common interactive command line user interfaces.
+Publisher
+sboudrias
+published 7.1.0 • 3 months ago
+yargs
+Description
+
+yargs the modern, pirate-themed, successor to optimist.
+Publisher
+oss-bot
+published 15.3.1 • 3 months ago
+webpack
+Description
+
+Packs CommonJs/AMD modules for the browser. Allows to split your codebase into multiple bundles, which can be loaded on demand. Support loaders to preprocess files, i.e. json, jsx, es7, css, less, ... and your custom stuff.
+Publisher
+sokra
+published 4.43.0 • a month ago
+rxjs
+Description
+
+Reactive Extensions for modern JavaScript
+Publisher
+blesh
+published 6.5.5 • 2 months ago
+mkdirp
+Description
+
+Recursively mkdir, like `mkdir -p`
+Publisher
+isaacs
+published 1.0.4 • 2 months ago
+glob
+Description
+
+a little globber
+Publisher
+isaacs
+published 7.1.6 • 7 months ago
+body-parser
+Description
+
+Node.js body parsing middleware
+Publisher
+dougwilson
+published 1.19.0 • a year ago
+dotenv
+Description
+
+Loads environment variables from .env file
+Publisher
+maxbeatty
+published 8.2.0 • 8 months ago
+typescript
+Description
+
+TypeScript is a language for application scale JavaScript development
+Publisher
+typescript-bot
+published 3.9.5 • a day ago
+colors
+Description
+
+get colors in your node.js console
+Publisher
+dabh
+published 1.4.0 • 8 months ago
+jquery
+Description
+
+JavaScript library for DOM operations
+Publisher
+timmywil
+published 3.5.1 • a month ago
+minimist
+Description
+
+parse argument options
+Publisher
+substack
+published 1.2.5 • 3 months ago
+@types/node
+Description
+
+TypeScript definitions for Node.js
+Publisher
+types
+published 14.0.11 • 19 hours ago
+aws-sdk
+Description
+
+AWS SDK for JavaScript
+Publisher
+aws-sdk-bot
+published 2.690.0 • 21 hours ago
+babel-runtime
+Description
+
+babel selfContained runtime
+Publisher
+hzoo
+
+semver
+Description
+
+The semantic version parser used by npm.
+Publisher
+isaacs
+published 7.3.2 • 2 months ago
+babel-loader
+Description
+
+babel module loader for webpack
+Publisher
+existentialism
+published 8.1.0 • 3 months ago
+redux
+Description
+
+Predictable state container for JavaScript apps
+Publisher
+timdorr
+published 4.0.5 • 6 months ago
+node-fetch
+Description
+
+A light-weight module that brings window.fetch to node.js
+Publisher
+bitinn
+published 2.6.0 • a year ago
+eslint
+Description
+
+An AST-based pattern checker for JavaScript.
+Publisher
+eslintbot
+published 7.2.0 • 7 days ago
+winston
+Description
+
+A logger for just about everything.
+Publisher
+indexzero
+published 3.2.1 • a year ago
+css-loader
+Description
+
+css loader module for webpack
+Publisher
+evilebottnawi
+published 3.5.3 • 2 months ago
+babel-core
+Description
+
+Babel compiler core.
+Publisher
+loganfsmyth
+published 6.26.3 • 2 years ago
+rimraf
+Description
+
+A deep deletion module for node (like `rm -rf`)
+Publisher
+isaacs
+published 3.0.2 • 4 months ago
+yeoman-generator
+Description
+
+Rails-inspired generator system that provides scaffolding for your apps
+Publisher
+mshima
+published 4.10.1 • a month ago
+through2
+Description
+
+A tiny wrapper around Node.js streams.Transform (Streams2/3) to avoid explicit subclassing noise
+Publisher
+rvagg
+published 3.0.1 • a year ago
+style-loader
+Description
+
+style loader module for webpack
+Publisher
+evilebottnawi
+published 1.2.1 • 2 months ago
+cheerio
+Description
+
+Tiny, fast, and elegant implementation of core jQuery designed specifically for the server
+Publisher
+jugglinmike
+published 1.0.0-rc.3 • a year ago
+shelljs
+Description
+
+Portable Unix shell commands for Node.js
+Publisher
+nfischer
+published 0.8.4 • 2 months ago
+react-redux
+Description
+
+Official React bindings for Redux
+Publisher
+acemarke
+published 7.2.0 • 4 months ago
+js-yaml
+Description
+
+YAML 1.2 parser and serializer
+Publisher
+vitaly
+published 3.14.0 • 21 days ago

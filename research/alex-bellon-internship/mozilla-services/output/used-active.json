@@ -1,0 +1,200 @@
+{
+  "github": [
+    {
+      "description": "minimist before 1.2.2 could be tricked into adding or modifying properties of Object.prototype using a \"constructor\" or \"__proto__\" payload.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLXZoOTUtcm1nci02dzRt",
+      "package": "minimist",
+      "permalink": "https://github.com/advisories/GHSA-vh95-rmgr-6w4m",
+      "publishedAt": "2020-04-03T21:48:32Z",
+      "severity": "MODERATE",
+      "summary": "Prototype pollution in minimist",
+      "updatedAt": "2020-05-13T16:03:55Z",
+      "withdrawnAt": null
+    },
+    {
+      "description": "Bower before 1.8.8 has a path traversal vulnerability permitting file write in arbitrary locations via install command, which allows attackers to write arbitrary files when a malicious package is extracted.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLXA2bXItcHhnNC02OGh4",
+      "package": "bower",
+      "permalink": "https://github.com/advisories/GHSA-p6mr-pxg4-68hx",
+      "publishedAt": "2019-09-17T23:21:34Z",
+      "severity": "HIGH",
+      "summary": "High severity vulnerability that affects bower",
+      "updatedAt": "2019-09-17T23:21:34Z",
+      "withdrawnAt": null
+    },
+    {
+      "description": "jQuery prior to 1.9.0 allows Cross-site Scripting attacks via the load method. The load method fails to recognize and remove \"<script>\" HTML tags that contain a whitespace character, i.e: \"</script >\", which results in the enclosed script logic to be executed.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLXE0bTMtMmo3aC1mN3h3",
+      "package": "jquery",
+      "permalink": "https://github.com/advisories/GHSA-q4m3-2j7h-f7xw",
+      "publishedAt": "2020-05-20T16:18:01Z",
+      "severity": "MODERATE",
+      "summary": "Cross-site Scripting in jQuery",
+      "updatedAt": "2020-05-20T16:18:01Z",
+      "withdrawnAt": null
+    },
+    {
+      "description": "lodash prior to 4.7.11 is affected by: CWE-400: Uncontrolled Resource Consumption. The impact is: Denial of service. The component is: Date handler. The attack vector is: Attacker provides very long strings, which the library attempts to match using a regular expression. The fixed version is: 4.7.11.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLXg1cnEtajJ4Zy1oN3Ft",
+      "package": "lodash",
+      "permalink": "https://github.com/advisories/GHSA-x5rq-j2xg-h7qm",
+      "publishedAt": "2019-07-19T16:13:07Z",
+      "severity": "MODERATE",
+      "summary": "Moderate severity vulnerability that affects lodash",
+      "updatedAt": "2019-07-19T16:13:08Z",
+      "withdrawnAt": null
+    },
+    {
+      "description": "Minimatch is a minimal matching utility that works by converting glob expressions into JavaScript `RegExp` objects. The primary function, `minimatch(path, pattern)` in Minimatch 3.0.1 and earlier is vulnerable to ReDoS in the `pattern` parameter.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLWh4bTItcjM0Zi1xbWM1",
+      "package": "minimatch",
+      "permalink": "https://github.com/advisories/GHSA-hxm2-r34f-qmc5",
+      "publishedAt": "2018-10-09T00:40:41Z",
+      "severity": "HIGH",
+      "summary": "High severity vulnerability that affects minimatch",
+      "updatedAt": "2019-07-03T21:02:03Z",
+      "withdrawnAt": null
+    },
+    {
+      "description": "A prototype pollution vulnerability was found in module extend <2.0.2, ~<3.0.2 that allows an attacker to inject arbitrary properties onto Object.prototype.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLXFybWMtZmo0NS1xZmMy",
+      "package": "extend",
+      "permalink": "https://github.com/advisories/GHSA-qrmc-fj45-qfc2",
+      "publishedAt": "2019-02-07T18:03:28Z",
+      "severity": "LOW",
+      "summary": "Low severity vulnerability that affects extend",
+      "updatedAt": "2019-07-03T21:02:06Z",
+      "withdrawnAt": null
+    }
+  ],
+  "npm": [
+    {
+      "access": "public",
+      "created": "2019-01-30T00:22:48.341Z",
+      "cves": [],
+      "cwe": "CWE-59",
+      "deleted": null,
+      "found_by": {
+        "link": "",
+        "name": "skyn3t"
+      },
+      "id": 776,
+      "metadata": {
+        "affected_components": "",
+        "exploitability": 7,
+        "module_type": ""
+      },
+      "module_name": "bower",
+      "overview": "Versions of `bower` prior to 1.8.8 are affected by an arbitrary file write vulnerability. The vulnerability occurs because `bower` does not verify that extracted symbolic links do not resolve to targets outside of the extraction root directory.\n",
+      "patched_versions": ">=1.8.8",
+      "recommendation": "Update to version 1.8.8 or later",
+      "references": "- [HackerOne Report](https://hackerone.com/reports/473811)\n- [Node.js Security-wg](https://github.com/nodejs/security-wg/blob/master/vuln/npm/487.json)",
+      "reported_by": {
+        "link": "",
+        "name": "skyn3t"
+      },
+      "severity": "high",
+      "title": "Symlink Arbitrary File Overwrite",
+      "updated": "2019-01-30T00:30:05.223Z",
+      "vulnerable_versions": "<1.8.8"
+    },
+    {
+      "access": "public",
+      "created": "2020-05-20T19:52:20.739Z",
+      "cves": [
+        "CVE-2020-7656"
+      ],
+      "cwe": "CWE-79",
+      "deleted": null,
+      "found_by": {
+        "email": "",
+        "link": "",
+        "name": "Masato Kinugawa"
+      },
+      "id": 1524,
+      "metadata": {
+        "affected_components": "",
+        "exploitability": 3,
+        "module_type": ""
+      },
+      "module_name": "jquery",
+      "overview": "Versions of `jquery` prior to 1.9.0 are vulnerable to Cross-Site Scripting. The load method fails to recognize and remove \"<script>\" HTML tags that contain a whitespace character, i.e: \"</script >\", which results in the enclosed script logic to be executed. This allows attackers to execute arbitrary JavaScript in a victim's browser.",
+      "patched_versions": ">=1.9.0",
+      "recommendation": "Upgrade to version 1.9.0 or later.",
+      "references": "- [GitHub Advisory](https://github.com/advisories/GHSA-q4m3-2j7h-f7xw)",
+      "reported_by": {
+        "email": "",
+        "link": "",
+        "name": "Masato Kinugawa"
+      },
+      "severity": "moderate",
+      "title": "Cross-Site Scripting",
+      "updated": "2020-06-09T17:33:26.022Z",
+      "vulnerable_versions": "<1.9.0"
+    },
+    {
+      "access": "public",
+      "created": "2020-05-20T01:36:49.357Z",
+      "cves": [
+        "CVE-2019-10744"
+      ],
+      "cwe": "CWE-471",
+      "deleted": null,
+      "found_by": {
+        "email": "",
+        "link": "",
+        "name": "posix"
+      },
+      "id": 1523,
+      "metadata": {
+        "affected_components": "",
+        "exploitability": 3,
+        "module_type": ""
+      },
+      "module_name": "lodash",
+      "overview": "All versions of `lodash` are vulnerable to Prototype Pollution.  The function `zipObjectDeep` allows a malicious user to modify the prototype of `Object` if the property identifiers are user-supplied. Being affected by this issue requires zipping objects based on user-provided property arrays.  \n\nThis vulnerability causes the addition or modification of an existing property that will exist on all objects and may lead to Denial of Service or Code Execution under specific circumstances.\n\n",
+      "patched_versions": "<0.0.0",
+      "recommendation": "No fix is currently available. Consider using an alternative package until a fix is made available.",
+      "references": "- [HackerOne Report](https://hackerone.com/reports/712065)\n- [GitHub Issue](https://github.com/lodash/lodash/issues/4744)",
+      "reported_by": {
+        "email": "",
+        "link": "",
+        "name": "posix"
+      },
+      "severity": "low",
+      "title": "Prototype Pollution",
+      "updated": "2020-07-01T20:43:49.860Z",
+      "vulnerable_versions": ">=0.0.0"
+    },
+    {
+      "access": "public",
+      "created": "2019-06-19T00:18:20.635Z",
+      "cves": [],
+      "cwe": "CWE-471",
+      "deleted": null,
+      "found_by": {
+        "link": "",
+        "name": "asgerf"
+      },
+      "id": 996,
+      "metadata": {
+        "affected_components": "",
+        "exploitability": 4,
+        "module_type": ""
+      },
+      "module_name": "extend",
+      "overview": "Versions of `extend` prior to 3.0.2 (for 3.x) and 2.0.2 (for 2.x) are vulnerable to Prototype Pollution. The `extend()` function allows attackers to modify the prototype of Object causing the addition or modification of an existing property that will exist on all objects.\n\n",
+      "patched_versions": ">=2.0.2 <3.0.0 || >=3.0.2",
+      "recommendation": "If you're using `extend` 3.x upgrade to 3.0.2 or later.\nIf you're using `extend` 2.x upgrade to 2.0.2 or later.",
+      "references": "- [HackerOne Report](https://hackerone.com/reports/381185)",
+      "reported_by": {
+        "link": "",
+        "name": "asgerf"
+      },
+      "severity": "moderate",
+      "title": "Prototype Pollution",
+      "updated": "2019-07-24T18:05:41.047Z",
+      "vulnerable_versions": "<2.0.2 || >=3.0.0 <3.0.2"
+    }
+  ]
+}

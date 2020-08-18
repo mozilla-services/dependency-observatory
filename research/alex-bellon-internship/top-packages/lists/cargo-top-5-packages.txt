@@ -1,0 +1,5 @@
+serde
+serde_json
+log
+serde_derive
+rand

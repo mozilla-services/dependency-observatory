@@ -1,0 +1,5 @@
+eslint
+mocha
+typescript
+webpack
+chai
