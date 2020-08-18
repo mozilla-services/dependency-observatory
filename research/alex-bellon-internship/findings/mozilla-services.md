@@ -1,0 +1,292 @@
+# Finding Vulnerable Packages in Mozilla's Services
+
+*Here "top _" means the top _ most-depended on NPM packages*
+
+- Mozilla uses:
+  - 45 of the packages in the top 50 (90.00%)
+  - 81 of the packages in the top 100 (81.00%)
+  - 162 of the packages in the top 250 (64.80%)
+  - 282 of the packages in the top 500 (56.40%)
+- Mozilla uses:
+  - 10 of the 11 unmaintained packages in the top 50 (90.91%)
+  - 19 of the 23 unmaintained packages in the top 100 (82.61%)
+  - 42 of the 69 unmaintained packages in the top 250 (60.87%)
+  - 86 of the 177 unmaintained packages in the top 500 (48.59%)
+
+## Packages
+
+It seems like most of the updating was done either manually or with [Dependabot](https://dependabot.com/).
+
+### Active Vulnerabilities + Unmaintained + Used by Mozilla
+- `bower`
+  - Vulnerable versions: `< 1.8.8`
+  - Severity: High
+  - Projects: ['fxa-password-strength-checker']
+  - Vulnerability: A path traversal vulnerability permitting file write in arbitrary locations via install command, which allows attackers to write arbitrary files when a malicious package is extracted
+- `extend`
+  - Vulnerable versions: `3.0.0 <= x < 3.0.2` and `< 2.0.2`
+  - Severity: Low
+  - Projects: ['fxa-amplitude-send', 'telemetry-analysis-service', 'speech-proxy', 'browserid-verifier', 'watchdog-proxy', 'blurts-server', 'fxa-crypto-relier', 'fxa-pairing-channel', 'vpn-recommendation-shield-study', 'addons-linter', 'lockwise-addon']
+  - Vulnerabilit: A [prototype pollution vulnerability](https://github.com/Kirill89/prototype-pollution-explained) was found that allows an attacker to inject arbitrary properties onto Object.prototype.
+- `minimatch`
+  - Vulnerable versions: `< 3.0.2`
+  - Severity: High
+  - Projects: ['eslint-plugin-fxa', 'fxa-content-server-l10n', 'fxa-amplitude-send', 'testpilot', 'speech-proxy', 'gecko-dev', 'gecko-dev-dep-files', 'browserid-verifier', 'screenshots-admin', 'watchdog-proxy', 'fxa-crypto-relier', 'fxa-pairing-channel', 'vpn-recommendation-shield-study', 'blurts-server', 'addons-linter', 'lockwise-addon']
+  - Vulnerability: The primary function, `minimatch(path, pattern)`, is vulnerable to [ReDoS](https://en.wikipedia.org/wiki/ReDoS) in the `pattern` parameter.
+
+### Active Vulnerabilities + Used by Mozilla
+The packages in [Active Vuln + Unmaintained + Used by Mozilla](#active-vulnerabilities-+-unmaintained-+-used-by-mozilla), plus...
+
+- `jquery`
+  - Vulnerable versions: `< 1.9.0`
+  - Severity: High
+  - Projects: ['telemetry-analysis-service', 'taskcluster-tools', 'addons-server']
+  - Vulnerability: Cross-site Scripting attacks via the load method
+- [`minimist`](https://github.com/advisories/GHSA-vh95-rmgr-6w4m)
+  - Vulnerable versions: `< 0.2.1`, `1.0.0 <= x < 1.2.3 `
+  - Severity: Moderate
+  - Projects: ['eslint-plugin-fxa', 'fxa-content-server-l10n', 'fxa-amplitude-send', 'fxa-crypto-relier', 'watchdog-proxy', 'vpn-recommendation-shield-study', 'gecko-dev-dep-files', 'testpilot', 'speech-proxy', 'gecko-dev', 'browserid-verifier', 'screenshots-admin', 'fxa-pairing-channel', 'blurts-server', 'addons-linter', 'lockwise-addon']
+  - Vulnerability: Prototype pollution
+- [`lodash`](https://www.npmjs.com/advisories/1523)
+  **- Vulnerable versions: All**
+  - Severity: Moderate
+  - Projects: ['delivery-console', 'eslint-plugin-fxa', 'fxa-content-server-l10n', 'fxa-crypto-relier', 'screenshots-admin', 'watchdog-proxy', 'aws-provisioner', 'azure-blob-storage', 'vpn-recommendation-shield-study', 'azure-entities', 'taskcluster-backup', 'taskcluster', 'ws-shell', 'gecko-dev', 'browserid-verifier', 'fxa-amplitude-send', 'speech-proxy', 'gecko-dev-dep-files', 'fxa-pairing-channel', 'blurts-server', 'addons-linter', 'lockwise-addon']
+  - Vulnerability: Prototype pollution
+
+### Unmaintained + Used by Mozilla
+The packages in [Active Vuln + Unmaintained + Used by Mozilla](#active-vulnerabilities-+-unmaintained-+-used-by-mozilla), plus...
+
+- `debug`
+  - Vulnerable versions: `< 2.6.9`, `3.0.0 <= x < 3.1.0`
+  - Severity: Low
+  - Projects: ['aws-provisioner', 'azure-entities', 'cloud-mirror', 'dind-service', 'dockerode-process', 'fast-azure-storage', 'browserid-verifier', 'eslint-plugin-fxa', 'fxa-amplitude-send', 'speech-proxy', 'testpilot', 'azure-blob-storage', 'remotely-signed-s3', 'taskcluster', 'ws-shell', 'gecko-dev', 'gecko-dev-dep-files', 'screenshots-admin', 'watchdog-proxy', 'vpn-recommendation-shield-study', 'blurts-server', 'fxa-crypto-relier', 'fxa-pairing-channel', 'lockwise-addon', 'addons-linter']
+  - Vulnerability: ReDoS
+- `express`
+  - Vulnerable versions: `< 3.11.0`, `4.0.0 <= x < 4.5.0`
+  - Severity: Moderate
+  - Projects: ['addons-frontend', 'speech-proxy', 'azure-entities', 'taskcluster', 'browserid-verifier', 'screenshots-admin', 'blurts-server']
+  - Vulnerability: XSS
+- `concat-stream`
+  - Vulnerable versions: `>=1.3.0 <1.3.2`, `>=1.4.0 <1.4.11`, `>=1.5.0 <1.5.2`
+  - Severity: Moderate
+  - Projects: ['browserid-verifier', 'blurts-server', 'fxa-crypto-relier', 'fxa-pairing-channel', 'screenshots-admin', 'watchdog-proxy', 'vpn-recommendation-shield-study', 'addons-linter', 'lockwise-addon']
+  - Vulnerability: Memory Exposure
+- `jsonwebtoken`
+  - Vulnerable versions: `< 4.2.2`
+  - Severity: High
+  - Projects: ['taskcluster', 'vpn-recommendation-shield-study', 'lockwise-addon']
+  - Vulnerability: It is possible for an attacker to bypass verification when a token digitally signed with an asymmetric key (RS/ES family) of algorithms but instead the attacker send a token digitally signed with a symmetric algorithm (HS* family).
+- `connect`
+  - Vulnerable versions: `<=2.8.0`
+  - Severity: Moderate
+  - Projects: ['fxa-crypto-relier', 'fxa-pairing-channel', 'lockwise-addon']
+  - Vulnerability: Reflected XSS
+- `serve-static`
+  - Vulnerable versions: `<1.6.5`, `>=1.7.0 <1.7.2`
+  - Severity: Low
+  - Projects: ['speech-proxy', 'browserid-verifier', 'screenshots-admin', 'blurts-server']
+  - Vulnerability: Open Redirect
+
+## Mozilla Projects
+
+### Vulnerable
+- **[addons-linter](https://github.com/mozilla/addons-linter/blob/master/package-lock.json)**
+  - `lodash`: `^4.17.13` (Low)
+    - Vulnerable function is not used
+- **[aws-provisioner](https://github.com/taskcluster/aws-provisioner/blob/master/package.json)**
+  - `lodash`: `^4.17.13` (Low)
+    - Vulnerable function is not used
+- **[azure-blob-storage](https://github.com/taskcluster/azure-blob-storage/blob/master/package.json)**
+  - `lodash`: `^4.17.11` (Low)
+    - Vulnerable function is not used
+- **[azure-entities](https://github.com/taskcluster/azure-entities/blob/master/package.json)**
+  - `lodash`: `^4.17.11` (Low)
+    - Vulnerable function is not used
+- **[blurts-server](https://github.com/mozilla/blurts-server/blob/v12.13.1/package-lock.json)**
+  - `lodash`: `^4.17.15` (Low)
+    - Vulnerable function is not used
+- **[browserid-verifier](https://github.com/mozilla/browserid-verifier/blob/master/package-lock.json)**
+  - `lodash`: `^4.17.10` (Low)
+    - Vulnerable function is not used
+- **[cloud-mirror](https://github.com/taskcluster/cloud-mirror/blob/master/package.json)**
+  - `debug`: `^2.2.0` (Low)
+    - Vulnerable formatter is not used
+- **[delivery-console](https://github.com/mozilla/delivery-console/blob/master/package.json)**
+  - `lodash`: `4.17.15` (Low)
+    - Vulnerable function is not used
+- **[delivery-console](https://github.com/taskcluster/dind-service/blob/master/package.json)**
+  - `lodash`: `^2.1.3` (Low)
+    - Vulnerable function is not used
+- **[eslint-plugin-fxa](https://github.com/mozilla/eslint-plugin-fxa/blob/master/package-lock.json)**
+    - 29 repositories and 6 packages (mostly owned by Mozilla, inlcuding a lot of FXA stuff) depend on this repo!
+  - `lodash`: `4.17.15` (Low)
+    - Not used
+  - `minimist`: `0.0.8` (Moderate)
+    - Not used
+- **[fxa-amplitude-send](https://github.com/mozilla/fxa-amplitude-send/blob/master/package-lock.json)**
+  - `lodash`: `^4.17.10` (Low)
+    - Vulnerable function is not used
+- **[fxa-content-server-l10n](https://github.com/mozilla/fxa-content-server-l10n/blob/master/package-lock.json)**
+  - `lodash`: `4.17.15` (Low)
+    - Vulnerable function is not used
+- **[fxa-crypto-relier](https://github.com/mozilla/fxa-crypto-relier/blob/master/package-lock.json)**
+  - `lodash`: `^4.17.10` (Low)
+    - Vulnerable function is not used
+- **[fxa-pairing-channel](https://github.com/mozilla/fxa-pairing-channel/blob/master/package-lock.json)**
+  - `lodash`: `^4.17.15` (Low)
+    - Vulnerable function is not used
+- **[fxa-password-strength-checker](https://github.com/mozilla/fxa-password-strength-checker/blob/master/package.json)** - Archived
+  - `bower`: `1.4.1` (High)
+    - Not currently vulnerable, but if the package were to depend on a new malicious package or if a current dependency were to compromised, then it would be vulnerable.
+- **[gecko-dev](https://github.com/mozilla/gecko-dev/blob/master/package-lock.json)**
+  - `lodash`: `^4.17.15` (Low)
+    - The vulnerable function is used in the debugger, but it doesn't seem to be vulnerable? **Need to look into it more**
+- **[gecko-dev-dep-files](https://github.com/g-k/gecko-dev-dep-files/blob/master/master/package-lock.json)**
+  - `lodash`: `^4.17.15` (Low)
+    - Vulnerable function is not used
+  - `minimist`: `0.0.8` (Moderate)
+    - Not used
+- **[lockwise-addon](https://github.com/mozilla-lockwise/lockwise-addon/blob/master/package-lock.json)**
+  - `lodash`: `^4.17.10` (Low)
+    - Vulnerable function is not used
+- **[screenshots-admin](https://github.com/mozilla-services/screenshots-admin/blob/master/package-lock.json)**
+  - `lodash`: `^4.17.15` (Low)
+    - Vulnerable function is not used
+- **[speech-proxy](https://github.com/mozilla/speech-proxy/blob/master/package-lock.json)**
+  - `lodash`: `^4.17.15` (Low)
+    - Vulnerable function is not used
+- **[taskcluster](https://github.com/taskcluster/taskcluster/blob/master/package.json)**
+  - `lodash`: `4.17.15` (Low)
+    - Vulnerable function is not used
+- **[taskcluster-backup](https://github.com/taskcluster/taskcluster-backup/blob/master/package.json)**
+  - `lodash`: `^4.17.14` (Low)
+    - Vulnerable function is not used
+- **[vpn-recommendation-shield-study](https://github.com/raymak/vpn-recommendation-shield-study/blob/master/package-lock.json)**
+  - `lodash`: `^4.17.10` (Low)
+    - Vulnerable function is not used
+- **[ws-shell](https://github.com/taskcluster/ws-shell/blob/master/package.json)**
+  - `lodash`: `^4.17.14` (Low)
+    - Vulnerable function is not used
+
+### Not Vulnerable
+- **[addons-frontend](https://github.com/mozilla/addons-frontend/blob/master/package.json)**
+  - `express`: `4.17.1`
+- **[addons-linter](https://github.com/mozilla/addons-linter/blob/master/package-lock.json)**
+  - `concat-stream`: `^1.5.0`
+  - `debug`: `^4.1.0`
+  - `extend`: `3.0.2`
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.2.5`
+- **[addons-server](https://github.com/mozilla/addons-server/blob/master/package.json)**
+  - `jquery`: `3.5.1`
+- **[aws-provisioner](https://github.com/taskcluster/aws-provisioner/blob/master/package.json)**
+  - `debug`: `^3.1.0`
+- **[azure-blob-storage](https://github.com/taskcluster/azure-blob-storage/blob/master/package.json)**
+  - `debug`: `^4.1.1`
+- **[azure-entities](https://github.com/taskcluster/azure-entities/blob/master/package.json)**
+  - `debug`: `^4.1.1`
+  - `express`: `4.17.1`
+- **[blurts-server](https://github.com/mozilla/blurts-server/blob/v12.13.1/package-lock.json)**
+  - `concat-stream`: `1.6.2`
+  - `debug`: `^4.1.0`
+  - `express`: `4.16.3`
+  - `extend`: `3.0.2`
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.2.5`
+  - `serve-static`: `1.13.2`
+- **[browserid-verifier](https://github.com/mozilla/browserid-verifier/blob/master/package-lock.json)**
+  - `concat-stream`: `^1.6.1`
+  - `debug`: `2.6.9`
+  - `express`: `4.16.4`
+  - `extend`: `3.0.2`
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.2.0`
+  - `serve-static`: `1.13.2`
+- **[dockerode-process](https://github.com/taskcluster/dockerode-process/blob/master/package.json)**
+  - `debug`: `2.6.9`
+- **[eslint-plugin-fxa](https://github.com/mozilla/eslint-plugin-fxa/blob/master/package-lock.json)**
+  - `debug`: `4.1.1`
+  - `minimatch`: `3.0.4`
+- **[fast-azure-storage](https://github.com/taskcluster/fast-azure-storage/blob/master/package.json)**
+  - `debug`: `^4.1.1`
+- **[fxa-amplitude-send](https://github.com/mozilla/fxa-amplitude-send/blob/master/package-lock.json)**
+  - `debug`: `4.1.1`
+  - `extend`: `3.0.2`
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.2.0`
+- **[fxa-content-server-l10n](https://github.com/mozilla/fxa-content-server-l10n/blob/master/package-lock.json)**
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.1.3`
+- **[fxa-crypto-relier](https://github.com/mozilla/fxa-crypto-relier/blob/master/package-lock.json)**
+  - `concat-stream`: `^1.6.0`
+  - `connect`: `^3.6.0`
+  - `debug`: `^3.1.0`
+  - `extend`: `3.0.2`
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.2.0`
+- **[fxa-pairing-channel](https://github.com/mozilla/fxa-pairing-channel/blob/master/package-lock.json)**
+  - `connect`: `^3.7.0`
+  - `debug`: `^4.1.0`
+  - `express`: `^1.5.0`
+  - `extend`: `3.0.2`
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.2.5`
+- **[gecko-dev](https://github.com/mozilla/gecko-dev/blob/master/package-lock.json)**
+  - `debug`: `^4.1.0`
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.2.5`
+- **[gecko-dev-dep-files](https://github.com/g-k/gecko-dev-dep-files/blob/master/master/package-lock.json)**
+  - `debug`: `4.1.1`
+  - `minimatch`: `3.0.4`
+- **[lockwise-addon](https://github.com/mozilla-lockwise/lockwise-addon/blob/master/package-lock.json)**
+  - `concat-stream`: `^1.5.2`
+  - `connect`: `^1.6.0`
+  - `debug`: `^3.1.0`
+  - `extend`: `3.0.2`
+  - `jsonwebtoken`: `8.2.1`
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.2.0`
+- **[remotely-signed-s3](https://github.com/taskcluster/remotely-signed-s3/blob/master/package.json)**
+  - `debug`: `^4.1.1`
+- **[screenshots-admin](https://github.com/mozilla-services/screenshots-admin/blob/master/package-lock.json)**
+  - `concat-stream`: `1.6.2`
+  - `debug`: `^3.1.0`
+  - `express`: `4.16.3`
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.2.0`
+  - `serve-static`: `1.13.2`
+- **[speech-proxy](https://github.com/mozilla/speech-proxy/blob/master/package-lock.json)**
+  - `debug`: `^4.1.1`
+  - `express`: `4.16.4`
+  - `extend`: `3.0.2`
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.2.5`
+  - `serve-static`: `1.13.2`
+- **[taskcluster-tools](https://github.com/taskcluster/taskcluster-tools/blob/master/package.json)**
+  - `debug`: `^4.1.1`
+  - `express`: `4.17.1`
+  - `jsonwebtoken`: `^8.1.1`
+  - `jquery`: `3.1.0`
+- **[telemetry-analysis-service](https://github.com/mozilla/telemetry-analysis-service/blob/master/package-lock.json)**
+  - `extend`: `3.0.2`
+  - `jquery`: `3.3.1`
+- **[testpilot](https://github.com/mozilla/testpilot/blob/eol/package-lock.json)**
+  - `debug`: `3.1.0`
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.2.0`
+- **[vpn-recommendation-shield-study](https://github.com/raymak/vpn-recommendation-shield-study/blob/master/package-lock.json)**
+  - `concat-stream`: `^1.5.2`
+  - `debug`: `^4.1.0`
+  - `extend`: `3.0.2`
+  - `jsonwebtoken`: `8.2.1`
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.2.0`
+- **[watchdog-proxy](https://github.com/mozilla/watchdog-proxy/blob/master/package-lock.json)**
+  - `concat-stream`: `^1.4.7`
+  - `debug`: `^3.1.0`
+  - `extend`: `3.0.2`
+  - `lodash`: `^4.17.11`
+  - `minimatch`: `3.0.4`
+  - `minimist`: `^1.2.0`
+- **[ws-shell](https://github.com/taskcluster/ws-shell/blob/master/package.json)**
+  - `debug`: `^4.0.0`

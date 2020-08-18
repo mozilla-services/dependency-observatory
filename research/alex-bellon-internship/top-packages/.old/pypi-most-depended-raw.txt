@@ -1,0 +1,150 @@
+requests
+Python HTTP for Humans.
+Latest release 2.23.0 - Updated Feb 19, 2020 - 42.6K stars
+six
+Python 2 and 3 compatibility utilities
+Latest release 1.15.0 - Updated 20 days ago - 657 stars
+numpy
+NumPy is the fundamental package for array computing with Python.
+Latest release 1.18.5 - Updated 7 days ago - 13.9K stars
+click
+Composable command line interface toolkit
+Latest release 7.1.2 - Updated about a month ago - 9.24K stars
+PyYAML
+YAML parser and emitter for Python
+Latest release 5.3.1 - Updated Mar 18, 2020 - 1K stars
+setuptools
+Easily download, build, install, upgrade, and uninstall Python packages
+Latest release 47.1.0 - Updated 13 days ago - 1.04K stars
+Django
+A high-level Python Web framework that encourages rapid development and clean, pragmatic design.
+Latest release 3.0.7 - Updated 7 days ago - 49.9K stars
+python-dateutil
+Extensions to the standard Python datetime module
+Latest release 2.8.1 - Updated Nov 3, 2019 - 1.15K stars
+Flask
+A simple framework for building complex web applications.
+Latest release 1.1.2 - Updated Apr 3, 2020 - 50.7K stars
+Jinja2
+A very fast and expressive template engine.
+Latest release 2.11.2 - Updated 2 months ago - 7.08K stars
+lxml
+Powerful and Pythonic XML processing library combining libxml2/libxslt with the ElementTree API.
+Latest release 4.5.1 - Updated 22 days ago - 1.69K stars
+urllib3
+HTTP library with thread-safe connection pooling, file post, and more.
+Latest release 1.25.9 - Updated 2 months ago - 2.3K stars
+pandas
+Powerful data structures for data analysis, time series, and statistics
+Latest release 1.0.4 - Updated 12 days ago - 25.1K stars
+beautifulsoup4
+Screen-scraping library
+Latest release 4.9.1 - Updated 24 days ago
+future
+Clean single-source support for Python 3 and 2
+Latest release 0.18.2 - Updated Oct 31, 2019
+boto3
+The AWS SDK for Python
+Latest release 1.13.26 - Updated a day ago - 5.5K stars
+pytest
+pytest: simple powerful testing with Python
+Latest release 5.4.3 - Updated 8 days ago - 5.98K stars
+Pillow
+Python Imaging Library (Fork)
+Latest release 7.1.2 - Updated 2 months ago - 7.34K stars
+pytz
+World timezone definitions, modern and historical
+Latest release 2020.1 - Updated about a month ago - 110 stars
+tqdm
+Fast, Extensible Progress Meter
+Latest release 4.45.0 - Updated Apr 2, 2020 - 14.6K stars
+certifi
+Python package for providing Mozilla's CA Bundle.
+Latest release 2020.4.5.2 - Updated 3 days ago - 383 stars
+SQLAlchemy
+Database Abstraction Library
+Latest release 1.3.17 - Updated 28 days ago - 2.34K stars
+scipy
+SciPy: Scientific Library for Python
+Latest release 1.4.1 - Updated Dec 19, 2019 - 7.08K stars
+matplotlib
+Python plotting package
+Latest release 3.2.1 - Updated Mar 18, 2020 - 11.6K stars
+colorama
+Cross-platform colored terminal text.
+Latest release 0.4.3 - Updated Dec 6, 2019 - 1.83K stars
+cryptography
+cryptography is a package which provides cryptographic recipes and primitives to Python developers.
+Latest release 2.9.2 - Updated 2 months ago - 3.29K stars
+attrs
+Classes Without Boilerplate
+Latest release 19.3.0 - Updated Oct 15, 2019 - 3.09K stars
+psutil
+Cross-platform lib for process and system monitoring in Python.
+Latest release 5.7.0 - Updated Feb 18, 2020 - 6.3K stars
+aiohttp
+Async http client/server framework (asyncio)
+Latest release 3.6.2 - Updated Oct 9, 2019 - 9.43K stars
+docopt
+Pythonic argument parser, that will make you smile
+Latest release 0.6.2 - Updated Jun 16, 2014
+redis
+Python client for Redis key-value store
+Latest release 3.5.3 - Updated 10 days ago - 8.57K stars
+enum34
+Python 3.4 Enum backported to 3.3, 3.2, 3.1, 2.7, 2.6, 2.5, and 2.4
+Latest release 1.1.10 - Updated Mar 10, 2020
+jsonschema
+An implementation of JSON Schema validation for Python
+Latest release 3.2.0 - Updated Nov 18, 2019 - 2.56K stars
+Pygments
+Pygments is a syntax highlighting package written in Python.
+Latest release 2.6.1 - Updated Mar 8, 2020
+bs4
+Dummy package for Beautiful Soup
+Latest release 1.2.7 - Updated Jan 19, 2016
+tabulate
+Pretty-print tabular data
+Latest release 0.8.7 - Updated Mar 22, 2020 - 240 stars
+protobuf
+Protocol Buffers
+Latest release 3.12.2 - Updated 15 days ago
+chardet
+Universal encoding detector for Python 2 and 3
+Latest release 3.0.4 - Updated Jun 8, 2017 - 1.22K stars
+GitPython
+Python Git Library
+Latest release 3.1.2 - Updated about a month ago - 2.66K stars
+appdirs
+A small Python module for determining appropriate platform-specific dirs, e.g. a "user data dir".
+Latest release 1.4.4 - Updated about a month ago - 562 stars
+PyJWT
+JSON Web Token implementation in Python
+Latest release 1.7.1 - Updated Dec 7, 2018 - 3.27K stars
+selenium
+Python bindings for Selenium
+Latest release 4.0.0a6.post2 - Updated 6 days ago - 17.8K stars
+idna
+Internationalized Domain Names in Applications (IDNA)
+Latest release 2.9 - Updated Feb 17, 2020 - 109 stars
+tornado
+Tornado is a Python web framework and asynchronous networking library, originally developed at Fr...
+Latest release 6.0.4 - Updated Mar 4, 2020 - 18.9K stars
+Markdown
+Python implementation of Markdown.
+Latest release 3.2.2 - Updated about a month ago
+Sphinx
+Python documentation generator
+Latest release 3.1.0 - Updated 3 days ago - 3.33K stars
+simplejson
+Simple, fast, extensible JSON encoder/decoder for Python
+Latest release 3.17.0 - Updated Nov 18, 2019 - 1.21K stars
+pbr
+Python Build Reasonableness
+Latest release 5.4.5 - Updated Apr 7, 2020
+typing-extensions
+Backported and Experimental Type Hints for Python 3.5+
+Latest release 3.7.4.2 - Updated Apr 2, 2020 - 705 stars
+networkx
+Python package for creating and manipulating graphs and networks
+Latest release 2.4 - Updated Oct 17, 2019 - 7.05K stars  

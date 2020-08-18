@@ -1,0 +1,99 @@
+{
+  "github": [
+    {
+      "description": "Bower before 1.8.8 has a path traversal vulnerability permitting file write in arbitrary locations via install command, which allows attackers to write arbitrary files when a malicious package is extracted.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLXA2bXItcHhnNC02OGh4",
+      "package": "bower",
+      "permalink": "https://github.com/advisories/GHSA-p6mr-pxg4-68hx",
+      "publishedAt": "2019-09-17T23:21:34Z",
+      "severity": "HIGH",
+      "summary": "High severity vulnerability that affects bower",
+      "updatedAt": "2019-09-17T23:21:34Z",
+      "withdrawnAt": null
+    },
+    {
+      "description": "Minimatch is a minimal matching utility that works by converting glob expressions into JavaScript `RegExp` objects. The primary function, `minimatch(path, pattern)` in Minimatch 3.0.1 and earlier is vulnerable to ReDoS in the `pattern` parameter.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLWh4bTItcjM0Zi1xbWM1",
+      "package": "minimatch",
+      "permalink": "https://github.com/advisories/GHSA-hxm2-r34f-qmc5",
+      "publishedAt": "2018-10-09T00:40:41Z",
+      "severity": "HIGH",
+      "summary": "High severity vulnerability that affects minimatch",
+      "updatedAt": "2019-07-03T21:02:03Z",
+      "withdrawnAt": null
+    },
+    {
+      "description": "A prototype pollution vulnerability was found in module extend <2.0.2, ~<3.0.2 that allows an attacker to inject arbitrary properties onto Object.prototype.",
+      "id": "MDE2OlNlY3VyaXR5QWR2aXNvcnlHSFNBLXFybWMtZmo0NS1xZmMy",
+      "package": "extend",
+      "permalink": "https://github.com/advisories/GHSA-qrmc-fj45-qfc2",
+      "publishedAt": "2019-02-07T18:03:28Z",
+      "severity": "LOW",
+      "summary": "Low severity vulnerability that affects extend",
+      "updatedAt": "2019-07-03T21:02:06Z",
+      "withdrawnAt": null
+    }
+  ],
+  "npm": [
+    {
+      "access": "public",
+      "created": "2019-01-30T00:22:48.341Z",
+      "cves": [],
+      "cwe": "CWE-59",
+      "deleted": null,
+      "found_by": {
+        "link": "",
+        "name": "skyn3t"
+      },
+      "id": 776,
+      "metadata": {
+        "affected_components": "",
+        "exploitability": 7,
+        "module_type": ""
+      },
+      "module_name": "bower",
+      "overview": "Versions of `bower` prior to 1.8.8 are affected by an arbitrary file write vulnerability. The vulnerability occurs because `bower` does not verify that extracted symbolic links do not resolve to targets outside of the extraction root directory.\n",
+      "patched_versions": ">=1.8.8",
+      "recommendation": "Update to version 1.8.8 or later",
+      "references": "- [HackerOne Report](https://hackerone.com/reports/473811)\n- [Node.js Security-wg](https://github.com/nodejs/security-wg/blob/master/vuln/npm/487.json)",
+      "reported_by": {
+        "link": "",
+        "name": "skyn3t"
+      },
+      "severity": "high",
+      "title": "Symlink Arbitrary File Overwrite",
+      "updated": "2019-01-30T00:30:05.223Z",
+      "vulnerable_versions": "<1.8.8"
+    },
+    {
+      "access": "public",
+      "created": "2019-06-19T00:18:20.635Z",
+      "cves": [],
+      "cwe": "CWE-471",
+      "deleted": null,
+      "found_by": {
+        "link": "",
+        "name": "asgerf"
+      },
+      "id": 996,
+      "metadata": {
+        "affected_components": "",
+        "exploitability": 4,
+        "module_type": ""
+      },
+      "module_name": "extend",
+      "overview": "Versions of `extend` prior to 3.0.2 (for 3.x) and 2.0.2 (for 2.x) are vulnerable to Prototype Pollution. The `extend()` function allows attackers to modify the prototype of Object causing the addition or modification of an existing property that will exist on all objects.\n\n",
+      "patched_versions": ">=2.0.2 <3.0.0 || >=3.0.2",
+      "recommendation": "If you're using `extend` 3.x upgrade to 3.0.2 or later.\nIf you're using `extend` 2.x upgrade to 2.0.2 or later.",
+      "references": "- [HackerOne Report](https://hackerone.com/reports/381185)",
+      "reported_by": {
+        "link": "",
+        "name": "asgerf"
+      },
+      "severity": "moderate",
+      "title": "Prototype Pollution",
+      "updated": "2019-07-24T18:05:41.047Z",
+      "vulnerable_versions": "<2.0.2 || >=3.0.0 <3.0.2"
+    }
+  ]
+}
