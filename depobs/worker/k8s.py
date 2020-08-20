@@ -102,9 +102,8 @@ def create_job(job_config: KubeJobConfig,) -> kubernetes.client.V1Job:
         containers=[container],
         service_account_name=job_config["service_account_name"],
         security_context=kubernetes.client.V1PodSecurityContext(
-            run_as_user=10001,
-            run_as_group=10001
-        )
+            run_as_user=10001, run_as_group=10001
+        ),
         volumes=[
             kubernetes.client.V1Volume(
                 name=secret["name"],
