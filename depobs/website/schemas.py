@@ -1,7 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
-# from flask import current_app
 import marshmallow
 import marshmallow_dataclass
 
