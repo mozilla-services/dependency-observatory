@@ -32,6 +32,8 @@ PACKAGE_NAME=${PACKAGE_NAME:-""}
 PACKAGE_VERSION=${PACKAGE_VERSION:-""}
 GCP_PUBSUB_TOPIC=${GCP_PUBSUB_TOPIC:-""}
 GCP_PROJECT_ID=${GCP_PROJECT_ID:-""}
+REPO_URL=${REPO_URL:-""}
+DEP_FILE_URLS_JSON=${DEP_FILE_URLS_JSON:-""}
 
 echo "starting job ${JOB_NAME}"
 
@@ -51,7 +53,15 @@ function publish_message () {
     # NB: max message size is 10MB https://cloud.google.com/pubsub/quotas#resource_limits
     # NB: max attribute key size is 256 bytes max key value 1024 bytes
     message=$1
-    gcloud pubsub topics publish "$GCP_PUBSUB_TOPIC" --message "$message" --attribute "JOB_NAME=${JOB_NAME},SCAN_ID=${SCAN_ID}"
+    # gcloud pubsub topics publish "$GCP_PUBSUB_TOPIC" --message "$message" --attribute "JOB_NAME=${JOB_NAME},SCAN_ID=${SCAN_ID}"
+
+    data_temp=$(mktemp)
+    echo -n "$message" | jq -rcM '@base64' | tr -d '\n' > "$data_temp"
+    jq -rcn --arg JOB_NAME "$JOB_NAME" \
+       --arg SCAN_ID "$SCAN_ID" \
+       --rawfile data "$data_temp" \
+       '{"messages": [{"attributes": {$JOB_NAME, $SCAN_ID}, $data}]}' \
+	| curl -X POST --data-binary @- -H "Content-Type: application/json" -H "Authorization: Bearer $(gcloud auth application-default print-access-token)" "https://pubsub.googleapis.com/v1/projects/${GCP_PROJECT_ID}/topics/${GCP_PUBSUB_TOPIC}:publish"
 }
 
 message_temp=$(mktemp)
@@ -154,6 +164,10 @@ while (( $# )); do
             # write a package.json file to so npm audit doesn't error out
             TASK_COMMAND="jq -cnM --arg name \"$PACKAGE_NAME\" --arg version \"$PACKAGE_VERSION\" '{dependencies: {}} | .dependencies[\$name] = \$version' | tee -a package.json"
             ;;
+        nodejs-npm-write_dep_files)
+            # write manifest and other files
+            TASK_COMMAND=$(echo "$DEP_FILE_URLS_JSON" | jq -rc '.[] |  ("curl -s \"" + .url + "\" | tee \"" + .filename + "\"")' | tr '\n' ';')
+            ;;
 
         nodejs-yarn-audit)
             # NB: requires a package.json manifest and a yarn.lock
@@ -171,6 +185,12 @@ while (( $# )); do
             # NB: requires a package.json and yarn.lock
             TASK_COMMAND="yarn list --json --frozen-lockfile"
             ;;
+	*-git_clone)
+	    # TODO: look into partial clones and sparse checkouts
+	    # https://github.com/git/git/blob/master/Documentation/technical/partial-clone.txt
+	    # https://github.blog/2020-01-13-highlights-from-git-2-25/#sparse-checkouts
+	    TASK_COMMAND="git clone --depth=1 --origin origin \"${REPO_URL}\" repo"
+	    ;;
         *)
             jq -cnM --arg invalid_value "${LANGUAGE}-${PACKAGE_MANAGER}-${TASK_NAME}" "{type: \"not_implemented_error\", message: \"do not know how to ${TASK_NAME} for language and package manager\", \$invalid_value}" | tee -a "$message_temp"
             shift
@@ -185,14 +205,12 @@ while (( $# )); do
     stderr=$(eval "$TASK_COMMAND" 2>&1 >"$stdout_temp")
     status=$?
     set -e
-    stdout=$(cat "$stdout_temp")
-
     jq -cnM \
        --arg name "$TASK_NAME" \
        --arg command "$TASK_COMMAND" \
        --arg working_dir "$(pwd)" \
        --argjson exit_code "$status" \
-       --arg stdout "$stdout" \
+       --rawfile stdout "$stdout_temp" \
        --arg stderr "$stderr" \
        --argjson versions "$VERSIONS" \
        --argjson envvar_args "$ENVVAR_ARGS" \
@@ -208,12 +226,6 @@ publish_message "$(jq -s '.' "$message_temp")"
 #   then sort tags from newest to oldest tagging time https://git-scm.com/docs/git-for-each-ref/
 #   git for-each-ref --sort=-taggerdate --format="%(refname:short)\t%(taggerdate:unix)\t%(creatordate:unix)" refs/tags
 #   tag_name, tag_ts, commit_ts = [part.strip('",') for part in line.split("\t", 2)]
-
-# TODO: add git clone
-# TODO: look into partial clones and sparse checkouts
-# https://github.com/git/git/blob/master/Documentation/technical/partial-clone.txt
-# https://github.blog/2020-01-13-highlights-from-git-2-25/#sparse-checkouts
-# git clone --depth=1 --origin origin {repo_url} repo
 
 # TODO: ensure ref task
 #   git fetch origin {commit} # commit per https://stackoverflow.com/a/30701724

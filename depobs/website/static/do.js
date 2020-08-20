@@ -1,6 +1,23 @@
-async function startScan(formData) {
-  console.debug("starting scan with formData:", formData);
-  let scanURI = "/api/v1/scans";
+function formDataToDepFilesScanBody(formData) {
+  console.debug("converting formData to dep files scan:", formData);
+  let body = {
+    scan_type: "scan_score_npm_dep_files",
+    package_manager: formData.package_manager,
+    manifest_url: formData.manifest_url,
+  };
+  if (formData.lockfile_url) {
+    console.debug("adding lockfile_url to body");
+    body.lockfile_url = formData.lockfile_url;
+  }
+  if (formData.shrinkwrap_url) {
+    console.debug("adding shrinkwrap_url to body");
+    body.shrinkwrap_url = formData.shrinkwrap_url;
+  }
+  return body;
+}
+
+function formDataToPackageScanBody(formData) {
+  console.debug("converting formData to package scan:", formData);
   let body = {
     scan_type: "scan_score_npm_package",
     package_manager: formData.package_manager,
@@ -14,6 +31,11 @@ async function startScan(formData) {
     console.debug("adding package_version to body");
     body.package_version = formData.package_version;
   }
+  return body;
+}
+
+async function startScan(body) {
+  let scanURI = "/api/v1/scans";
   console.debug("starting scan with req body:", body);
 
   let response = await fetch(scanURI, {
@@ -67,12 +89,13 @@ async function checkChangelogExists(formDataObj) {
 
 // view / UI code
 
-const formEl = document.getElementById("search-form");
+const formEl = document.getElementById("package-form");
 const formFieldsetEls = formEl.querySelectorAll("fieldset");
 const formPackageVersionTypeEl = document.getElementById(
   "package-versions-type"
 );
 const formPackageVersionEl = document.getElementById("packageVersion");
+const depFilesFormEl = document.getElementById("dep-files-form");
 
 function updateSearchError(err, errContextMessage) {
   // takes an Error with an optional .response property set and
@@ -121,9 +144,9 @@ function updateSearchForm(disable) {
   }
 }
 
-async function scanAndScorePackage(formDataObj) {
-  console.debug("starting scan with data:", formDataObj);
-  let startScanResponseJSON = await startScan(formDataObj);
+async function scanAndScore(body) {
+  console.debug("starting scan with data:", body);
+  let startScanResponseJSON = await startScan(body);
   let scanID = startScanResponseJSON.id;
   console.log(
     `created scan with name: ${scanID} and URL: ${window.location.origin}/api/v1/scans/${scanID}`
@@ -140,16 +163,16 @@ function redirectToScanLogs(scanID) {
 }
 
 function onSubmit(event) {
-  console.debug(`form submitted! timestamp: ${event.timeStamp}`);
+  console.debug(`package scan form submitted! timestamp: ${event.timeStamp}`);
   event.preventDefault();
   updateSearchError(null); // clear error display
 
   let formDataObj = Object.fromEntries(new FormData(formEl));
-  console.debug("have formdata", formDataObj);
+  console.debug("have package scan formdata", formDataObj);
 
   if (formDataObj.force_rescan === "on") {
     console.debug("skipping report check since rescan requested");
-    scanAndScorePackage(formDataObj)
+    scanAndScore(formDataToPackageScanBody(formDataObj))
       .then(redirectToScanLogs)
       .catch((err) => {
         console.error(`error starting rescan: ${err}`);
@@ -178,7 +201,7 @@ function onSubmit(event) {
           err.response = response;
           updateSearchError(err, "checking a package changelog exists");
         } else {
-          scanAndScorePackage(formDataObj)
+          scanAndScore(formDataToPackageScanBody(formDataObj))
             .then(redirectToScanLogs)
             .catch((err) => {
               console.error(`error starting scan: ${err}`);
@@ -210,7 +233,7 @@ function onSubmit(event) {
           err.response = response;
           updateSearchError(err, "checking a package report exists");
         } else {
-          scanAndScorePackage(formDataObj)
+          scanAndScore(formDataToPackageScanBody(formDataObj))
             .then(redirectToScanLogs)
             .catch((err) => {
               console.error(`error starting scan: ${err}`);
@@ -230,6 +253,20 @@ function updatePackageVersionInput(e) {
   }
 }
 
+function onDepFilesFormSubmit(e) {
+  console.debug(`dep files scan form submitted! timestamp: ${event.timeStamp}`);
+  event.preventDefault();
+
+  let formDataObj = Object.fromEntries(new FormData(depFilesFormEl));
+  console.debug("have dep files scan formdata", formDataObj);
+  scanAndScore(formDataToDepFilesScanBody(formDataObj))
+    .then(redirectToScanLogs)
+    .catch((err) => {
+      console.error(`error starting dep files scan: ${err}`);
+      updateSearchError(err, "scanning a dep files");
+    });
+}
+
 window.addEventListener("DOMContentLoaded", (event) => {
   console.debug("DOM fully loaded and parsed");
 
@@ -238,4 +275,6 @@ window.addEventListener("DOMContentLoaded", (event) => {
     updatePackageVersionInput
   );
   formEl.addEventListener("submit", onSubmit);
+
+  depFilesFormEl.addEventListener("submit", onDepFilesFormSubmit);
 });

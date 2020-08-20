@@ -1,0 +1,35 @@
+<div class="card mt-3">
+    <div class="card-header bg-primary text-white"><span class="h3">Scan your dependency files</span></div>
+    <div class="card-body no-popover-mobile pb-4">
+        <form id="dep-files-form">
+            <fieldset class="form-group">
+                <div class="form-group">
+                    <label for="packageManager">Package Manager</label>
+
+                    <select class="form-control form-control-lg" id="packageManager" name="package_manager">
+                        <option value="npm">NPM</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="manifest_url">package.json file URL</label>
+                    <input type="url" class="form-control form-control-lg" name="manifest_url" id="manifest_url" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="lockfile_url">package-lock.json file URL</label>
+                    <input type="url" class="form-control form-control-lg" name="lockfile_url" id="lockfile_url">
+                </div>
+
+                <div class="form-group">
+                    <label for="shrinkwrap_url">npm-shrinkwrap.json file URL</label>
+                    <input type="url" class="form-control form-control-lg" name="shrinkwrap_url" id="shrinkwrap_url">
+                </div>
+
+                <div class="input-group mt-2 mb-3">
+                    <button class="btn btn-primary btn-large btn-block" type="submit">Scan Dependency Files</button>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+</div>

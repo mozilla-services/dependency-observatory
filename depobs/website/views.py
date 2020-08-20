@@ -8,6 +8,7 @@ from collections import OrderedDict
 
 from flask import (
     Blueprint,
+    Response,
     current_app,
     g,
     jsonify,
@@ -20,15 +21,16 @@ from flask import (
 import graphviz
 from marshmallow import ValidationError
 import networkx as nx
+import seaborn as sb
 import urllib3
 from werkzeug.exceptions import BadGateway, BadRequest, NotFound, NotImplemented
-import seaborn as sb
 
 from depobs.website.schemas import (
     JSONResultSchema,
     JobParamsSchema,
     PackageReportParamsSchema,
     ScanSchema,
+    ScanScoreNPMDepFilesRequestParamsSchema,
     ScanScoreNPMPackageRequestParamsSchema,
 )
 from depobs.database import models
@@ -63,14 +65,6 @@ STANDARD_HEADERS = {
 views_blueprint = api = Blueprint(
     "views_blueprint", __name__, template_folder="templates"
 )
-
-
-def stream_template(template_name, **context):
-    current_app.update_template_context(context)
-    t = current_app.jinja_env.get_template(template_name)
-    rv = t.stream(context)
-    rv.enable_buffering(5)
-    return rv
 
 
 def get_most_recently_scored_package_report_or_raise(
@@ -248,23 +242,22 @@ def index_page() -> Any:
     )
 
 
-@api.route("/api/v1/scans", methods=["POST"])
-def queue_scan() -> Tuple[Dict, int]:
-    """
-    Queues a scan for package version or versions and returns the scan
-    JSON with status 202
-    """
-    body = request.get_json()
-    log.debug(f"received scan JSON body: {body}")
-    try:
-        scan_config = ScanScoreNPMPackageRequestParamsSchema().load(data=body)
-    except ValidationError as err:
-        return err.messages, 422
+def schema_to_dep_files_scan(scan_config) -> models.Scan:
+    dep_files: List[models.ScanFileURL] = [
+        {"filename": "package.json", "url": scan_config.manifest_url,}
+    ]
+    if scan_config.lockfile_url:
+        dep_files.append(
+            {"filename": "package-lock.json", "url": scan_config.lockfile_url,}
+        )
+    if scan_config.shrinkwrap_url:
+        dep_files.append(
+            {"filename": "npm-shrinkwrap.json", "url": scan_config.shrinkwrap_url,}
+        )
+    return models.dependency_files_to_scan(dep_files)
 
-    log.info(f"deserialized scan JSON to {scan_config.scan_type}: {scan_config}")
-    if scan_config.scan_type not in current_app.config["WEB_JOB_NAMES"]:
-        raise BadRequest(description="scan type not allowed or does not exist for app")
 
+def schema_to_package_scan(scan_config) -> models.Scan:
     if scan_config.package_versions_type == "specific-version":
         version = scan_config.package_version
     elif scan_config.package_versions_type == "releases":
@@ -274,10 +267,38 @@ def queue_scan() -> Tuple[Dict, int]:
     else:
         raise NotImplementedError()
 
-    scan = models.save_scan_with_status(
-        models.package_name_and_version_to_scan(scan_config.package_name, version,),
-        "queued",
-    )
+    return models.package_name_and_version_to_scan(scan_config.package_name, version,)
+
+
+@api.route("/api/v1/scans", methods=["POST"])
+def queue_scan() -> Tuple[Dict, int]:
+    """
+    Queues a scan for package version or versions and returns the scan
+    JSON with status 202
+    """
+    body = request.get_json()
+    log.warning(f"received scan JSON body: {body}")
+    if (
+        isinstance(body, dict)
+        and "scan_type" in body
+        and body["scan_type"] == "scan_score_npm_dep_files"
+    ):
+        schema = ScanScoreNPMDepFilesRequestParamsSchema
+        loader = schema_to_dep_files_scan
+    else:
+        schema = ScanScoreNPMPackageRequestParamsSchema
+        loader = schema_to_package_scan
+
+    try:
+        scan_config = schema().load(data=body)
+    except ValidationError as err:
+        return err.messages, 422
+
+    log.info(f"deserialized scan JSON to {scan_config.scan_type}: {scan_config}")  # type: ignore
+    if scan_config.scan_type not in current_app.config["WEB_JOB_NAMES"]:  # type: ignore
+        raise BadRequest(description="scan type not allowed or does not exist for app")
+
+    scan = models.save_scan_with_status(loader(scan_config), "queued",)
     log.info(f"queued scan {scan.id}")
     return ScanSchema().dump(scan), 202
 

@@ -1,7 +1,19 @@
 from datetime import datetime
 from functools import cached_property
 import logging
-from typing import Any, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import (
+    AbstractSet,
+    Any,
+    Dict,
+    Generator,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypedDict,
+    Union,
+)
 
 import flask
 from flask_migrate import Migrate
@@ -45,6 +57,16 @@ migrate = Migrate()
 # define type aliases to make ints distinguishable in type annotations
 PackageLinkID = int
 PackageVersionID = int
+
+
+class ScanFileURL(TypedDict):
+    """
+    A filename and URL to use in a scan
+    """
+
+    filename: str
+
+    url: str
 
 
 class utcnow(expression.FunctionElement):
@@ -378,7 +400,7 @@ class PackageGraph(db.Model):
         return {
             link.id: (link.parent_package_id, link.child_package_id)
             for link in db.session.query(PackageLink).filter(
-                PackageLink.id.in_([lid[0] for lid in self.link_ids])
+                PackageLink.id.in_(self.link_ids)
             )
         }
 
@@ -853,8 +875,14 @@ class Scan(db.Model):
     status = Column(scan_status_enum, nullable=False)
 
     @cached_property
+    def name(self,) -> str:
+        assert isinstance(self.params, dict)
+        return self.params["name"]
+
+    @cached_property
     def package_name(self,) -> str:
         assert isinstance(self.params, dict)
+        assert self.name == "scan_score_npm_package"
         return self.params["args"][0]
 
     @cached_property
@@ -863,6 +891,11 @@ class Scan(db.Model):
         if len(self.params["args"]) > 1:
             return self.params["args"][1]
         return None
+
+    def dep_file_urls(self,) -> Generator[ScanFileURL, None, None]:
+        assert isinstance(self.params, dict)
+        for file_config in self.params["kwargs"]["dep_file_urls"]:
+            yield file_config
 
 
 def get_package_report(
@@ -1314,81 +1347,62 @@ def get_advisories_by_package_versions(
     )
 
 
-def add_new_package_version(pkg: Dict) -> None:
-    get_package_version_id_query(pkg).one_or_none() or db.session.add(
-        PackageVersion(
-            name=pkg.get("name", None),
-            version=pkg.get("version", None),
-            language="node",
-            url=pkg.get(
-                "resolved", None
-            ),  # is null for the root for npm list and yarn list output
-        )
-    )
-
-
-def get_package_version_id_query(pkg: Dict) -> sqlalchemy.orm.query.Query:
-    return db.session.query(PackageVersion.id).filter_by(
-        name=pkg["name"], version=pkg["version"], language="node"
-    )
-
-
-def get_package_version_link_id_query(
-    link: Tuple[int, int]
+def get_package_version_id_query(
+    package_version: PackageVersion,
 ) -> sqlalchemy.orm.query.Query:
-    parent_package_id, child_package_id = link
-    return db.session.query(PackageLink.id).filter_by(
-        parent_package_id=parent_package_id, child_package_id=child_package_id
+    """
+    Returns query to select a node package version id by name and version
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_package_version_id_query(PackageVersion(name='foo', version='0.0.0-test')))
+    'SELECT package_versions.id AS package_versions_id \\nFROM package_versions \\nWHERE package_versions.name = %(name_1)s AND package_versions.version = %(version_1)s AND package_versions.language = %(language_1)s'
+    """
+    return db.session.query(PackageVersion.id).filter_by(
+        name=package_version.name, version=package_version.version, language="node"
     )
+
+
+def upsert_package_version(package_version: PackageVersion) -> None:
+    get_package_version_id_query(package_version).one_or_none() or db.session.add(
+        package_version
+    )
+
+
+def get_package_version_link_id_query(link: PackageLink) -> sqlalchemy.orm.query.Query:
+    """
+    Returns query to select a package version link by child and parent PackageVersion ids
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_package_version_link_id_query(PackageLink(parent_package_id=38, child_package_id=5)))
+    'SELECT package_links.id AS package_links_id \\nFROM package_links \\nWHERE package_links.parent_package_id = %(parent_package_id_1)s AND package_links.child_package_id = %(child_package_id_1)s'
+    """
+    return db.session.query(PackageLink.id).filter_by(
+        parent_package_id=link.parent_package_id, child_package_id=link.child_package_id
+    )
+
+
+def upsert_package_links(links: Iterable[PackageLink]) -> None:
+    """
+    Upserts package links
+    """
+    for link in links:
+        link_id = get_package_version_link_id_query(link).one_or_none()
+        if not link_id:
+            db.session.add(link)
 
 
 def get_node_advisory_id_query(advisory: Advisory) -> sqlalchemy.orm.query.Query:
+    """
+    Returns query to select an advisory id by URL
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_node_advisory_id_query(Advisory(url='https://example.com')))
+    'SELECT advisories.id AS advisories_id \\nFROM advisories \\nWHERE advisories.language = %(language_1)s AND advisories.url = %(url_1)s'
+    """
     return db.session.query(Advisory.id).filter_by(language="node", url=advisory.url)
-
-
-def insert_package_graph(task_data: Dict) -> None:
-    link_ids = []
-    for task_dep in task_data.get("dependencies", []):
-        add_new_package_version(task_dep)
-        db.session.commit()
-        parent_package_id = get_package_version_id_query(task_dep).first()
-
-        for dep in task_dep.get("dependencies", []):
-            # is fully qualified semver for npm (or file: or github: url), semver for yarn
-            name, version = dep.rsplit("@", 1)
-            child_package_id = get_package_version_id_query(
-                dict(name=name, version=version)
-            ).first()
-
-            link_id = get_package_version_link_id_query(
-                (parent_package_id, child_package_id)
-            ).one_or_none()
-            if not link_id:
-                db.session.add(
-                    PackageLink(
-                        child_package_id=child_package_id,
-                        parent_package_id=parent_package_id,
-                    )
-                )
-                db.session.commit()
-                link_id = get_package_version_link_id_query(
-                    (parent_package_id, child_package_id)
-                ).first()
-            link_ids.append(link_id)
-
-    db.session.add(
-        PackageGraph(
-            root_package_version_id=get_package_version_id_query(
-                task_data["root"]
-            ).first()
-            if task_data["root"]
-            else None,
-            link_ids=link_ids,
-            package_manager="yarn" if "yarn" in task_data["command"] else "npm",
-            package_manager_version=None,
-        )
-    )
-    db.session.commit()
 
 
 def insert_advisories(advisories: Iterable[Advisory]) -> None:
@@ -1480,7 +1494,7 @@ def get_scan_job_results(job_name: str) -> sqlalchemy.orm.query.Query:
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
     ...     str(get_scan_job_results('scan-foo'))
-    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id DESC'
+    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data, json_results.url AS json_results_url \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id DESC'
     """
     return (
         db.session.query(JSONResult)
@@ -1496,7 +1510,7 @@ def get_scan_results_by_id(scan_id: int) -> sqlalchemy.orm.query.Query:
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
     ...     str(get_scan_results_by_id(392))
-    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id ASC'
+    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data, json_results.url AS json_results_url \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id ASC'
     """
     return (
         db.session.query(JSONResult)
@@ -1512,7 +1526,7 @@ def get_scan_results_by_id_on_job_name(scan_id: int) -> sqlalchemy.orm.query.Que
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
     ...     str(get_scan_results_by_id_on_job_name(392))
-    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s GROUP BY json_results.id, CAST((json_results.data -> %(data_2)s) ->> %(param_3)s AS VARCHAR) ORDER BY json_results.id ASC'
+    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data, json_results.url AS json_results_url \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s GROUP BY json_results.id, CAST((json_results.data -> %(data_2)s) ->> %(param_3)s AS VARCHAR) ORDER BY json_results.id ASC'
     """
     return get_scan_results_by_id(scan_id).group_by(
         JSONResult.id, JSONResult.data["attributes"]["SCAN_ID"].as_string()
@@ -1534,8 +1548,84 @@ def package_name_and_version_to_scan(
     )
 
 
+def dependency_files_to_scan(dep_file_urls: List[ScanFileURL],) -> Scan:
+    """
+    Return a scan model for the npm dependency files.
+    """
+    return Scan(
+        params=JobParamsSchema().dump(
+            {
+                "name": "scan_score_npm_dep_files",
+                "kwargs": {"dep_file_urls": dep_file_urls},
+            }
+        ),
+        status="queued",
+    )
+
+
 def save_scan_with_status(scan: Scan, status: str) -> Scan:
     scan.status = status
     db.session.add(scan)
     db.session.commit()
     return scan
+
+
+def save_deserialized(
+    deserialized: Union[
+        PackageVersion,
+        Tuple[
+            PackageGraph,
+            Optional[PackageVersion],
+            List[Tuple[PackageVersion, PackageVersion]],
+        ],
+        Tuple[Advisory, AbstractSet[str]],
+    ]
+) -> None:
+    if isinstance(deserialized, PackageVersion):
+        upsert_package_version(deserialized)
+    elif isinstance(deserialized, tuple) and isinstance(deserialized[0], PackageGraph):
+        graph: PackageGraph = deserialized[0]
+        root_package_version: Optional[PackageVersion] = deserialized[1]  # type: ignore
+        links: List[Tuple[PackageVersion, PackageVersion]] = deserialized[
+            2
+        ]  # type: ignore
+        if root_package_version:
+            upsert_package_version(root_package_version)
+            db.session.commit()
+            root_package_version_with_id = get_package_version_id_query(
+                root_package_version
+            ).one_or_none()
+            graph.root_package_version_id = (
+                root_package_version_with_id.id
+                if root_package_version_with_id
+                else None
+            )
+
+        # TODO: combine into one query
+        link_ids = []
+        for parent, child in links:
+            log.debug(
+                f"resolving link package version ids for {child.name}@{child.version}->{parent.name}@{parent.version}"
+            )
+            link = PackageLink(
+                parent_package_id=get_package_version_id_query(parent).first().id,
+                child_package_id=get_package_version_id_query(child).first().id,
+            )
+            log.debug(
+                f"resolved package version ids for link {link.child_package_id}->{link.parent_package_id}"
+            )
+            upsert_package_links([link])
+            db.session.commit()
+            log.debug(f"upserted link {link} w/ id {link.id}")
+            link_ids.append(get_package_version_link_id_query(link).first().id)
+            log.debug(f"added link id to graph {link_ids[-1]}")
+
+        graph.link_ids = link_ids
+        db.session.add(graph)
+    elif isinstance(deserialized, tuple) and isinstance(deserialized[0], Advisory):
+        advisory, impacted_versions = deserialized  # type: ignore
+        insert_advisories([advisory])
+        update_advisory_vulnerable_package_versions(advisory, set(impacted_versions))
+    else:
+        log.warn(f"don't know how to save deserialized {deserialized}")
+    db.session.commit()

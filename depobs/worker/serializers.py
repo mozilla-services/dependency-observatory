@@ -23,11 +23,7 @@ from depobs.database.models import (
     NPMRegistryEntry,
     NPMSIOScore,
     PackageGraph,
-    PackageLink,
     PackageVersion,
-    insert_package_graph,
-    insert_advisories,
-    update_advisory_vulnerable_package_versions,
 )
 from depobs.util.graph_util import npm_packages_to_networkx_digraph, get_graph_stats
 from depobs.models.nodejs import NPMPackage, flatten_deps
@@ -501,13 +497,46 @@ def serialize_advisories(advisories_data: Iterable[Dict]) -> Iterable[Advisory]:
         yield Advisory(**advisory_fields)
 
 
-def deserialize_scan_job_results(messages: Iterable[JSONResult],) -> None:
+def deserialize_npm_package_version(package: Dict[str, str]) -> PackageVersion:
     """
-    Given an iterable of JSONResults of pubsub messages for a
-    completed scan npm tarball job, parses the output and saves
-    a PackageGraph constituent PackageVersion and PackageLinks, and Advisory models (if any)
+    Deserializes a dict from npm list output into a PackageVersion
     """
-    # TODO: convert to Generator[Union[PackageGraph, PackageVersion, PackageLink, Advisory], None, None] and inline insert_package_graph
+    return PackageVersion(
+        name=package.get("name", None),
+        version=package.get("version", None),
+        language="node",
+        url=package.get(
+            "resolved", None
+        ),  # is null for the root for npm list and yarn list output
+    )
+
+
+def deserialize_scan_job_results(
+    messages: Iterable[JSONResult],
+) -> Generator[
+    Union[
+        PackageVersion,
+        Tuple[
+            PackageGraph,
+            Optional[PackageVersion],
+            List[Tuple[PackageVersion, PackageVersion]],
+        ],
+        Tuple[Advisory, AbstractSet[str]],
+    ],
+    None,
+    None,
+]:
+    """Takes an iterable of JSONResults of pubsub messages for a
+    completed npm scan (tarball or dep file), parses the messages, and
+    yields models to save in the following order:
+
+    * one or more PackageVersions
+    * a PackageGraph with an optional root package version and a list of its links in a pairs of PackageVersions
+    * Advisory models with impacted versions (if any)
+
+    The models will not have IDs and should be upserted to avoid
+    violating index constraints and creating duplicate rows.
+    """
     for json_result in messages:
         if json_result.data is None:
             log.warning(f"json result ID: {json_result.id} null data column")
@@ -538,7 +567,31 @@ def deserialize_scan_job_results(messages: Iterable[JSONResult],) -> None:
 
             task_name = line["name"]
             if task_name == "list_metadata":
-                insert_package_graph(task_data)
+                links: List[Tuple[PackageVersion, PackageVersion]] = []
+                for task_dep in task_data.get("dependencies", []):
+                    parent: PackageVersion = deserialize_npm_package_version(task_dep)
+                    yield parent
+                    for dep in task_dep.get("dependencies", []):
+                        # is fully qualified semver for npm (or file: or github: url), semver for yarn
+                        name, version = dep.rsplit("@", 1)
+                        child: PackageVersion = deserialize_npm_package_version(
+                            dict(name=name, version=version,)
+                        )
+                        yield child
+                        links.append((parent, child))
+                package_manager = "yarn" if "yarn" in task_data["command"] else "npm"
+                root_package_version = (
+                    deserialize_npm_package_version(task_data["root"])
+                    if task_data["root"]
+                    else None
+                )
+                # NB: caller must convert links to link_ids, root_package_version to root_package_version_id
+                yield PackageGraph(
+                    root_package_version_id=None,
+                    link_ids=[],
+                    package_manager=package_manager,
+                    package_manager_version=None,  # TODO: find and set
+                ), root_package_version, links
             elif task_name == "audit":
                 for (
                     advisory_fields,
@@ -549,9 +602,6 @@ def deserialize_scan_job_results(messages: Iterable[JSONResult],) -> None:
                     advisory: Advisory = list(serialize_advisories([advisory_fields]))[
                         0
                     ]
-                    insert_advisories([advisory])
-                    update_advisory_vulnerable_package_versions(
-                        advisory, set(impacted_versions)
-                    )
+                    yield advisory, impacted_versions
             else:
                 log.warning(f"skipping unrecognized task {task_name}")

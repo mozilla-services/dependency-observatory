@@ -59,7 +59,12 @@ async def fetch_npm_registry_metadata(
     async with aiohttp_session(config) as s:
         async_query_with_backoff = backoff.on_exception(
             backoff.expo,
-            (aiohttp.ClientResponseError, aiohttp.ClientError, asyncio.TimeoutError),
+            (
+                aiohttp.ClientError,
+                aiohttp.ClientResponseError,
+                aiohttp.ContentTypeError,
+                asyncio.TimeoutError,
+            ),
             max_tries=config["max_retries"],
             giveup=is_not_found_exception,
             logger=log,

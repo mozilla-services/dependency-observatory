@@ -50,4 +50,4 @@ shellcheck:
 	shellcheck bin/*.sh util/*.sh scan_envs/*.sh
 
 unit-test:
-	./util/run_tests.sh
+	./util/run_tests.sh -m unit

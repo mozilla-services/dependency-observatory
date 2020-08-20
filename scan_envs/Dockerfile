@@ -12,7 +12,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y update && \
     apt-get install --no-install-recommends -y \
 	    curl \
 	    git \
-	    jq \
 	    ripgrep \
             apt-transport-https \
             ca-certificates \
@@ -27,6 +26,7 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
       apt-get install google-cloud-sdk -y
 
 RUN cargo --version && cargo install cargo-audit || true
+RUN curl -L --proto '=https' --tlsv1.2 https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -o /usr/bin/jq && chmod +x /usr/bin/jq
 
 RUN mkdir -p /opt
 COPY docker-entrypoint.sh /opt
