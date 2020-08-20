@@ -76,6 +76,7 @@ async def request_json(
     log.debug(f"{method} {url}")
     try:
         response = await session.request(method, url, **kwargs)
+        response.raise_for_status()
         response_json = await response.json()
     except Exception as err:
         if is_not_found_exception(err):
