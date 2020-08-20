@@ -1604,13 +1604,21 @@ def save_deserialized(
         # TODO: combine into one query
         link_ids = []
         for parent, child in links:
+            log.debug(
+                f"resolving link package version ids for {child.name}@{child.version}->{parent.name}@{parent.version}"
+            )
             link = PackageLink(
                 parent_package_id=get_package_version_id_query(parent).first().id,
                 child_package_id=get_package_version_id_query(child).first().id,
             )
+            log.debug(
+                f"resolved package version ids for link {link.child_package_id}->{link.parent_package_id}"
+            )
             upsert_package_links([link])
             db.session.commit()
+            log.debug(f"upserted link {link} w/ id {link.id}")
             link_ids.append(get_package_version_link_id_query(link).first().id)
+            log.debug(f"added link id to graph {link_ids[-1]}")
 
         graph.link_ids = link_ids
         db.session.add(graph)
