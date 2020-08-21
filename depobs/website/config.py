@@ -91,13 +91,13 @@ SCAN_NPM_DEP_FILES_ARGS: Dict[
 ] = dict(
     backoff_limit=4,
     ttl_seconds_after_finished=3600 * 8,  # keeps jobs for 8 hours
-    context_name=None,
-    namespace="default",
+    context_name=os.environ.get("UNTRUSTED_JOB_CONTEXT", None),
+    namespace=os.environ.get("UNTRUSTED_JOB_NAMESPACE", "default"),
     language="nodejs",
     package_manager="npm",
     image_name="mozilla/dependency-observatory:node-12",
     repo_tasks=["write_dep_files", "install", "list_metadata", "audit",],
-    service_account_name=os.environ.get("JOB_SERVICE_ACCOUNT_NAME", ""),
+    service_account_name=os.environ.get("UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME", ""),
     env=dict(GCP_PUBSUB_TOPIC=JOB_STATUS_PUBSUB_TOPIC, GCP_PROJECT_ID=GCP_PROJECT_ID,),
     volume_mounts=[],
     secrets=[],
