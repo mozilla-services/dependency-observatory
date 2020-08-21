@@ -192,15 +192,12 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
     When the version is 'latest' only scans the most recently published version of the package.
     """
     package_name: str = scan.package_name
-    package_version: Optional[str] = scan.package_version
-    if package_version == "latest":
-        versions_query = models.get_npm_registry_entries_to_scan(
-            package_name, None
-        ).limit(1)
-    else:
-        versions_query = models.get_npm_registry_entries_to_scan(
-            package_name, package_version
-        )
+    scan_package_version: Optional[str] = scan.package_version
+    if scan_package_version == "latest":
+        package_version = None
+    versions_query = models.get_npm_registry_entries_to_scan(
+        package_name, package_version
+    )
 
     # fetch npm registry entries from DB
     for (package_version, source_url, git_head, tarball_url,) in versions_query:
@@ -243,6 +240,12 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
             log.error(
                 f"scan: {scan.id} Installing from VCS source and ref not implemented to scan {package_name}@{package_version}"
             )
+
+        if scan_package_version == "latest":
+            log.info(
+                "scan: {scan.id} latest version of package requested. Stopping after first release version"
+            )
+            break
 
 
 async def fetch_missing_npm_data():
