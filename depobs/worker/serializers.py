@@ -491,7 +491,8 @@ def serialize_advisories(advisories_data: Iterable[Dict]) -> Iterable[Advisory]:
                 "title": ["title"],
             },
         )
-        advisory_fields["cwe"] = int(advisory_fields["cwe"].lower().replace("cwe-", ""))
+        cwe_id = advisory_fields["cwe"].lower().replace("cwe-", "")
+        advisory_fields["cwe"] = int(cwe_id) if cwe_id else None
         advisory_fields["language"] = "node"
         advisory_fields["vulnerable_package_version_ids"] = []
         yield Advisory(**advisory_fields)
