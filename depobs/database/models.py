@@ -421,6 +421,16 @@ class PackageGraph(db.Model):
             for package_version in get_packages_by_ids(self.distinct_package_ids)
         }
 
+    @cached_property
+    def distinct_package_reports(self) -> List[PackageReport]:
+        return get_package_score_reports(
+            self.distinct_package_versions_by_id.values()
+        ).all()
+
+    @cached_property
+    def distinct_package_reports_json(self) -> List[Dict]:
+        return [pr.report_json for pr in self.distinct_package_reports]
+
     def get_npm_registry_data_by_package_version_id(
         self,
     ) -> Dict[PackageVersionID, Optional["NPMRegistryEntry"]]:
@@ -912,6 +922,12 @@ class Scan(db.Model):
 
         raise NotImplementedError("report_url not implemented")
 
+    @cached_property
+    def package_graph(self,) -> Optional[PackageGraph]:
+        if self.graph_id:
+            return get_graph_by_id(self.graph_id)
+        return None
+
 
 def get_package_report(
     package: str, version: Optional[str] = None
@@ -930,6 +946,22 @@ def get_package_report(
         ):
             return rep
     return None
+
+
+def get_package_score_reports(
+    package_versions: Iterable[PackageVersion],
+) -> sqlalchemy.orm.query.Query:
+    """
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_package_score_reports([PackageVersion(name="foo", version="0.0.1"), PackageVersion(name="bar", version="0.1.1"),]))
+    'SELECT reports.package AS reports_package, reports.version AS reports_version, reports.release_date AS reports_release_date, reports.scoring_date AS reports_scoring_date, reports.top_score AS reports_top_score, reports.npmsio_score AS reports_npmsio_score, reports.npmsio_scored_package_version AS reports_npmsio_scored_package_version, reports."directVulnsCritical_score" AS "reports_directVulnsCritical_score", reports."directVulnsHigh_score" AS "reports_directVulnsHigh_score", reports."directVulnsMedium_score" AS "reports_directVulnsMedium_score", reports."directVulnsLow_score" AS "reports_directVulnsLow_score", reports."indirectVulnsCritical_score" AS "reports_indirectVulnsCritical_score", reports."indirectVulnsHigh_score" AS "reports_indirectVulnsHigh_score", reports."indirectVulnsMedium_score" AS "reports_indirectVulnsMedium_score", reports."indirectVulnsLow_score" AS "reports_indirectVulnsLow_score", reports.authors AS reports_authors, reports.contributors AS reports_contributors, reports.immediate_deps AS reports_immediate_deps, reports.all_deps AS reports_all_deps, reports.graph_id AS reports_graph_id, reports.id AS reports_id \\nFROM reports \\nWHERE (reports.package, reports.version) IN ((%(param_1)s, %(param_2)s), (%(param_3)s, %(param_4)s))'
+    """
+    return db.session.query(PackageScoreReport).filter(
+        sqlalchemy.sql.expression.tuple_(
+            PackageScoreReport.package, PackageScoreReport.version
+        ).in_([(p.name, p.version) for p in package_versions])
+    )
 
 
 def get_most_recently_scored_package_report(
