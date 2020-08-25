@@ -10,20 +10,13 @@ Kubernetes cluster with minikube:
 1. Run `minikube start` (on Linux use `--driver=docker`) to start a local k8s cluster (`minikube stop` to stop it):
 
 ```console
-$ minikube start
+$ minikube start --mount=true --mount-string="$(pwd):/minikube-host"
 😄  minikube v1.10.1 on Ubuntu 18.04
 ✨  Automatically selected the docker driver
-🎉  minikube 1.11.0 is available! Download it: https://github.com/kubernetes/minikube/releases/tag/v1.11.0
-💡  To disable this notice, run: 'minikube config set WantUpdateNotification false'
-
-👍  Starting control plane node minikube in cluster minikube
-🔥  Creating docker container (CPUs=2, Memory=3900MB) ...
-🐳  Preparing Kubernetes v1.18.2 on Docker 19.03.2 ...
-    ▪ kubeadm.pod-network-cidr=10.244.0.0/16
-🔎  Verifying Kubernetes components...
-🌟  Enabled addons: default-storageclass, storage-provisioner
+...
 🏄  Done! kubectl is now configured to use "minikube"
 ```
+
 1. Create a kubernetes secret with GCP Service Account key for the `dev-local`
 Service Account in the depobs-nonprod project.
 ```
