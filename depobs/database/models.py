@@ -1644,3 +1644,15 @@ def save_deserialized(
     else:
         log.warn(f"don't know how to save deserialized {deserialized}")
     db.session.commit()
+
+
+def get_scan_by_id(scan_id: int) -> Scan:
+    """
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     query = str(get_scan_by_id(20))
+
+    >>> query
+    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status, scans.graph_id AS scans_graph_id \\nFROM scans \\nWHERE scans.id = %(id_1)s'
+    """
+    return db.session.query(Scan).filter_by(id=scan_id)
