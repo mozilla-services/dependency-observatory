@@ -80,8 +80,16 @@ spec:
         ports:
         - containerPort: 8000
         resources: {}
+        volumeMounts:
+          - name: local-depobs-dev
+            mountPath: /app
       restartPolicy: Always
       serviceAccountName: ""
+      volumes:
+      - name: local-depobs-dev
+        hostPath:
+          path: /minikube-host
+          type: Directory
 status: {}
 
 ---
@@ -214,10 +222,16 @@ spec:
         volumeMounts:
           - name: google-cloud-key
             mountPath: /var/secrets/google
+          - name: local-depobs-dev
+            mountPath: /app
       restartPolicy: Always
       serviceAccountName: job-runner
       volumes:
       - name: google-cloud-key
         secret:
           secretName: dev-local-service-account
+      - name: local-depobs-dev
+        hostPath:
+          path: /minikube-host
+          type: Directory
 status: {}
