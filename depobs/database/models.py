@@ -897,6 +897,21 @@ class Scan(db.Model):
         for file_config in self.params["kwargs"]["dep_file_urls"]:
             yield file_config
 
+    @cached_property
+    def report_url(self,) -> str:
+        """
+        Returns the report URL for the scan type and args
+        """
+        if self.name == "scan_score_npm_package":
+            if self.package_version:
+                return f"/package_report?package_name={self.package_name}&package_version={self.package_version}&package_manager=npm"
+            else:
+                return f"/package_report?package_name={self.package_name}&package_manager=npm"
+        elif self.name == "scan_score_npm_dep_files":
+            return f"/dep_files_reports/{self.id}"
+
+        raise NotImplementedError("report_url not implemented")
+
 
 def get_package_report(
     package: str, version: Optional[str] = None
