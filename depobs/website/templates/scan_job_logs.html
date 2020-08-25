@@ -57,7 +57,7 @@
 
     <dl>
         <dd>
-            <pre><code>{% for result in results %}{{ result.data }}
+            <pre><code>{% for result in results %}{{ result.data | tojson(indent=2) }}
 {% endfor %}</code></pre>
         </dd>
     </dl>
