@@ -3,60 +3,61 @@
 {% block content %}
 
 <div>
-    {% if scan.name == 'scan_score_npm_package' %}
-    <h3>Scan Logs for {{ scan.package_name }} {%if scan.package_version %}{{ scan.package_version }}{% else %}releases{% endif %}</h3>
+    <h1>Scan {{ scan.id }}</h1>
 
     <div>
         {% include 'scan_status.html' %}
 
-        {%if scan.status == 'succeeded' %}
         <div>
-            {% if scan.package_version %}
-            package report:
-            <a href="/package_report?package_name={{ scan.package_name }}&package_version={{ scan.package_version }}&package_manager=npm">
-                {{ scan.package_name }}@{{ scan.package_version }}
-            </a>
-            {% else %}
-            package changelog:
-            <a href="/package_changelog?package_name={{ scan.package_name }}&package_manager=npm">
+            scan of:
+
+            {% if scan.name == 'scan_score_npm_package' %}
                 {{ scan.package_name }}
-            </a>
+                {%if scan.package_version %}
+                    {{ scan.package_version }}
+                {% else %}
+                    releases
+                {% endif %}
+            {% elif scan.name == 'scan_score_npm_dep_files' %}
+                {% include 'dep_files_list.html' %}
+            {% else %}
+                Unknown targets
             {% endif %}
         </div>
-        {% endif %}
-
-        {%if refresh and scan.status != 'failed' %}
-            <div>This page will refresh every five seconds until the scan finishes then redirect to the package report or changelog.</div>
-            {% if scan.status == 'succeeded' and scan.package_version %}
-            <meta http-equiv="refresh" content="5; url=/package_report?package_name={{ scan.package_name }}&package_version={{ scan.package_version }}&package_manager=npm">
-            {% elif scan.status == 'succeeded' %}
-            <meta http-equiv="refresh" content="5; url=/package_changelog?package_name={{ scan.package_name }}&package_manager=npm">
-            {% else %}
-            <meta http-equiv="refresh" content="5">
-            {% endif %}
-        {% endif %}
 
         {%if scan.status == 'failed' %}
-        <div class="alert alert-warning">
-            <br>An unexpected error occurred.
+            <div class="alert alert-warning">
+                <br>An unexpected error occurred.
 
-            <br>Please retry your search.
+                <br>Please retry your search.
 
-            <br>If the problem persists, please <a class="error-issue-link" target="_blank" rel="noreferrer" rel="noopener" href="https://github.com/mozilla-services/dependency-observatory/issues/new?title=error making request&body=scan failed id: {{scan.id}}">click here</a> to file an issue
-        </div>
+                <br>If the problem persists, please <a class="error-issue-link" target="_blank" rel="noreferrer" rel="noopener" href="https://github.com/mozilla-services/dependency-observatory/issues/new?title=error making request&body=scan failed id: {{scan.id}}">click here</a> to file an issue
+            </div>
+        {% else %}
+            {%if refresh %}
+                <div>This page will refresh every five seconds until the scan finishes.</div>
+                {% if scan.status == 'succeeded' %}
+                    <meta http-equiv="refresh" content="5; url={{ scan.report_url }}">
+                {% else %}
+                    <meta http-equiv="refresh" content="5">
+                {% endif %}
+            {% endif %}
+
+            {%if scan.status == 'succeeded' %}
+                <h2>
+                    <a href="{{ scan.report_url }}">
+                        scan report
+                    </a>
+                </h2>
+            {% endif %}
         {% endif %}
     </div>
-    {% else %}
-    <div>
-        <h3>Scan Logs for {{ scan.name }} {{ scan.id }}</h3>
 
-        {% include 'scan_status.html' %}
-    </div>
-    {% endif %}
+    <h3>Logs</h3>
 
     <dl>
         <dd>
-            <pre><code>{% for result in results %}{{ result.data }}
+            <pre><code>{% for result in results %}{{ result.data | tojson(indent=2) }}
 {% endfor %}</code></pre>
         </dd>
     </dl>

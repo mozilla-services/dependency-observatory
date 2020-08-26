@@ -150,6 +150,21 @@ def show_package_changelog() -> Any:
     )
 
 
+@api.route("/dep_files_reports/<int:scan_id>", methods=["GET", "HEAD"])
+def show_dep_files_report(scan_id: int) -> Any:
+    """
+    Renders the dep files report for the provided scan ID
+    (alternatively could index on and use hashes of the dep files as
+    query params).
+    """
+    return render_template(
+        "dep_files_report.html",
+        name=f"scan {scan_id}",
+        scan=models.get_scan_by_id(scan_id).one(),
+        package_report_fields=scoring.all_score_component_fields,
+    )
+
+
 @api.route("/histogram.png")
 def get_histogram(scoring_algorithm: str = None) -> Any:
 
@@ -309,9 +324,7 @@ def get_scan(scan_id: int) -> Dict:
     Returns the scan as JSON
     """
     log.info(f"fetching scan {scan_id}")
-    return ScanSchema().dump(
-        models.db.session.query(models.Scan).filter_by(id=scan_id).one()
-    )
+    return ScanSchema().dump(models.get_scan_by_id(scan_id).one())
 
 
 @api.route("/api/v1/scans/<int:scan_id>/logs", methods=["GET"])
@@ -337,7 +350,7 @@ def render_scan_logs(scan_id: int):
     """
     refresh = request.args.get("refresh", False, bool)
     log.info(f"rendering job logs for scan {scan_id} with refresh {refresh}")
-    scan = models.db.session.query(models.Scan).filter_by(id=scan_id).one_or_none()
+    scan = models.get_scan_by_id(scan_id).one_or_none()
     json_results = []
     if scan is not None:
         json_results = list(models.get_scan_results_by_id_on_job_name(scan_id).all())

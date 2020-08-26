@@ -421,6 +421,16 @@ class PackageGraph(db.Model):
             for package_version in get_packages_by_ids(self.distinct_package_ids)
         }
 
+    @cached_property
+    def distinct_package_reports(self) -> List[PackageReport]:
+        return get_package_score_reports(
+            self.distinct_package_versions_by_id.values()
+        ).all()
+
+    @cached_property
+    def distinct_package_reports_json(self) -> List[Dict]:
+        return [pr.report_json for pr in self.distinct_package_reports]
+
     def get_npm_registry_data_by_package_version_id(
         self,
     ) -> Dict[PackageVersionID, Optional["NPMRegistryEntry"]]:
@@ -874,6 +884,9 @@ class Scan(db.Model):
     # scan status
     status = Column(scan_status_enum, nullable=False)
 
+    # resulting scan graph id
+    graph_id = Column(Integer, nullable=True)
+
     @cached_property
     def name(self,) -> str:
         assert isinstance(self.params, dict)
@@ -897,6 +910,27 @@ class Scan(db.Model):
         for file_config in self.params["kwargs"]["dep_file_urls"]:
             yield file_config
 
+    @cached_property
+    def report_url(self,) -> str:
+        """
+        Returns the report URL for the scan type and args
+        """
+        if self.name == "scan_score_npm_package":
+            if self.package_version:
+                return f"/package_report?package_name={self.package_name}&package_version={self.package_version}&package_manager=npm"
+            else:
+                return f"/package_report?package_name={self.package_name}&package_manager=npm"
+        elif self.name == "scan_score_npm_dep_files":
+            return f"/dep_files_reports/{self.id}"
+
+        raise NotImplementedError("report_url not implemented")
+
+    @cached_property
+    def package_graph(self,) -> Optional[PackageGraph]:
+        if self.graph_id:
+            return get_graph_by_id(self.graph_id)
+        return None
+
 
 def get_package_report(
     package: str, version: Optional[str] = None
@@ -915,6 +949,22 @@ def get_package_report(
         ):
             return rep
     return None
+
+
+def get_package_score_reports(
+    package_versions: Iterable[PackageVersion],
+) -> sqlalchemy.orm.query.Query:
+    """
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_package_score_reports([PackageVersion(name="foo", version="0.0.1"), PackageVersion(name="bar", version="0.1.1"),]))
+    'SELECT reports.package AS reports_package, reports.version AS reports_version, reports.release_date AS reports_release_date, reports.scoring_date AS reports_scoring_date, reports.top_score AS reports_top_score, reports.npmsio_score AS reports_npmsio_score, reports.npmsio_scored_package_version AS reports_npmsio_scored_package_version, reports."directVulnsCritical_score" AS "reports_directVulnsCritical_score", reports."directVulnsHigh_score" AS "reports_directVulnsHigh_score", reports."directVulnsMedium_score" AS "reports_directVulnsMedium_score", reports."directVulnsLow_score" AS "reports_directVulnsLow_score", reports."indirectVulnsCritical_score" AS "reports_indirectVulnsCritical_score", reports."indirectVulnsHigh_score" AS "reports_indirectVulnsHigh_score", reports."indirectVulnsMedium_score" AS "reports_indirectVulnsMedium_score", reports."indirectVulnsLow_score" AS "reports_indirectVulnsLow_score", reports.authors AS reports_authors, reports.contributors AS reports_contributors, reports.immediate_deps AS reports_immediate_deps, reports.all_deps AS reports_all_deps, reports.graph_id AS reports_graph_id, reports.id AS reports_id \\nFROM reports \\nWHERE (reports.package, reports.version) IN ((%(param_1)s, %(param_2)s), (%(param_3)s, %(param_4)s))'
+    """
+    return db.session.query(PackageScoreReport).filter(
+        sqlalchemy.sql.expression.tuple_(
+            PackageScoreReport.package, PackageScoreReport.version
+        ).in_([(p.name, p.version) for p in package_versions])
+    )
 
 
 def get_most_recently_scored_package_report(
@@ -1477,7 +1527,7 @@ def get_next_queued_scan() -> sqlalchemy.orm.query.Query:
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
     ...     str(get_next_queued_scan())
-    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status \\nFROM scans \\nWHERE scans.status = %(status_1)s ORDER BY scans.inserted_at DESC \\n LIMIT %(param_1)s'
+    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status, scans.graph_id AS scans_graph_id \\nFROM scans \\nWHERE scans.status = %(status_1)s ORDER BY scans.inserted_at DESC \\n LIMIT %(param_1)s'
     """
     return (
         db.session.query(Scan)
@@ -1570,6 +1620,13 @@ def save_scan_with_status(scan: Scan, status: str) -> Scan:
     return scan
 
 
+def save_scan_with_graph_id(scan: Scan, graph_id: int) -> Scan:
+    scan.graph_id = graph_id
+    db.session.add(scan)
+    db.session.commit()
+    return scan
+
+
 def save_deserialized(
     deserialized: Union[
         PackageVersion,
@@ -1629,3 +1686,15 @@ def save_deserialized(
     else:
         log.warn(f"don't know how to save deserialized {deserialized}")
     db.session.commit()
+
+
+def get_scan_by_id(scan_id: int) -> Scan:
+    """
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     query = str(get_scan_by_id(20))
+
+    >>> query
+    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status, scans.graph_id AS scans_graph_id \\nFROM scans \\nWHERE scans.id = %(id_1)s'
+    """
+    return db.session.query(Scan).filter_by(id=scan_id)
