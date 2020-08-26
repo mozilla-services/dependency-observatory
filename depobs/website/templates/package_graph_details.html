@@ -1,0 +1,15 @@
+{%if graph_id %}
+<div class="card card-primary mt-4">
+    <div class="card-header bg-primary text-center text-md-left text-white">
+        <span class="h3">Constraint Graph Scoring Details</span>
+    </div>
+    <div class="card-body pb-1">
+        <ul>
+            <li><a target="_blank" href="/score_details/graphs/{{graph_id}}">resolved packages</a>
+            {% for field in package_report_fields  %}
+                <li><a target="_blank" href="/score_details/score_component_graphs/{{graph_id}}/{{field}}">{{field}}</a>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
