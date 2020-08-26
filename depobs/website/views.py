@@ -36,6 +36,10 @@ from depobs.website.schemas import (
 from depobs.database import models
 from depobs.util import graph_traversal
 from depobs.util import graph_util
+from depobs.util.datavis_util import (
+    package_score_reports_to_scores_histogram,
+    package_score_reports_to_score_grades_histogram,
+)
 from depobs.worker import k8s
 from depobs.worker import tasks
 from depobs.worker import scoring
@@ -147,6 +151,36 @@ def show_package_changelog() -> Any:
         versions=list(
             models.get_npm_registry_entries_to_scan(report.package_name, None).all()
         ),
+    )
+
+
+@api.route("/graphs/<int:graph_id>/score_code_histogram", methods=["GET", "HEAD"])
+def get_graph_score_code_histogram_spec(graph_id: int):
+    """
+    Returns a vega spec for a histogram of the graph score codes/grades
+    """
+    db_graph: models.PackageGraph = models.get_graph_by_id(graph_id)
+    return (
+        package_score_reports_to_score_grades_histogram(
+            db_graph.distinct_package_reports
+        )
+        .properties(width=400, height=400)
+        .configure_axis(grid=False)
+        .to_json()
+    )
+
+
+@api.route("/graphs/<int:graph_id>/score_histogram", methods=["GET", "HEAD"])
+def get_graph_score_histogram_spec(graph_id: int):
+    """
+    Returns a vega spec for a histogram of the graph scores
+    """
+    db_graph: models.PackageGraph = models.get_graph_by_id(graph_id)
+    return (
+        package_score_reports_to_scores_histogram(db_graph.distinct_package_reports)
+        .properties(width=400, height=400)
+        .configure_axis(grid=False)
+        .to_json()
     )
 
 
