@@ -303,6 +303,8 @@ async def scan_score_npm_dep_files(scan: models.Scan,) -> None:
                 f"scan: {scan.id} saving job results for {list(scan.dep_file_urls())}"
             )
             db_graph = deserialized[0]
+            assert db_graph.id
+            models.save_scan_with_graph_id(scan, db_graph.id)
 
     log.info(
         f"scan: {scan.id} fetching missing npms.io scores and npm registry entries for scoring"

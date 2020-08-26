@@ -1527,7 +1527,7 @@ def get_next_queued_scan() -> sqlalchemy.orm.query.Query:
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
     ...     str(get_next_queued_scan())
-    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status \\nFROM scans \\nWHERE scans.status = %(status_1)s ORDER BY scans.inserted_at DESC \\n LIMIT %(param_1)s'
+    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status, scans.graph_id AS scans_graph_id \\nFROM scans \\nWHERE scans.status = %(status_1)s ORDER BY scans.inserted_at DESC \\n LIMIT %(param_1)s'
     """
     return (
         db.session.query(Scan)
@@ -1615,6 +1615,13 @@ def dependency_files_to_scan(dep_file_urls: List[ScanFileURL],) -> Scan:
 
 def save_scan_with_status(scan: Scan, status: str) -> Scan:
     scan.status = status
+    db.session.add(scan)
+    db.session.commit()
+    return scan
+
+
+def save_scan_with_graph_id(scan: Scan, graph_id: int) -> Scan:
+    scan.graph_id = graph_id
     db.session.add(scan)
     db.session.commit()
     return scan
