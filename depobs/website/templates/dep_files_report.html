@@ -17,29 +17,39 @@
                     {% include 'dep_files_list.html' %}
                 </div>
 
+                <div class="">
+                    <div id="deps_score_histogram" data-src="/graphs/{{scan.graph_id}}/score_histogram"></div>
+                    <div id="deps_score_code_histogram" data-src="/graphs/{{scan.graph_id}}/score_code_histogram"></div>
+                <div>
             </div>
         </div>
     </div>
 
-    <div class="card card-primary mt-4">
-        <div class="card-header bg-primary text-center text-md-left text-white">
-            <span class="h3">Dependencies</span>
+    <div class="row">
+        <div class="col-lg-12">
+        <div class="card card-primary mt-4">
+            <div class="card-header bg-primary text-center text-md-left text-white">
+                <span class="h3">Dependencies</span>
+            </div>
+            <div class="card-body pb-1">
+                {%if scan.package_graph and scan.package_graph.distinct_package_reports %}
+                    {% with deps=scan.package_graph.distinct_package_reports_json %}
+                        {% include 'dependencies_table.html' %}
+                    {% endwith %}
+                {% else %}
+                    <div>
+                        No dependencies found.
+                    </div>
+                {% endif %}
+            </div>
         </div>
-        <div class="card-body pb-1">
-            {%if scan.package_graph and scan.package_graph.distinct_package_reports %}
-                {% with deps=scan.package_graph.distinct_package_reports_json %}
-                    {% include 'dependencies_table.html' %}
-                {% endwith %}
-            {% else %}
-                <div>
-                    No dependencies found.
-                </div>
-            {% endif %}
         </div>
     </div>
 
     {% with graph_id=scan.graph_id %}
        {% include 'package_graph_details.html' %}
     {% endwith %}
+
+    <script src="/static/dep_files_report_page.js"></script>
 </div>
 {% endblock %}
