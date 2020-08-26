@@ -46,7 +46,7 @@ import depobs.worker.scoring as scoring
 import depobs.worker.serializers as serializers
 import depobs.worker.validators as validators
 
-from depobs.clients.aiohttp_client import AIOHTTPClientConfig
+from depobs.clients.aiohttp_client import AIOHTTPClientConfig, is_not_found_exception
 from depobs.clients.hibp import fetch_hibp_breach_data
 from depobs.clients.npmsio import fetch_npmsio_scores
 from depobs.clients.npm_registry import fetch_npm_registry_metadata
@@ -420,6 +420,8 @@ async def fetch_package_data(
     # TODO: figure this type error out later
     async for package_result in fetcher(config, package_names, len(package_names)):  # type: ignore
         if isinstance(package_result, Exception):
+            if is_not_found_exception(package_result):
+                continue
             raise package_result
         package_results.append(package_result)
 
