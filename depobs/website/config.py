@@ -36,6 +36,7 @@ LOGGING = {
         "depobs.worker.main": {"handlers": ["console"], "level": "INFO",},
         "depobs.worker.scoring": {"handlers": ["console"], "level": "INFO",},
         "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
+        "depobs.util.dataviz_util": {"handlers": ["console"], "level": "INFO"},
     },
 }
 
