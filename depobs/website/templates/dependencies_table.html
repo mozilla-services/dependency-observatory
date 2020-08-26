@@ -31,7 +31,7 @@
             </a>
         </td>
         <td>
-            {{dep['score_code']}} ({{dep['score'] | round(0) | int}})
+            {{dep['score_code']}} {% if dep['score'] %}({{dep['score'] | round(0) | int}}){% endif %}
         </td>
         <td>
             {{dep['immediate_deps']}}
