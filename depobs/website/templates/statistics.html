@@ -14,9 +14,7 @@
           </select>
           <br>
           <div class="flex-container">
-            <div>
-              <img id="histogram_image" src="/histogram.png">
-            </div>
+            <div id="score_code_histogram"></div>
             <div>
               <table id="score_table_latest">
                 {% for score, count in table_data["latest"].items() %}
@@ -46,9 +44,12 @@
             <option value="v0">V0</option>
       		</select>
           <br>
-          <img id="distribution_image" src="/distribution.png">
+          <div id="score_distribution"></div>
       </div>
 
-      <script src="/static/graph.js"></script>
-
+      <script src="/static/vega@5.js"></script>
+      <script src="/static/vega-interpreter@1.js"></script>
+      <script src="/static/vega-lite@4.js"></script>
+      <script src="/static/vega-embed@6.js"></script>
+      <script src="/static/statistics_page.js"></script>
 {% endblock %}

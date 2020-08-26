@@ -1314,7 +1314,7 @@ def get_statistics_scores(scoring_algorithm: str = None) -> List[int]:
         scores = db.session.query(PackageScoreReportV0.score).all()
     else:
         scores = db.session.query(PackageScoreReport.score).all()
-    scores = [int(score[0]) for score in scores]
+    scores = [int(score[0]) for score in scores if len(score) and score[0]]
     return scores
 
 
