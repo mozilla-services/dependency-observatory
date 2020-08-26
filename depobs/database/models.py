@@ -884,6 +884,9 @@ class Scan(db.Model):
     # scan status
     status = Column(scan_status_enum, nullable=False)
 
+    # resulting scan graph id
+    graph_id = Column(Integer, nullable=True)
+
     @cached_property
     def name(self,) -> str:
         assert isinstance(self.params, dict)
