@@ -52,7 +52,7 @@ STANDARD_HEADERS = {
         "frame-ancestors 'none'; "
         "font-src 'self'; "
         "img-src 'self'; "
-        "style-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
         "script-src 'self'; "
         "connect-src 'self'; "
     ),
