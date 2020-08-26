@@ -18,10 +18,10 @@ from flask import (
     url_for,
     Response,
 )
+import altair as alt
 import graphviz
 from marshmallow import ValidationError
 import networkx as nx
-import seaborn as sb
 import urllib3
 from werkzeug.exceptions import BadGateway, BadRequest, NotFound, NotImplemented
 
@@ -165,66 +165,67 @@ def show_dep_files_report(scan_id: int) -> Any:
     )
 
 
-@api.route("/histogram.png")
+@api.route("/statistics/histogram.vg.json")
 def get_histogram(scoring_algorithm: str = None) -> Any:
-
+    """
+    Returns a vega spec and data to render a histogram of the
+    distribution of score codes for all reports
+    """
     scores = models.get_statistics(scoring_algorithm)
     counts = scores["score_codes_histogram"]
 
     # Required to pass typing CI test
     assert isinstance(counts, dict)
 
-    # This is a workaround to get the data into a format that seaborn will accept
-    letters = list()
-    for letter in counts:
-        for i in range(counts[letter]):
-            letters.append(letter)
+    data = alt.Data(
+        values=[
+            dict(score_code=score_code, count=counts.get(score_code, 0))
+            for score_code in ["A", "B", "C", "D", "E"]
+        ]
+    )
+    return (
+        alt.Chart(data)
+        .mark_bar()
+        .encode(
+            x=alt.X("score_code:O", axis=alt.Axis(title="package grade")),
+            y=alt.Y("count:Q", axis=alt.Axis(title="count")),
+        )
+        .configure_axis(grid=False)
+        .properties(width=600, height=400)
+        .to_json()
+    )
 
-    data = {"score_code": letters}
 
-    img = BytesIO()
-    fig = sb.countplot(
-        x="score_code", data=data, order=["A", "B", "C", "D", "E"],
-    ).get_figure()
-    fig.savefig(img, format="png")
-    fig.clf()
-    return Response(img.getvalue(), mimetype="image/png")
-
-
-@api.route("/histogram_v0.png")
+@api.route("/statistics/histogram_v0.vg.json")
 def get_histogram_v0() -> Any:
     return get_histogram("v0")
 
 
-@api.route("/distribution.png")
+@api.route("/statistics/distribution.vg.json")
 def get_distribution(scoring_algorithm: str = None) -> Any:
-
     scores = models.get_statistics_scores(scoring_algorithm)
 
-    img = BytesIO()
-    plot = sb.distplot(
-        scores,
-        bins=12,
-        kde=False,
-        norm_hist=False,
-        axlabel="package score",
-        hist_kws={"range": (0, 120)},
+    data = alt.Data(values=[dict(score=score) for score in scores])
+    return (
+        alt.Chart(data)
+        .mark_bar()
+        .encode(
+            x=alt.X("score:O", bin=True, axis=alt.Axis(title="package score")),
+            y=alt.Y("count()", axis=alt.Axis(title="count")),
+        )
+        .configure_axis(grid=False)
+        .properties(width=600, height=400)
+        .to_json()
     )
-    plot.set_xlim(0, 120)
-    fig = plot.get_figure()
-    fig.savefig(img, format="png")
-    fig.clf()
-    return Response(img.getvalue(), mimetype="image/png")
 
 
-@api.route("/distribution_v0.png")
+@api.route("/statistics/distribution_v0.vg.json")
 def get_distribution_v0() -> Any:
     return get_distribution("v0")
 
 
 @api.route("/statistics", methods=["GET"])
 def get_statistics() -> Any:
-
     scoring_algorithms = ["v0", "latest"]
     table_data = dict()
 
