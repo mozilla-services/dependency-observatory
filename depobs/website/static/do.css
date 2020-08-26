@@ -39,10 +39,6 @@ ul {
 }
 
 /* wordmark and nav stuff */
-/*#navbar-container {
-    margin: 6px auto 8px auto;
-}*/
-
 #observatory-wordmark {
   height: 1.6em;
 }
@@ -63,16 +59,6 @@ ul {
   .table {
     margin-bottom: 1px;
   }
-
-  /* fix large gap between sections */
-  /*    #recommended-change {
-        min-width: 360px;
-    }
-*/
-  /*    #scan-summary {
-        width: 95%;
-    }
-*/
 }
 
 #results-container {
@@ -93,34 +79,6 @@ ul {
   border: 0;
   box-shadow: none;
 }
-
-/*
-.nav-tabs > li > a {
-    background-color: #f6f6f6;
-    border-width: 2px 2px 0 2px;
-    border-color: #dddddd;
-    border-radius: 4px 4px 0 0;
-}
-
-.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus {
-    background-color: #4582ec;
-    border-color: #4582ec;
-    border-width: 3px 3px 0 3px;
-    color: white;
-    font-weight: 600;
-}
-
-.nav-tabs > li > a.tabs-danger {
-    background-color: #fbeaea;
-    border-color: #f3cac8;
-    color: #ea4b2f;
-}
-
-.nav-tabs > li.active > a.tabs-danger {
-    background-color: #d9534f;
-    border-color: #d9534f;
-    color: white;
-}*/
 
 .tab-content {
   margin-top: 1.2em;
@@ -213,75 +171,12 @@ ul {
   margin-bottom: 2em;
 }
 
-/* expandible panel buttons, such as raw server headers */
-button.expandy-panel-button {
-  font-weight: 700;
-  padding: 0.25rem 0.75rem;
-  white-space: normal;
-}
-
-/* hide all results while the progress bar is in the DOM before it */
-div.progress-lg + div.row {
-  display: none;
-}
-
 .summary tr td:nth-child(1) {
   font-weight: 600;
   /*    padding-right: 1.5em; */
 }
 
-/*
-.summary tr td:nth-child(2) {
-    white-space: pre-wrap;
-    width: 100%;
-}
-*/
-#csp-analysis tr td:nth-child(2) {
-  display: table-cell; /* override inline-block */
-}
-
-/* test name */
-#server-headers-table tr td:nth-child(1),
-#tls-certificate-table tr td:nth-child(1),
-#tls-misc-table tr td:nth-child(1),
-#ssh-misc-table tr td:nth-child(1),
-#ssh-version-table tr td:nth-child(1) {
-  font-weight: 600;
-  padding-right: 1em;
-}
-
-/* pass fail */
-/* #test-scores tr td:nth-child(2), */
-#csp-analysis tr td:nth-child(2),
-#csp-analysis tr td:nth-child(3) {
-  margin-right: 3em;
-  text-align: center;
-  white-space: nowrap;
-}
-
-/* line up vertically with glyphicons */
-#csp-analysis tr td:nth-child(3) span {
-  line-height: 1.42857143;
-}
-
-/* cookies, when not a tablesaw */
-/*#cookies tr td:nth-child(1) {
-    max-width: 8em;
-    word-wrap: break-word;
-}*/
-
 /* explanations */
-/*
-#test-scores tr td:nth-child(4) {
-    width: 100%;
-}
-*/
-
-/*
-#test-scores tr td {
-    vertical-align: middle;
-}
-*/
 
 /* change how code looks inside the test scores */
 #test-scores code,
@@ -290,81 +185,11 @@ div.progress-lg + div.row {
   font-size: 80%;
 }
 
-/* score modifier */
-/*
-#test-scores tr td:nth-child(3) {
-    padding-right: 1.5em;
-    text-align: right;
-    white-space: nowrap;
-}
-*/
-
-/* site history */
-/*#host-history-table tbody tr td:nth-child(2),
-#host-history-table thead tr th:nth-child(2) {
-    text-align: center;
-}*/
-
-/*#host-history-table tbody tr td:nth-child(3) {
-    padding-left: 1.5em;
-}
-*/
-/* server header values, protocols */
-/*#server-headers tr td:last-child, #tls-certificate-table tr td:last-child, #tls-ciphers-table tr td:last-child {
-    hyphens: auto;
-    width: 100%;
-    word-break: break-all;
-}*/
-
-/* tls observatory protocols table is a big crowded */
-.bold-no-wrap {
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-#tls-suggestions #tls-suggestions-disclaimer {
-  padding: 0 0.75em;
-}
-
-#tls-suggestions #tls-suggestions-disclaimer p:last-child {
-  margin-bottom: 0;
-}
-
-#ssh-recommendations-table ul {
-  margin-bottom: 0;
-}
-
-/* qualys third party test */
-#qualys-logo {
-  margin: 1.5em 0.75em -1em 0;
-  width: 300px;
-}
-
-/* htbridge third party result */
-#htbridge-logo {
-  margin: 1.5em 0.75em -1em 0;
-  width: 220px;
-}
-
-#htbridge-url {
-  display: inline-block;
-  max-width: 30em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 sup,
 sub {
   vertical-align: baseline;
   position: relative;
   top: -0.4em;
-}
-
-/* provide some order to the third party tests */
-#third-party-tests h3 {
-  margin-bottom: 0.5em;
-  margin-top: 1.5em;
 }
 
 /* faq and terms and statistics pages */
