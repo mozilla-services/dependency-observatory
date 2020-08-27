@@ -47,6 +47,7 @@ from sqlalchemy.schema import Table
 from sqlalchemy import func
 
 from depobs.database.mixins import PackageReportColumnsMixin
+from depobs.database.schemas import PackageReportSchema
 from depobs.website.schemas import JobParamsSchema
 
 log = logging.getLogger(__name__)
@@ -251,49 +252,7 @@ class PackageReport(PackageReportColumnsMixin, db.Model):
 
     @property
     def report_json(self) -> Dict:
-        return dict(
-            score=self.score,
-            score_code=self.score_code,
-            id=self.id,
-            graph_id=self.graph_id,
-            package=self.package,
-            version=self.version,
-            release_date=self.release_date,
-            scoring_date=self.scoring_date,
-            top_score=self.top_score,
-            npmsio_score=self.npmsio_score,
-            npmsio_scored_package_version=self.npmsio_scored_package_version,
-            directVulnsCritical_score=self.directVulnsCritical_score,
-            directVulnsHigh_score=self.directVulnsHigh_score,
-            directVulnsMedium_score=self.directVulnsMedium_score,
-            directVulnsLow_score=self.directVulnsLow_score,
-            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
-            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
-            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
-            indirectVulnsLow_score=self.indirectVulnsLow_score,
-            authors=self.authors,
-            contributors=self.contributors,
-            immediate_deps=self.immediate_deps,
-            all_deps=self.all_deps,
-        )
-
-    def json_with_dependencies(self, depth: int = 1) -> Dict:
-        return {
-            "dependencies": [
-                rep.json_with_dependencies(depth - 1) for rep in self.dependencies
-            ]
-            if depth > 0
-            else [],
-            **self.report_json,
-        }
-
-    def json_with_parents(self, depth: int = 1) -> Dict:
-        return {
-            "parents": [rep.json_with_parents(depth - 1) for rep in self.parents]
-            if depth > 0
-            else [],
-            **self.report_json,
-        }
+        return PackageReportSchema().dump(self)
 
 
 class PackageVersion(db.Model):

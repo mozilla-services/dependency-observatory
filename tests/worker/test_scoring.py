@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import itertools
 from typing import Any, Dict, Iterator, Iterable, List, Optional, Tuple
 
 import pytest
@@ -403,7 +404,7 @@ score_package_graph_testcases = {
                 npmsio_score=0.0,
                 npmsio_scored_package_version="0.1.0",
                 graph_id=-1,
-            ).json_with_dependencies(depth=0)
+            )
         ],
     ),
     "three_node_path_graph": (
@@ -429,73 +430,76 @@ score_package_graph_testcases = {
             get_advisories_by_package_version_id=lambda: {0: [], 1: [], 2: []},
         ),
         [
-            {
-                **_default_report_json,
-                "graph_id": -1,
-                "npmsio_score": 0.25,
-                "npmsio_scored_package_version": "2.0.0",
-                "score": 25.0,
-                "score_code": "E",
-                "package": "test-grandchild-pkg",
-                "version": "2.1.0",
-            },
-            {
-                **_default_report_json,
-                "graph_id": -1,
-                "all_deps": 1,
-                "dependencies": [
-                    {
-                        **_default_report_json,
-                        "graph_id": -1,
-                        "npmsio_score": 0.25,
-                        "npmsio_scored_package_version": "2.0.0",
-                        "score": 25.0,
-                        "score_code": "E",
-                        "package": "test-grandchild-pkg",
-                        "version": "2.1.0",
-                    },
-                ],
-                "immediate_deps": 1,
-                "npmsio_score": 0.9,
-                "npmsio_scored_package_version": "0.0.3",
-                "score": 100.0,
-                "score_code": "A",
-                "package": "test-child-pkg",
-                "version": "0.0.3",
-            },
-            {
-                **_default_report_json,
-                "graph_id": -1,
-                "all_deps": 2,
-                "authors": None,
-                "dependencies": [
-                    {
-                        **_default_report_json,
-                        "graph_id": -1,
-                        "all_deps": 1,
-                        "immediate_deps": 1,
-                        "npmsio_score": 0.9,
-                        "npmsio_scored_package_version": "0.0.3",
-                        "score": 100.0,
-                        "score_code": "A",
-                        "package": "test-child-pkg",
-                        "version": "0.0.3",
-                    },
-                ],
-                "immediate_deps": 1,
-                "npmsio_score": 0.34,
-                "npmsio_scored_package_version": "0.1.3",
-                "score": 44.0,
-                "score_code": "D",
-                "package": "test-root-pkg",
-                "version": "0.1.0",
-            },
+            m.PackageReport(
+                **{
+                    **_default_report_json,
+                    "graph_id": -1,
+                    "npmsio_score": 0.25,
+                    "npmsio_scored_package_version": "2.0.0",
+                    "package": "test-grandchild-pkg",
+                    "version": "2.1.0",
+                }
+            ),
+            m.PackageReport(
+                **{
+                    **_default_report_json,
+                    "graph_id": -1,
+                    "all_deps": 1,
+                    "dependencies": [
+                        m.PackageReport(
+                            **{
+                                **_default_report_json,
+                                "graph_id": -1,
+                                "npmsio_score": 0.25,
+                                "npmsio_scored_package_version": "2.0.0",
+                                "package": "test-grandchild-pkg",
+                                "version": "2.1.0",
+                            }
+                        ),
+                    ],
+                    "immediate_deps": 1,
+                    "npmsio_score": 0.9,
+                    "npmsio_scored_package_version": "0.0.3",
+                    "package": "test-child-pkg",
+                    "version": "0.0.3",
+                }
+            ),
+            m.PackageReport(
+                **{
+                    **_default_report_json,
+                    "graph_id": -1,
+                    "all_deps": 2,
+                    "authors": None,
+                    "dependencies": [
+                        m.PackageReport(
+                            **{
+                                **_default_report_json,
+                                "graph_id": -1,
+                                "all_deps": 1,
+                                "immediate_deps": 1,
+                                "npmsio_score": 0.9,
+                                "npmsio_scored_package_version": "0.0.3",
+                                "package": "test-child-pkg",
+                                "version": "0.0.3",
+                            }
+                        ),
+                    ],
+                    "immediate_deps": 1,
+                    "npmsio_score": 0.34,
+                    "npmsio_scored_package_version": "0.1.3",
+                    "package": "test-root-pkg",
+                    "version": "0.1.0",
+                }
+            ),
         ],
     ),
     "two_node_loop": (
         m.PackageGraph(
             id=-1,
-            package_links_by_id={0: (0, 1), 1: (1, 0),},
+            package_links_by_id={
+                0: (0, 1),
+                1: (1, 0),
+            },
             distinct_package_versions_by_id={
                 0: m.PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
                 1: m.PackageVersion(id=1, name="test-child-pkg", version="0.0.3"),
@@ -505,82 +509,85 @@ score_package_graph_testcases = {
                 1: ("0.0.3", {"0.0.3": 0.8}),
             },
             get_npm_registry_data_by_package_version_id=lambda: {0: None, 1: None},
-            get_advisories_by_package_version_id=lambda: {0: [], 1: [],},
+            get_advisories_by_package_version_id=lambda: {
+                0: [],
+                1: [],
+            },
         ),
         [
-            {
-                **_default_report_json,
-                "graph_id": -1,
-                "all_deps": 1,
-                "immediate_deps": 1,
-                "npmsio_score": 0.8,
-                "npmsio_scored_package_version": "0.0.3",
-                "score": 90.0,
-                "score_code": "B",
-                "package": "test-child-pkg",
-                "version": "0.0.3",
-                "dependencies": [
-                    {
-                        **_default_report_json,
-                        "graph_id": -1,
-                        "all_deps": 1,
-                        "immediate_deps": 1,
-                        "npmsio_score": 0.2,
-                        "npmsio_scored_package_version": "0.1.3",
-                        "score": 30.0,
-                        "score_code": "E",
-                        "package": "test-root-pkg",
-                        "version": "0.1.0",
-                    }
-                ],
-            },
-            {
-                **_default_report_json,
-                "graph_id": -1,
-                "all_deps": 1,
-                "immediate_deps": 1,
-                "npmsio_score": 0.2,
-                "npmsio_scored_package_version": "0.1.3",
-                "score": 30.0,
-                "score_code": "E",
-                "package": "test-root-pkg",
-                "version": "0.1.0",
-                "dependencies": [
-                    {
-                        **_default_report_json,
-                        "graph_id": -1,
-                        "all_deps": 1,
-                        "immediate_deps": 1,
-                        "npmsio_score": 0.8,
-                        "npmsio_scored_package_version": "0.0.3",
-                        "score": 90.0,
-                        "score_code": "B",
-                        "package": "test-child-pkg",
-                        "version": "0.0.3",
-                    }
-                ],
-            },
+            m.PackageReport(
+                **{
+                    **_default_report_json,
+                    "graph_id": -1,
+                    "all_deps": 1,
+                    "immediate_deps": 1,
+                    "npmsio_score": 0.8,
+                    "npmsio_scored_package_version": "0.0.3",
+                    "package": "test-child-pkg",
+                    "version": "0.0.3",
+                    "dependencies": [
+                        m.PackageReport(
+                            **{
+                                **_default_report_json,
+                                "graph_id": -1,
+                                "all_deps": 1,
+                                "immediate_deps": 1,
+                                "npmsio_score": 0.2,
+                                "npmsio_scored_package_version": "0.1.3",
+                                "package": "test-root-pkg",
+                                "version": "0.1.0",
+                            }
+                        )
+                    ],
+                }
+            ),
+            m.PackageReport(
+                **{
+                    **_default_report_json,
+                    "graph_id": -1,
+                    "all_deps": 1,
+                    "immediate_deps": 1,
+                    "npmsio_score": 0.2,
+                    "npmsio_scored_package_version": "0.1.3",
+                    "package": "test-root-pkg",
+                    "version": "0.1.0",
+                    "dependencies": [
+                        m.PackageReport(
+                            **{
+                                **_default_report_json,
+                                "graph_id": -1,
+                                "all_deps": 1,
+                                "immediate_deps": 1,
+                                "npmsio_score": 0.8,
+                                "npmsio_scored_package_version": "0.0.3",
+                                "package": "test-child-pkg",
+                                "version": "0.0.3",
+                            }
+                        )
+                    ],
+                }
+            ),
         ],
     ),
 }
 
 
 @pytest.mark.parametrize(
-    "db_graph, expected_package_reports_with_deps_json",
+    "db_graph, expected_package_reports",
     score_package_graph_testcases.values(),
     ids=score_package_graph_testcases.keys(),
 )
 @pytest.mark.unit
 def test_score_package_graph(
     db_graph: m.PackageGraph,
-    expected_package_reports_with_deps_json: List[Dict[str, Any]],
+    expected_package_reports: List[m.PackageReport],
     mocker,
 ):
     dt_mock = mocker.patch("depobs.worker.scoring.datetime")
-    for r in expected_package_reports_with_deps_json:
-        r["scoring_date"] = dt_mock.now()
-        for dep in r.get("dependencies", []):
-            dep["scoring_date"] = dt_mock.now()
+    for r in expected_package_reports:
+        r.scoring_date = dt_mock.now()
+        for dep in r.dependencies:
+            dep.scoring_date = dt_mock.now()
 
     reports = list(m.score_package_graph(db_graph).values())
 
@@ -588,14 +595,18 @@ def test_score_package_graph(
     assert (
         len(db_graph.distinct_package_ids)
         == len(reports)
-        == len(expected_package_reports_with_deps_json)
+        == len(expected_package_reports)
     )
 
     # should have correct direct and indirect dep counts
-    for report, expected_report_json in zip(
-        reports, expected_package_reports_with_deps_json
+    for report, expected_report in itertools.zip_longest(
+        reports, expected_package_reports
     ):
-        assert report.json_with_dependencies() == expected_report_json
+        assert report.report_json == expected_report.report_json
+        for dep, expected_dep in itertools.zip_longest(
+            report.dependencies, expected_report.dependencies
+        ):
+            assert dep.report_json == expected_dep.report_json
 
 
 compare_package_graph_testcases = {
