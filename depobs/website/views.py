@@ -49,6 +49,7 @@ log = logging.getLogger(__name__)
 
 STANDARD_HEADERS = {
     "Access-Control-Allow-Origin": "*",
+    # NB: altair/vega uses style-src unsafe-inline
     "Content-Security-Policy": (
         "default-src 'none'; "
         "base-uri 'none'; "
