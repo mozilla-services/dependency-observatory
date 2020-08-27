@@ -200,12 +200,12 @@ def show_dep_files_report(scan_id: int) -> Any:
 
 
 @api.route("/statistics/histogram.vg.json")
-def get_histogram(scoring_algorithm: str = None) -> Any:
+def get_histogram() -> Any:
     """
     Returns a vega spec and data to render a histogram of the
     distribution of score codes for all reports
     """
-    scores = models.get_statistics(scoring_algorithm)
+    scores = models.get_statistics()
     counts = scores["score_codes_histogram"]
 
     # Required to pass typing CI test
@@ -230,14 +230,9 @@ def get_histogram(scoring_algorithm: str = None) -> Any:
     )
 
 
-@api.route("/statistics/histogram_v0.vg.json")
-def get_histogram_v0() -> Any:
-    return get_histogram("v0")
-
-
 @api.route("/statistics/distribution.vg.json")
-def get_distribution(scoring_algorithm: str = None) -> Any:
-    scores = models.get_statistics_scores(scoring_algorithm)
+def get_distribution() -> Any:
+    scores = models.get_statistics_scores()
 
     data = alt.Data(values=[dict(score=score) for score in scores])
     return (
@@ -253,30 +248,19 @@ def get_distribution(scoring_algorithm: str = None) -> Any:
     )
 
 
-@api.route("/statistics/distribution_v0.vg.json")
-def get_distribution_v0() -> Any:
-    return get_distribution("v0")
-
-
 @api.route("/statistics", methods=["GET"])
 def get_statistics() -> Any:
-    scoring_algorithms = ["v0", "latest"]
-    table_data = dict()
+    scores = models.get_statistics()["score_codes_histogram"]
 
-    for algorithm in scoring_algorithms:
-        scores = models.get_statistics(algorithm)["score_codes_histogram"]
+    # Required to pass typing CI test
+    assert isinstance(scores, dict)
 
-        # Required to pass typing CI test
-        assert isinstance(scores, dict)
+    # Sort the dictionary alphabetically by key
+    sorted_scores = OrderedDict()
+    for key, value in sorted(scores.items()):
+        sorted_scores[key] = value
 
-        # Sort the dictionary alphabetically by key
-        sorted_scores = OrderedDict()
-        for key, value in sorted(scores.items()):
-            sorted_scores[key] = value
-
-        table_data[algorithm] = sorted_scores
-
-    return render_template("statistics.html", table_data=table_data)
+    return render_template("statistics.html", sorted_scores=sorted_scores)
 
 
 @api.route("/faq")

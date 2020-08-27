@@ -220,74 +220,6 @@ class PackageScoreReport(PackageReportColumnsMixin, db.Model):
         }
 
 
-class PackageScoreReportV0(PackageReportColumnsMixin, db.Model):
-    __tablename__ = "report_score_view_v0"
-
-    # flag as view for Flask-Migrate running alembic doesn't try to create a table
-    # https://alembic.sqlalchemy.org/en/latest/cookbook.html#don-t-emit-create-table-statements-for-views
-    __table_args__ = {"info": {"is_view": True}}
-
-    id = Column("id", Integer, primary_key=True)
-
-    score = Column(Float)
-    score_code = Column(String(1))
-
-    # this relationship is used for persistence
-    dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
-        "PackageScoreReportV0",
-        secondary=Dependency.__table__,
-        primaryjoin=id == Dependency.__table__.c.depends_on_id,
-        secondaryjoin=id == Dependency.__table__.c.used_by_id,
-        backref="parents",
-    )
-
-    @property
-    def report_json(self) -> Dict:
-        return dict(
-            score=self.score,
-            score_code=self.score_code,
-            id=self.id,
-            graph_id=self.graph_id,
-            package=self.package,
-            version=self.version,
-            release_date=self.release_date,
-            scoring_date=self.scoring_date,
-            top_score=self.top_score,
-            npmsio_score=self.npmsio_score,
-            npmsio_scored_package_version=self.npmsio_scored_package_version,
-            directVulnsCritical_score=self.directVulnsCritical_score,
-            directVulnsHigh_score=self.directVulnsHigh_score,
-            directVulnsMedium_score=self.directVulnsMedium_score,
-            directVulnsLow_score=self.directVulnsLow_score,
-            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
-            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
-            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
-            indirectVulnsLow_score=self.indirectVulnsLow_score,
-            authors=self.authors,
-            contributors=self.contributors,
-            immediate_deps=self.immediate_deps,
-            all_deps=self.all_deps,
-        )
-
-    def json_with_dependencies(self, depth: int = 1) -> Dict:
-        return {
-            "dependencies": [
-                rep.json_with_dependencies(depth - 1) for rep in self.dependencies
-            ]
-            if depth > 0
-            else [],
-            **self.report_json,
-        }
-
-    def json_with_parents(self, depth: int = 1) -> Dict:
-        return {
-            "parents": [rep.json_with_parents(depth - 1) for rep in self.parents]
-            if depth > 0
-            else [],
-            **self.report_json,
-        }
-
-
 class PackageVersion(db.Model):
     __tablename__ = "package_versions"
 
@@ -1261,7 +1193,7 @@ def get_vulnerabilities(package: str, version: str) -> sqlalchemy.orm.query.Quer
     )
 
 
-def get_score_code_counts(scoring_algorithm: str = None) -> sqlalchemy.orm.query.Query:
+def get_score_code_counts() -> sqlalchemy.orm.query.Query:
     """
     Returns a query returning score codes to their counts from the
     scored reports view.
@@ -1275,20 +1207,12 @@ def get_score_code_counts(scoring_algorithm: str = None) -> sqlalchemy.orm.query
 
     """
     # NB: try pulling from pg_stats if we materialize the view later
-
-    if scoring_algorithm == "v0":
-        return db.session.query(
-            PackageScoreReportV0.score_code, func.count("1")
-        ).group_by(PackageScoreReportV0.score_code)
-    else:
-        return db.session.query(
-            PackageScoreReport.score_code, func.count("1")
-        ).group_by(PackageScoreReport.score_code)
+    return db.session.query(PackageScoreReport.score_code, func.count("1")).group_by(
+        PackageScoreReport.score_code
+    )
 
 
-def get_statistics(
-    scoring_algorithm: str = None,
-) -> Dict[str, Union[int, Dict[str, int]]]:
+def get_statistics() -> Dict[str, Union[int, Dict[str, int]]]:
     pkg_version_count = (
         db.session.query(PackageVersion.name, PackageVersion.version,)
         .distinct()
@@ -1302,18 +1226,13 @@ def get_statistics(
         reports=reports_count,
         score_codes_histogram={
             score_code: score_code_count
-            for (score_code, score_code_count) in get_score_code_counts(
-                scoring_algorithm
-            ).all()
+            for (score_code, score_code_count) in get_score_code_counts().all()
         },
     )
 
 
-def get_statistics_scores(scoring_algorithm: str = None) -> List[int]:
-    if scoring_algorithm == "v0":
-        scores = db.session.query(PackageScoreReportV0.score).all()
-    else:
-        scores = db.session.query(PackageScoreReport.score).all()
+def get_statistics_scores() -> List[int]:
+    scores = db.session.query(PackageScoreReport.score).all()
     scores = [int(score[0]) for score in scores if len(score) and score[0]]
     return scores
 
