@@ -33,7 +33,6 @@ from depobs.database.models import (
     get_package_report,
     get_npms_io_score,
     get_NPMRegistryEntry,
-    get_maintainers_contributors,
     get_npm_registry_data,
     store_package_reports,
     get_most_recently_inserted_package_from_name_and_version,
