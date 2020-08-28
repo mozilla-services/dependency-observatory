@@ -1272,11 +1272,6 @@ def get_statistics_scores() -> List[int]:
     return scores
 
 
-def store_package_report(pr: PackageReport) -> None:
-    db.session.add(pr)
-    db.session.commit()
-
-
 def store_package_reports(prs: List[PackageReport]) -> None:
     db.session.add_all(prs)
     db.session.commit()
