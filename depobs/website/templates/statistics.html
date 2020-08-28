@@ -7,25 +7,11 @@
 
       <div id="histogram">
           <h2 class="h3 border-bottom border-light mb-3 pb-2" id="letter-scores">Distribution of letter scores</h2>
-          Scoring algorithm version:
-          <select class="form-s" id="histScoringView" name="hist_scoring_view">
-            <option value="latest" select="selected">Latest</option>
-            <option value="v0">V0</option>
-          </select>
-          <br>
           <div class="flex-container">
             <div id="score_code_histogram"></div>
             <div>
               <table id="score_table_latest">
-                {% for score, count in table_data["latest"].items() %}
-                  <tr>
-                    <th> {{ score }} </th>
-                    <td> {{ count }} </td>
-                  </tr>
-                {% endfor %}
-              </table>
-              <table hidden id="score_table_v0">
-                {% for score, count in table_data["v0"].items() %}
+                {% for score, count in sorted_scores.items() %}
                   <tr>
                     <th> {{ score }} </th>
                     <td> {{ count }} </td>
@@ -38,12 +24,6 @@
 
       <div id="distribution">
           <h2 class="h3 border-bottom border-light mb-3 pb-2" id="numerical-scores">Distribution of numerical scores</h2>
-          Scoring algorithm version:
-          <select class="form-s" id="distScoringView" name="dist_scoring_view">
-            <option value="latest" select="selected">Latest</option>
-            <option value="v0">V0</option>
-      		</select>
-          <br>
           <div id="score_distribution"></div>
       </div>
 

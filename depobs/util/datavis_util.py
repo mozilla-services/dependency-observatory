@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 
 
 def package_score_reports_to_scores_histogram(
-    reports: Iterable[models.PackageScoreReport],
+    reports: Iterable[models.PackageReport],
 ) -> alt.Chart:
     """
     Returns a vega spec and data to render a histogram of the
@@ -27,7 +27,7 @@ def package_score_reports_to_scores_histogram(
 
 
 def package_score_reports_to_score_grades_histogram(
-    reports: Iterable[models.PackageScoreReport],
+    reports: Iterable[models.PackageReport],
 ) -> alt.Chart:
     """
     Returns a vega spec and data to render a histogram of the

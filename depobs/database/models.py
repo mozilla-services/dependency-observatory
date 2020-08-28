@@ -36,8 +36,9 @@ from sqlalchemy import (
     Table,
     UniqueConstraint,
 )
-from sqlalchemy.orm import backref, deferred, relationship
-from sqlalchemy.sql import func, expression
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.orm import backref, column_property, deferred, relationship
+from sqlalchemy.sql import case, expression, func
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.dialects.postgresql import ARRAY, ENUM, JSONB
 from sqlalchemy.ext.compiler import compiles
@@ -98,143 +99,150 @@ class PackageReport(PackageReportColumnsMixin, db.Model):
 
     id = Column("id", Integer, primary_key=True)
 
+    @staticmethod
+    def score_vulns(
+        directVulnsCritical_score: int,
+        directVulnsHigh_score: int,
+        directVulnsMedium_score: int,
+        directVulnsLow_score: int,
+        indirectVulnsCritical_score: int,
+        indirectVulnsHigh_score: int,
+        indirectVulnsMedium_score: int,
+        indirectVulnsLow_score: int,
+    ) -> int:
+        """
+        Returns the vulns score contributions per the v1 scoring alg
+        """
+        return (
+            (-30 * directVulnsCritical_score if directVulnsCritical_score > 0 else 0)
+            + (-15 * directVulnsHigh_score if directVulnsHigh_score > 0 else 0)
+            + (-7 * directVulnsMedium_score if directVulnsMedium_score > 0 else 0)
+            + (
+                -15 * indirectVulnsCritical_score
+                if indirectVulnsCritical_score > 0
+                else 0
+            )
+            + (-7 * indirectVulnsHigh_score if indirectVulnsHigh_score > 0 else 0)
+            + (-4 * indirectVulnsMedium_score if indirectVulnsMedium_score > 0 else 0)
+        )
+
+    @staticmethod
+    def score_all_deps(all_deps: Optional[int]) -> int:
+        """
+        Returns the all_deps score contribution per the v1 scoring alg
+        """
+        if not all_deps:
+            return 0
+        elif all_deps <= 5:
+            return 10
+        elif all_deps <= 20:
+            return 5
+        elif all_deps >= 100:
+            return -5
+        elif all_deps >= 500:
+            return -10
+        else:
+            return 0
+
+    @hybrid_property
+    def score(self) -> int:
+        return (
+            (self.npmsio_score * 100 if self.npmsio_score else 0)
+            + PackageReport.score_all_deps(self.all_deps)
+            + PackageReport.score_vulns(
+                self.directVulnsCritical_score,
+                self.directVulnsHigh_score,
+                self.directVulnsMedium_score,
+                self.directVulnsLow_score,
+                self.indirectVulnsCritical_score,
+                self.indirectVulnsHigh_score,
+                self.indirectVulnsMedium_score,
+                self.indirectVulnsLow_score,
+            )
+        )
+
+    @score.expression  # type: ignore
+    def score(cls):
+        return (
+            case([(cls.npmsio_score != None, cls.npmsio_score * 100)], else_=0)
+            + case(
+                [
+                    (cls.all_deps <= 5, 10),
+                    (cls.all_deps <= 20, 5),
+                    (cls.all_deps >= 100, -5),
+                    (cls.all_deps >= 500, -5),
+                ],
+                else_=0,
+            )
+            + case(
+                [
+                    (
+                        cls.directVulnsCritical_score > 0,
+                        -30 * cls.directVulnsCritical_score,
+                    ),
+                ],
+                else_=0,
+            )
+            + case(
+                [(cls.directVulnsHigh_score > 0, -15 * cls.directVulnsHigh_score),],
+                else_=0,
+            )
+            + case(
+                [(cls.directVulnsMedium_score > 0, -7 * cls.directVulnsMedium_score),],
+                else_=0,
+            )
+            + case(
+                [
+                    (
+                        cls.indirectVulnsCritical_score > 0,
+                        -15 * cls.indirectVulnsCritical_score,
+                    ),
+                ],
+                else_=0,
+            )
+            + case(
+                [(cls.indirectVulnsHigh_score > 0, -7 * cls.indirectVulnsHigh_score),],
+                else_=0,
+            )
+            + case(
+                [
+                    (
+                        cls.indirectVulnsMedium_score > 0,
+                        -4 * cls.indirectVulnsMedium_score,
+                    ),
+                ],
+                else_=0,
+            )
+        )
+
+    @hybrid_property
+    def score_code(self) -> str:
+        if self.score >= 100:
+            return "A"
+        elif self.score >= 80:
+            return "B"
+        elif self.score >= 60:
+            return "C"
+        elif self.score >= 40:
+            return "D"
+        else:
+            return "E"
+
+    @score_code.expression  # type: ignore
+    def score_code(cls):
+        return case(
+            [
+                (cls.score >= 100, "A"),
+                (cls.score >= 80, "B"),
+                (cls.score >= 60, "C"),
+                (cls.score >= 40, "D"),
+            ],
+            else_="E",
+        )
+
     # this relationship is used for persistence
     dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
         "PackageReport",
-        secondary=Dependency.__table__,
-        primaryjoin=id == Dependency.__table__.c.depends_on_id,
-        secondaryjoin=id == Dependency.__table__.c.used_by_id,
-        backref="parents",
-    )
-
-    @property
-    def report_json(self) -> Dict:
-        return dict(
-            id=self.id,
-            graph_id=self.graph_id,
-            package=self.package,
-            version=self.version,
-            release_date=self.release_date,
-            scoring_date=self.scoring_date,
-            top_score=self.top_score,
-            npmsio_score=self.npmsio_score,
-            npmsio_scored_package_version=self.npmsio_scored_package_version,
-            directVulnsCritical_score=self.directVulnsCritical_score,
-            directVulnsHigh_score=self.directVulnsHigh_score,
-            directVulnsMedium_score=self.directVulnsMedium_score,
-            directVulnsLow_score=self.directVulnsLow_score,
-            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
-            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
-            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
-            indirectVulnsLow_score=self.indirectVulnsLow_score,
-            authors=self.authors,
-            contributors=self.contributors,
-            immediate_deps=self.immediate_deps,
-            all_deps=self.all_deps,
-        )
-
-    def json_with_dependencies(self, depth: int = 1) -> Dict:
-        return {
-            "dependencies": [
-                rep.json_with_dependencies(depth - 1) for rep in self.dependencies
-            ]
-            if depth > 0
-            else [],
-            **self.report_json,
-        }
-
-    def json_with_parents(self, depth: int = 1) -> Dict:
-        return {
-            "parents": [rep.json_with_parents(depth - 1) for rep in self.parents]
-            if depth > 0
-            else [],
-            **self.report_json,
-        }
-
-
-class PackageScoreReport(PackageReportColumnsMixin, db.Model):
-    __tablename__ = "report_score_view"
-
-    # flag as view for Flask-Migrate running alembic doesn't try to create a table
-    # https://alembic.sqlalchemy.org/en/latest/cookbook.html#don-t-emit-create-table-statements-for-views
-    __table_args__ = {"info": {"is_view": True}}
-
-    id = Column("id", Integer, primary_key=True)
-
-    score = Column(Float)
-    score_code = Column(String(1))
-
-    # this relationship is used for persistence
-    dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
-        "PackageScoreReport",
-        secondary=Dependency.__table__,
-        primaryjoin=id == Dependency.__table__.c.depends_on_id,
-        secondaryjoin=id == Dependency.__table__.c.used_by_id,
-        backref="parents",
-    )
-
-    @property
-    def report_json(self) -> Dict:
-        return dict(
-            score=self.score,
-            score_code=self.score_code,
-            id=self.id,
-            graph_id=self.graph_id,
-            package=self.package,
-            version=self.version,
-            release_date=self.release_date,
-            scoring_date=self.scoring_date,
-            top_score=self.top_score,
-            npmsio_score=self.npmsio_score,
-            npmsio_scored_package_version=self.npmsio_scored_package_version,
-            directVulnsCritical_score=self.directVulnsCritical_score,
-            directVulnsHigh_score=self.directVulnsHigh_score,
-            directVulnsMedium_score=self.directVulnsMedium_score,
-            directVulnsLow_score=self.directVulnsLow_score,
-            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
-            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
-            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
-            indirectVulnsLow_score=self.indirectVulnsLow_score,
-            authors=self.authors,
-            contributors=self.contributors,
-            immediate_deps=self.immediate_deps,
-            all_deps=self.all_deps,
-        )
-
-    def json_with_dependencies(self, depth: int = 1) -> Dict:
-        return {
-            "dependencies": [
-                rep.json_with_dependencies(depth - 1) for rep in self.dependencies
-            ]
-            if depth > 0
-            else [],
-            **self.report_json,
-        }
-
-    def json_with_parents(self, depth: int = 1) -> Dict:
-        return {
-            "parents": [rep.json_with_parents(depth - 1) for rep in self.parents]
-            if depth > 0
-            else [],
-            **self.report_json,
-        }
-
-
-class PackageScoreReportV0(PackageReportColumnsMixin, db.Model):
-    __tablename__ = "report_score_view_v0"
-
-    # flag as view for Flask-Migrate running alembic doesn't try to create a table
-    # https://alembic.sqlalchemy.org/en/latest/cookbook.html#don-t-emit-create-table-statements-for-views
-    __table_args__ = {"info": {"is_view": True}}
-
-    id = Column("id", Integer, primary_key=True)
-
-    score = Column(Float)
-    score_code = Column(String(1))
-
-    # this relationship is used for persistence
-    dependencies: sqlalchemy.orm.RelationshipProperty = relationship(
-        "PackageScoreReportV0",
         secondary=Dependency.__table__,
         primaryjoin=id == Dependency.__table__.c.depends_on_id,
         secondaryjoin=id == Dependency.__table__.c.used_by_id,
@@ -960,9 +968,9 @@ def get_package_score_reports(
     ...     str(get_package_score_reports([PackageVersion(name="foo", version="0.0.1"), PackageVersion(name="bar", version="0.1.1"),]))
     'SELECT reports.package AS reports_package, reports.version AS reports_version, reports.release_date AS reports_release_date, reports.scoring_date AS reports_scoring_date, reports.top_score AS reports_top_score, reports.npmsio_score AS reports_npmsio_score, reports.npmsio_scored_package_version AS reports_npmsio_scored_package_version, reports."directVulnsCritical_score" AS "reports_directVulnsCritical_score", reports."directVulnsHigh_score" AS "reports_directVulnsHigh_score", reports."directVulnsMedium_score" AS "reports_directVulnsMedium_score", reports."directVulnsLow_score" AS "reports_directVulnsLow_score", reports."indirectVulnsCritical_score" AS "reports_indirectVulnsCritical_score", reports."indirectVulnsHigh_score" AS "reports_indirectVulnsHigh_score", reports."indirectVulnsMedium_score" AS "reports_indirectVulnsMedium_score", reports."indirectVulnsLow_score" AS "reports_indirectVulnsLow_score", reports.authors AS reports_authors, reports.contributors AS reports_contributors, reports.immediate_deps AS reports_immediate_deps, reports.all_deps AS reports_all_deps, reports.graph_id AS reports_graph_id, reports.id AS reports_id \\nFROM reports \\nWHERE (reports.package, reports.version) IN ((%(param_1)s, %(param_2)s), (%(param_3)s, %(param_4)s))'
     """
-    return db.session.query(PackageScoreReport).filter(
+    return db.session.query(PackageReport).filter(
         sqlalchemy.sql.expression.tuple_(
-            PackageScoreReport.package, PackageScoreReport.version
+            PackageReport.package, PackageReport.version
         ).in_([(p.name, p.version) for p in package_versions])
     )
 
@@ -971,15 +979,15 @@ def get_most_recently_scored_package_report(
     package_name: str,
     package_version: Optional[str] = None,
     scored_after: Optional[datetime] = None,
-) -> Optional[PackageScoreReport]:
-    "Get the most recently scored PackageScoreReport with package_name, optional package_version, and optionally scored_after the scored_after datetime or None"
-    query = db.session.query(PackageScoreReport).filter_by(package=package_name)
+) -> Optional[PackageReport]:
+    "Get the most recently scored PackageReport with package_name, optional package_version, and optionally scored_after the scored_after datetime or None"
+    query = db.session.query(PackageReport).filter_by(package=package_name)
     if package_version is not None:
         query = query.filter_by(version=package_version)
     if scored_after is not None:
-        query = query.filter(PackageScoreReport.scoring_date >= scored_after)
+        query = query.filter(PackageReport.scoring_date >= scored_after)
     log.debug(f"Query is {query}")
-    return query.order_by(PackageScoreReport.scoring_date.desc()).limit(1).one_or_none()
+    return query.order_by(PackageReport.scoring_date.desc()).limit(1).one_or_none()
 
 
 def get_most_recently_inserted_package_from_name_and_version(
@@ -1261,7 +1269,7 @@ def get_vulnerabilities(package: str, version: str) -> sqlalchemy.orm.query.Quer
     )
 
 
-def get_score_code_counts(scoring_algorithm: str = None) -> sqlalchemy.orm.query.Query:
+def get_score_code_counts() -> sqlalchemy.orm.query.Query:
     """
     Returns a query returning score codes to their counts from the
     scored reports view.
@@ -1271,24 +1279,16 @@ def get_score_code_counts(scoring_algorithm: str = None) -> sqlalchemy.orm.query
     ...     query = str(get_score_code_counts())
 
     >>> query
-    'SELECT report_score_view.score_code AS report_score_view_score_code, count(%(count_2)s) AS count_1 \\nFROM report_score_view GROUP BY report_score_view.score_code'
+    'SELECT reports.score_code AS reports_score_code, count(%(count_2)s) AS count_1 \\nFROM reports GROUP BY reports.score_code'
 
     """
     # NB: try pulling from pg_stats if we materialize the view later
-
-    if scoring_algorithm == "v0":
-        return db.session.query(
-            PackageScoreReportV0.score_code, func.count("1")
-        ).group_by(PackageScoreReportV0.score_code)
-    else:
-        return db.session.query(
-            PackageScoreReport.score_code, func.count("1")
-        ).group_by(PackageScoreReport.score_code)
+    return db.session.query(PackageReport.score_code, func.count("1")).group_by(
+        PackageReport.score_code
+    )
 
 
-def get_statistics(
-    scoring_algorithm: str = None,
-) -> Dict[str, Union[int, Dict[str, int]]]:
+def get_statistics() -> Dict[str, Union[int, Dict[str, int]]]:
     pkg_version_count = (
         db.session.query(PackageVersion.name, PackageVersion.version,)
         .distinct()
@@ -1302,18 +1302,13 @@ def get_statistics(
         reports=reports_count,
         score_codes_histogram={
             score_code: score_code_count
-            for (score_code, score_code_count) in get_score_code_counts(
-                scoring_algorithm
-            ).all()
+            for (score_code, score_code_count) in get_score_code_counts().all()
         },
     )
 
 
-def get_statistics_scores(scoring_algorithm: str = None) -> List[int]:
-    if scoring_algorithm == "v0":
-        scores = db.session.query(PackageScoreReportV0.score).all()
-    else:
-        scores = db.session.query(PackageScoreReport.score).all()
+def get_statistics_scores() -> List[int]:
+    scores = db.session.query(PackageReport.score).all()
     scores = [int(score[0]) for score in scores if len(score) and score[0]]
     return scores
 
