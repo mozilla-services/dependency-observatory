@@ -1065,37 +1065,6 @@ def get_child_package_ids_from_parent_package_id(
     ]
 
 
-def get_vulnerabilities(package: str, version: str) -> sqlalchemy.orm.query.Query:
-    """
-    >>> from depobs.website.do import create_app
-    >>> with create_app().app_context():
-    ...     str(get_vulnerabilities('foo', '0.0.0'))
-    'SELECT advisories.package_name AS advisories_package_name, package_versions.version AS package_versions_version, advisories.severity AS advisories_severity, advisories.url AS advisories_url, advisories.title AS advisories_title \\nFROM advisories, package_versions \\nWHERE advisories.package_name = %(package_name_1)s AND package_versions.version = %(version_1)s AND advisories.package_name = package_versions.name'
-
-    """
-    return (
-        db.session.query(
-            Advisory.package_name,
-            PackageVersion.version,
-            Advisory.severity,
-            Advisory.url,
-            Advisory.title,
-        )
-        .filter_by(package_name=package)
-        .filter(PackageVersion.version == version)
-        .filter(Advisory.package_name == PackageVersion.name)
-    )
-
-
-def get_vulnerabilities_report(package: str, version: str) -> Dict:
-    vulns = []
-    for package_name, version, severity, url, title in get_vulnerabilities(
-        package, version
-    ):
-        vulns.append(dict(severity=severity, url=url, title=title))
-    return dict(package=package, version=version, vulnerabilities=vulns)
-
-
 def get_npms_io_score(
     package: str, version: Optional[str] = None
 ) -> sqlalchemy.orm.query.Query:
