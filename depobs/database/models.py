@@ -477,8 +477,8 @@ class PackageGraph(db.Model):
     ) -> Dict[PackageVersionID, List["Advisory"]]:
         # TOOD: fetch all with one DB call
         return {
-            package_version.id: get_advisories_by_package_versions(
-                [package_version]
+            package_version.id: get_advisories_by_package_version_ids_query(
+                [package_version.id]
             ).all()
             for package_version in self.distinct_package_versions_by_id.values()
         }
@@ -1363,21 +1363,21 @@ def insert_npm_registry_entries(entries: Iterable[NPMRegistryEntry]) -> None:
             )
 
 
-def get_advisories_by_package_versions(
-    package_versions: List[PackageVersion],
+def get_advisories_by_package_version_ids_query(
+    package_version_ids: List[PackageVersionID],
 ) -> sqlalchemy.orm.query.Query:
     """
-    Returns all advisories that directly impact the provided PackageVersion objects.
+    Returns all advisories that directly impact the provided PackageVersion ids.
 
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
-    ...     str(get_advisories_by_package_versions([PackageVersion(id=932)]))
+    ...     str(get_advisories_by_package_version_ids_query([932]))
     ...
     'SELECT advisories.id AS advisories_id, advisories.language AS advisories_language, advisories.package_name AS advisories_package_name, advisories.npm_advisory_id AS advisories_npm_advisory_id, advisories.url AS advisories_url, advisories.severity AS advisories_severity, advisories.cwe AS advisories_cwe, advisories.exploitability AS advisories_exploitability, advisories.title AS advisories_title \\nFROM advisories \\nWHERE advisories.vulnerable_package_version_ids @> %(vulnerable_package_version_ids_1)s'
     """
     return db.session.query(Advisory).filter(
         Advisory.vulnerable_package_version_ids.contains(
-            [package_version.id for package_version in package_versions]
+            [package_version_id for package_version_id in package_version_ids]
         )
     )
 
