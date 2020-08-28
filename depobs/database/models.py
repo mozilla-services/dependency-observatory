@@ -1332,7 +1332,7 @@ def get_advisories_by_package_version_ids_query(
     'SELECT advisories.id AS advisories_id, advisories.language AS advisories_language, advisories.package_name AS advisories_package_name, advisories.npm_advisory_id AS advisories_npm_advisory_id, advisories.url AS advisories_url, advisories.severity AS advisories_severity, advisories.cwe AS advisories_cwe, advisories.exploitability AS advisories_exploitability, advisories.title AS advisories_title \\nFROM advisories \\nWHERE advisories.vulnerable_package_version_ids @> %(vulnerable_package_version_ids_1)s'
     """
     return db.session.query(Advisory).filter(
-        Advisory.vulnerable_package_version_ids.contains(
+        Advisory.vulnerable_package_version_ids.overlap(
             [package_version_id for package_version_id in package_version_ids]
         )
     )
