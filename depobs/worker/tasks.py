@@ -35,7 +35,6 @@ from depobs.database.models import (
     get_NPMRegistryEntry,
     get_maintainers_contributors,
     get_npm_registry_data,
-    get_vulnerability_counts,
     store_package_report,
     store_package_reports,
     get_most_recently_inserted_package_from_name_and_version,

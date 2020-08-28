@@ -1236,21 +1236,6 @@ def get_npm_registry_data(package: str, version: str) -> sqlalchemy.orm.query.Qu
     )
 
 
-def get_vulnerability_counts(package: str, version: str) -> sqlalchemy.orm.query.Query:
-    return (
-        db.session.query(
-            Advisory.package_name,
-            PackageVersion.version,
-            Advisory.severity,
-            func.count(Advisory.severity),
-        )
-        .filter_by(package_name=package)
-        .filter(PackageVersion.version == version)
-        .filter(Advisory.package_name == PackageVersion.name)
-        .group_by(Advisory.package_name, PackageVersion.version, Advisory.severity)
-    )
-
-
 def get_vulnerabilities(package: str, version: str) -> sqlalchemy.orm.query.Query:
     return (
         db.session.query(
