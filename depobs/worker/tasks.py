@@ -191,9 +191,11 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
     package_name: str = scan.package_name
     scan_package_version: Optional[str] = scan.package_version
     if scan_package_version == "latest":
-        package_version = None
+        query_package_version = None
+    else:
+        query_package_version = scan.package_version
     versions_query = models.get_npm_registry_entries_to_scan(
-        package_name, package_version
+        package_name, query_package_version
     )
 
     # fetch npm registry entries from DB
