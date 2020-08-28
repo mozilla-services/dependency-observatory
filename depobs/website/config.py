@@ -25,16 +25,31 @@ LOGGING = {
         "depobs.clients.aiohttp_client": {"handlers": ["console"], "level": "INFO"},
         "depobs.clients.cratesio": {"handlers": ["console"], "level": "INFO"},
         "depobs.clients.github": {"handlers": ["console"], "level": "INFO"},
-        "depobs.clients.npm_registry": {"handlers": ["console"], "level": "INFO",},
+        "depobs.clients.npm_registry": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
         "depobs.clients.npmsio": {"handlers": ["console"], "level": "INFO"},
         "depobs.database.models": {"handlers": ["console"], "level": "INFO"},
         "depobs.database.serializers": {"handlers": ["console"], "level": "INFO"},
         "depobs.util.serialize_util": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.views": {"handlers": ["console"], "level": "INFO"},
-        "depobs.worker.gcp": {"handlers": ["console"], "level": "INFO",},
-        "depobs.worker.k8s": {"handlers": ["console"], "level": "INFO",},
-        "depobs.worker.main": {"handlers": ["console"], "level": "INFO",},
-        "depobs.worker.scoring": {"handlers": ["console"], "level": "INFO",},
+        "depobs.worker.gcp": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.k8s": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.main": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.scoring": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
         "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
         "depobs.util.dataviz_util": {"handlers": ["console"], "level": "INFO"},
     },
@@ -79,7 +94,10 @@ SCAN_NPM_TARBALL_ARGS: Dict[
     image_name="mozilla/dependency-observatory:node-12",
     repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
     service_account_name=os.environ.get("UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME", ""),
-    env=dict(GCP_PUBSUB_TOPIC=JOB_STATUS_PUBSUB_TOPIC, GCP_PROJECT_ID=GCP_PROJECT_ID,),
+    env=dict(
+        GCP_PUBSUB_TOPIC=JOB_STATUS_PUBSUB_TOPIC,
+        GCP_PROJECT_ID=GCP_PROJECT_ID,
+    ),
     volume_mounts=[],
     secrets=[],
 )
@@ -97,9 +115,17 @@ SCAN_NPM_DEP_FILES_ARGS: Dict[
     language="nodejs",
     package_manager="npm",
     image_name="mozilla/dependency-observatory:node-12",
-    repo_tasks=["write_dep_files", "install", "list_metadata", "audit",],
+    repo_tasks=[
+        "write_dep_files",
+        "install",
+        "list_metadata",
+        "audit",
+    ],
     service_account_name=os.environ.get("UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME", ""),
-    env=dict(GCP_PUBSUB_TOPIC=JOB_STATUS_PUBSUB_TOPIC, GCP_PROJECT_ID=GCP_PROJECT_ID,),
+    env=dict(
+        GCP_PUBSUB_TOPIC=JOB_STATUS_PUBSUB_TOPIC,
+        GCP_PROJECT_ID=GCP_PROJECT_ID,
+    ),
     volume_mounts=[],
     secrets=[],
 )
@@ -116,7 +142,10 @@ if (
         ]
         assert isinstance(job_config["volume_mounts"], list)
         job_config["volume_mounts"] = [
-            dict(mount_path="/var/secrets/google", name="google-cloud-key",),
+            dict(
+                mount_path="/var/secrets/google",
+                name="google-cloud-key",
+            ),
         ]
         job_config["secrets"] = [
             dict(secret_name="dev-local-service-account", name="google-cloud-key")

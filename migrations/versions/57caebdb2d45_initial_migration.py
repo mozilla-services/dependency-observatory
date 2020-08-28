@@ -349,8 +349,14 @@ def upgrade():
         "package_dependencies",
         sa.Column("depends_on_id", sa.Integer(), nullable=False),
         sa.Column("used_by_id", sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(["depends_on_id"], ["reports.id"],),
-        sa.ForeignKeyConstraint(["used_by_id"], ["reports.id"],),
+        sa.ForeignKeyConstraint(
+            ["depends_on_id"],
+            ["reports.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["used_by_id"],
+            ["reports.id"],
+        ),
         sa.PrimaryKeyConstraint("depends_on_id", "used_by_id"),
     )
     # ### end Alembic commands ###

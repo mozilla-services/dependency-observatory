@@ -75,7 +75,8 @@ class RunRepoTasksConfig(k8s.KubeJobConfig, total=True):
 
 
 async def run_job_to_completion(
-    job_config: k8s.KubeJobConfig, scan_id: int,
+    job_config: k8s.KubeJobConfig,
+    scan_id: int,
 ) -> kubernetes.client.models.v1_job.V1Job:
     job_name = job_config["name"]
     log.info(f"scan {scan_id} starting job {job_name} with config {job_config}")
@@ -149,7 +150,8 @@ async def scan_tarball_url(
 
 
 async def scan_npm_dep_files(
-    config: RunRepoTasksConfig, scan: models.Scan,
+    config: RunRepoTasksConfig,
+    scan: models.Scan,
 ) -> kubernetes.client.models.v1_job.V1Job:
     """
     Takes a run_repo_tasks config and scan_id.
@@ -200,7 +202,12 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
     )
 
     # fetch npm registry entries from DB
-    for (package_version, source_url, git_head, tarball_url,) in versions_query:
+    for (
+        package_version,
+        source_url,
+        git_head,
+        tarball_url,
+    ) in versions_query:
         if package_version is None:
             log.warn(
                 f"scan: {scan.id} skipping npm registry entry with null version {package_name}"
@@ -263,7 +270,9 @@ async def fetch_missing_npm_data():
     )
 
 
-async def scan_score_npm_dep_files(scan: models.Scan,) -> None:
+async def scan_score_npm_dep_files(
+    scan: models.Scan,
+) -> None:
     """
     Scan and score dependencies from a manifest file and one or more optional lockfiles
     """
@@ -273,7 +282,11 @@ async def scan_score_npm_dep_files(scan: models.Scan,) -> None:
     )
     job_name = config["name"] = f"scan-{scan.id}-depfiles-{hex(randrange(1 << 32))[2:]}"
     task: asyncio.Task = asyncio.create_task(
-        scan_npm_dep_files(config, scan,), name=job_name,
+        scan_npm_dep_files(
+            config,
+            scan,
+        ),
+        name=job_name,
     )
     job: kubernetes.client.models.v1_job.V1Job = await task
     log.info(f"scan: {scan.id} {job_name} k8s job finished with status {job.status}")
@@ -436,7 +449,9 @@ async def fetch_and_save_npmsio_scores(package_names: Iterable[str]) -> List[Dic
     log.debug(f"fetching npmsio scores for package names: {list(package_names)}")
     npmsio_scores: List[Dict] = await asyncio.create_task(
         fetch_package_data(
-            fetch_npmsio_scores, current_app.config["NPMSIO_CLIENT"], package_names,
+            fetch_npmsio_scores,
+            current_app.config["NPMSIO_CLIENT"],
+            package_names,
         ),
         name=f"fetch_npmsio_scores",
     )
@@ -620,7 +635,10 @@ def get_github_advisories() -> None:
 
 async def fetch_breach_data(
     fetcher: Callable[
-        [AIOHTTPClientConfig, Iterable[str],],
+        [
+            AIOHTTPClientConfig,
+            Iterable[str],
+        ],
         AsyncGenerator[Result[Dict[str, Dict]], None],
     ],
     config: AIOHTTPClientConfig,
@@ -647,8 +665,8 @@ def get_maintainer_breaches(package_name: str, package_version: str = None) -> N
 
     if package_version:
 
-        package_version_validation_error = validators.get_npm_package_version_validation_error(
-            package_version
+        package_version_validation_error = (
+            validators.get_npm_package_version_validation_error(package_version)
         )
         if package_version_validation_error is not None:
             raise package_version_validation_error
@@ -693,7 +711,9 @@ def fetch_breaches(emails: List[str]) -> List[Dict[str, str]]:
 
     breaches = asyncio.run(
         fetch_breach_data(
-            fetch_hibp_breach_data, current_app.config["HIBP_CLIENT"], emails,
+            fetch_hibp_breach_data,
+            current_app.config["HIBP_CLIENT"],
+            emails,
         ),
         debug=False,
     )
@@ -751,11 +771,13 @@ def run_pubsub_thread(app: flask.Flask, timeout=30):
     Requires depobs flask app context.
     """
     with app.app_context():
-        future: gcp.pubsub_v1.subscriber.futures.StreamingPullFuture = gcp.receive_pubsub_messages(
-            current_app.config["GCP_PROJECT_ID"],
-            current_app.config["JOB_STATUS_PUBSUB_TOPIC"],
-            current_app.config["JOB_STATUS_PUBSUB_SUBSCRIPTION"],
-            functools.partial(save_pubsub_message, app),
+        future: gcp.pubsub_v1.subscriber.futures.StreamingPullFuture = (
+            gcp.receive_pubsub_messages(
+                current_app.config["GCP_PROJECT_ID"],
+                current_app.config["JOB_STATUS_PUBSUB_TOPIC"],
+                current_app.config["JOB_STATUS_PUBSUB_SUBSCRIPTION"],
+                functools.partial(save_pubsub_message, app),
+            )
         )
         while True:
             try:
@@ -791,7 +813,10 @@ async def run_next_scan(app: flask.Flask) -> Optional[models.Scan]:
     return await run_scan(app, maybe_next_scan)
 
 
-async def run_scan(app: flask.Flask, scan: models.Scan,) -> models.Scan:
+async def run_scan(
+    app: flask.Flask,
+    scan: models.Scan,
+) -> models.Scan:
     """
     Async task that:
 

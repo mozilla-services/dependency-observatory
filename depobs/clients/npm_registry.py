@@ -77,7 +77,9 @@ async def fetch_npm_registry_metadata(
                 group_results = await asyncio.gather(
                     *[
                         async_query_with_backoff(
-                            s, "GET", f"{config['base_url']}{package_name}",
+                            s,
+                            "GET",
+                            f"{config['base_url']}{package_name}",
                         )
                         for package_name in group
                         if package_name is not None

@@ -7,8 +7,8 @@ import marshmallow_dataclass
 
 @dataclass
 class PackageReportDataclass:
-    """
-    """
+    """"""
+
     id = int
     package = str
     version = str
@@ -37,6 +37,4 @@ class PackageReportDataclass:
     score_code = Optional[str]
 
 
-PackageReportSchema = marshmallow_dataclass.class_schema(
-    PackageReportDataclass
-)
+PackageReportSchema = marshmallow_dataclass.class_schema(PackageReportDataclass)

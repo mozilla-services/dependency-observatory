@@ -80,7 +80,9 @@ def get_api_client(context_name: Optional[str] = None) -> kubernetes.client.ApiC
     return kubernetes.client.ApiClient(configuration=kubernetes.client.Configuration())
 
 
-def create_job(job_config: KubeJobConfig,) -> kubernetes.client.V1Job:
+def create_job(
+    job_config: KubeJobConfig,
+) -> kubernetes.client.V1Job:
     api_client = get_api_client(job_config["context_name"])
     # Configureate Pod template container
     container = kubernetes.client.V1Container(
@@ -131,7 +133,8 @@ def create_job(job_config: KubeJobConfig,) -> kubernetes.client.V1Job:
         )
     else:
         spec = kubernetes.client.V1JobSpec(
-            template=template, backoff_limit=job_config["backoff_limit"],
+            template=template,
+            backoff_limit=job_config["backoff_limit"],
         )
 
     # Instantiate the job object
@@ -142,7 +145,8 @@ def create_job(job_config: KubeJobConfig,) -> kubernetes.client.V1Job:
         spec=spec,
     )
     job = kubernetes.client.BatchV1Api(api_client=api_client).create_namespaced_job(
-        namespace=job_config["namespace"], body=job_obj,
+        namespace=job_config["namespace"],
+        body=job_obj,
     )
     return job
 
@@ -153,7 +157,10 @@ def read_job(
     api_client = get_api_client(context_name)
     return (
         kubernetes.client.BatchV1Api(api_client=api_client)
-        .list_namespaced_job(namespace=namespace, label_selector=f"job-name={name}",)
+        .list_namespaced_job(
+            namespace=namespace,
+            label_selector=f"job-name={name}",
+        )
         .items[0]
     )
 
@@ -181,7 +188,10 @@ def get_job_pod(
     api_client = get_api_client(context_name)
     return (
         kubernetes.client.CoreV1Api(api_client=api_client)
-        .list_namespaced_pod(namespace=namespace, label_selector=f"job-name={name}",)
+        .list_namespaced_pod(
+            namespace=namespace,
+            label_selector=f"job-name={name}",
+        )
         .items[0]
     )
 

@@ -229,7 +229,9 @@ class RustPackage:
     repository: Optional[str] = field(default=None)
 
 
-def cargo_metadata_to_rust_crates(cargo_meta_out: Dict,) -> Dict[str, RustCrate]:
+def cargo_metadata_to_rust_crates(
+    cargo_meta_out: Dict,
+) -> Dict[str, RustCrate]:
     assert (
         get_in(cargo_meta_out, ["metadata", "version"]) == 1
     ), "cargo metadata format was not version 1"

@@ -68,7 +68,8 @@ def create_single_node_digraph_with_attrs(attrs: Dict) -> m.nx.DiGraph:
 
 
 def create_digraph(
-    nodes: Iterable[Tuple[int, Dict]], edges: Iterable[Tuple[int, int]] = None,
+    nodes: Iterable[Tuple[int, Dict]],
+    edges: Iterable[Tuple[int, int]] = None,
 ) -> m.nx.DiGraph:
     if edges is None:
         edges = []
@@ -84,7 +85,9 @@ score_package_component_testcases = {
         create_single_node_digraph_with_attrs({}),
         0,
         [],
-        {"scoring_date": "replace_with_mocked_value",},
+        {
+            "scoring_date": "replace_with_mocked_value",
+        },
     ],
     "null_package_version": [
         create_single_node_digraph_with_attrs({"package_version": None}),
@@ -110,37 +113,62 @@ score_package_component_testcases = {
         create_single_node_digraph_with_attrs({"npmsio_score": None}),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": None, "npmsio_scored_package_version": None,},
+        {
+            "npmsio_score": None,
+            "npmsio_scored_package_version": None,
+        },
     ],
     "npmsio_score_empty_tuple": [
         create_single_node_digraph_with_attrs({"npmsio_score": ()}),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": None, "npmsio_scored_package_version": None,},
+        {
+            "npmsio_score": None,
+            "npmsio_scored_package_version": None,
+        },
     ],
     "npmsio_score_null_package_version": [
         create_single_node_digraph_with_attrs({"npmsio_score": (None, None)}),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": None, "npmsio_scored_package_version": None,},
+        {
+            "npmsio_score": None,
+            "npmsio_scored_package_version": None,
+        },
     ],
     "npmsio_score_empty_scores": [
         create_single_node_digraph_with_attrs({"npmsio_score": ("0.1.0", {})}),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": None, "npmsio_scored_package_version": None,},
+        {
+            "npmsio_score": None,
+            "npmsio_scored_package_version": None,
+        },
     ],
     "npmsio_score_zero_exact_match": [
         create_single_node_digraph_with_attrs(
-            {"npmsio_score": ("0.1.0", {"0.1.0": 0, "2.3.4": 0.5,})}
+            {
+                "npmsio_score": (
+                    "0.1.0",
+                    {
+                        "0.1.0": 0,
+                        "2.3.4": 0.5,
+                    },
+                )
+            }
         ),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": 0.0, "npmsio_scored_package_version": "0.1.0",},
+        {
+            "npmsio_score": 0.0,
+            "npmsio_scored_package_version": "0.1.0",
+        },
     ],
     "npmsio_score_halfish_major_version_match": [
         create_single_node_digraph_with_attrs(
-            {"npmsio_score": ("0.1.0", {"0.2.1": 0.53, "0.4.1": 0.2}),}
+            {
+                "npmsio_score": ("0.1.0", {"0.2.1": 0.53, "0.4.1": 0.2}),
+            }
         ),
         0,
         [m.NPMSIOScoreComponent],
@@ -158,7 +186,9 @@ score_package_component_testcases = {
         create_single_node_digraph_with_attrs({"registry_entry": None}),
         0,
         [m.NPMRegistryScoreComponent],
-        {"release_date": None,},
+        {
+            "release_date": None,
+        },
     ],
     "npm_reg_null_published_at": [
         create_single_node_digraph_with_attrs(
@@ -167,7 +197,9 @@ score_package_component_testcases = {
         ),
         0,
         [m.NPMRegistryScoreComponent],
-        {"release_date": None,},
+        {
+            "release_date": None,
+        },
     ],
     "npm_reg_published_at": [
         create_single_node_digraph_with_attrs(
@@ -176,7 +208,9 @@ score_package_component_testcases = {
         ),
         0,
         [m.NPMRegistryScoreComponent],
-        {"release_date": m.datetime(year=2030, month=1, day=1),},
+        {
+            "release_date": m.datetime(year=2030, month=1, day=1),
+        },
     ],
     "npm_reg_null_contributors": [
         create_single_node_digraph_with_attrs(
@@ -185,14 +219,18 @@ score_package_component_testcases = {
         ),
         0,
         [m.NPMRegistryScoreComponent],
-        {"contributors": None,},
+        {
+            "contributors": None,
+        },
     ],
     "npm_reg_empty_contributors": [
         # published_at, maintainers, contributors as returned by models.get_npm_registry_data
         create_single_node_digraph_with_attrs({"registry_entry": (None, None, [])}),
         0,
         [m.NPMRegistryScoreComponent],
-        {"contributors": 0,},
+        {
+            "contributors": 0,
+        },
     ],
     "npm_reg_two_contributors": [
         # published_at, maintainers, contributors as returned by models.get_npm_registry_data
@@ -201,27 +239,36 @@ score_package_component_testcases = {
                 "registry_entry": (
                     None,
                     None,
-                    ["contributor1@example.com", "contributor2@example.com",],
+                    [
+                        "contributor1@example.com",
+                        "contributor2@example.com",
+                    ],
                 )
             }
         ),
         0,
         [m.NPMRegistryScoreComponent],
-        {"contributors": 2,},
+        {
+            "contributors": 2,
+        },
     ],
     "npm_reg_null_maintainers": [
         # published_at, maintainers, contributors as returned by models.get_npm_registry_data
         create_single_node_digraph_with_attrs({"registry_entry": (None, None, None)}),
         0,
         [m.NPMRegistryScoreComponent],
-        {"authors": None,},
+        {
+            "authors": None,
+        },
     ],
     "npm_reg_empty_maintainers": [
         # published_at, maintainers, contributors as returned by models.get_npm_registry_data
         create_single_node_digraph_with_attrs({"registry_entry": (None, [], None)}),
         0,
         [m.NPMRegistryScoreComponent],
-        {"authors": 0,},
+        {
+            "authors": 0,
+        },
     ],
     "npm_reg_two_maintainers": [
         # published_at, maintainers, contributors as returned by models.get_npm_registry_data
@@ -229,14 +276,19 @@ score_package_component_testcases = {
             {
                 "registry_entry": (
                     None,
-                    ["contributor1@example.com", "contributor2@example.com",],
+                    [
+                        "contributor1@example.com",
+                        "contributor2@example.com",
+                    ],
                     None,
                 )
             }
         ),
         0,
         [m.NPMRegistryScoreComponent],
-        {"authors": 2,},
+        {
+            "authors": 2,
+        },
     ],
     "null_advisories": [
         create_single_node_digraph_with_attrs({"advisories": None}),
@@ -316,24 +368,54 @@ score_package_component_testcases = {
         create_digraph([(0, {})]),
         0,
         [m.DependencyCountScoreComponent],
-        {"all_deps": 0, "immediate_deps": 0,},
+        {
+            "all_deps": 0,
+            "immediate_deps": 0,
+        },
     ],
     "three_immediate_deps": [
         create_digraph(
-            nodes=[(0, {}), (1, {}), (2, {}), (3, {}),], edges=[(0, 1), (0, 2), (0, 3),]
+            nodes=[
+                (0, {}),
+                (1, {}),
+                (2, {}),
+                (3, {}),
+            ],
+            edges=[
+                (0, 1),
+                (0, 2),
+                (0, 3),
+            ],
         ),
         0,
         [m.DependencyCountScoreComponent],
-        {"all_deps": 3, "immediate_deps": 3,},
+        {
+            "all_deps": 3,
+            "immediate_deps": 3,
+        },
     ],
     "one_immediate_three_transitive_deps": [
         create_digraph(
-            nodes=[(0, {}), (1, {}), (2, {}), (3, {}), (4, {}),],
-            edges=[(0, 1), (1, 2), (1, 3), (1, 4),],
+            nodes=[
+                (0, {}),
+                (1, {}),
+                (2, {}),
+                (3, {}),
+                (4, {}),
+            ],
+            edges=[
+                (0, 1),
+                (1, 2),
+                (1, 3),
+                (1, 4),
+            ],
         ),
         0,
         [m.DependencyCountScoreComponent],
-        {"all_deps": 4, "immediate_deps": 1,},
+        {
+            "all_deps": 4,
+            "immediate_deps": 1,
+        },
     ],
 }
 
@@ -718,7 +800,10 @@ compare_package_graph_testcases = {
                 0: ("0.1.0", {"0.1.3": 0.34}),
                 1: ("0.3.0", {"2.0.0": 0.25}),
             },
-            get_npm_registry_data_by_package_version_id=lambda: {0: None, 1: None,},
+            get_npm_registry_data_by_package_version_id=lambda: {
+                0: None,
+                1: None,
+            },
             get_advisories_by_package_version_id=lambda: {0: [], 1: []},
         ),
         m.PackageGraph(
@@ -776,8 +861,18 @@ def test_compare_package_graph(
 
 count_advisories_by_severity_testcases = {
     "none": ([], m.Counter()),
-    "empty_str_ignored": ([m.Advisory(severity=""),], m.Counter(),),
-    "none_ignored": ([m.Advisory(severity=None),], m.Counter(),),
+    "empty_str_ignored": (
+        [
+            m.Advisory(severity=""),
+        ],
+        m.Counter(),
+    ),
+    "none_ignored": (
+        [
+            m.Advisory(severity=None),
+        ],
+        m.Counter(),
+    ),
     "one_critical_upper_case_counted": (
         [m.Advisory(severity="CRITICAL")],
         m.Counter({m.AdvisorySeverity.CRITICAL: 1}),

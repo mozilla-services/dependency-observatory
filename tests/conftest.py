@@ -5,7 +5,11 @@ from depobs.website.do import create_app
 
 @pytest.fixture
 def app():
-    app = create_app({"TESTING": True,})
+    app = create_app(
+        {
+            "TESTING": True,
+        }
+    )
 
     with app.app_context():
         pass
