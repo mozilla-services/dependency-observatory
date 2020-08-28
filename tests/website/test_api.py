@@ -69,16 +69,23 @@ def delete_scan_results(models, scan_id: int):
 def test_valid_create_scan_package_job_and_get(
     models, client, valid_package_scan_payload
 ):
-    scan_response = client.post("/api/v1/scans", json=valid_package_scan_payload,)
+    scan_response = client.post(
+        "/api/v1/scans",
+        json=valid_package_scan_payload,
+    )
     assert scan_response.status == "202 ACCEPTED"
     assert "id" in scan_response.json
     scan_id = scan_response.json["id"]
 
-    response = client.get(f"/api/v1/scans/{scan_id}",)
+    response = client.get(
+        f"/api/v1/scans/{scan_id}",
+    )
     assert response.status == "200 OK"
 
     delete_scan_results(models, scan_id)
-    response = client.get(f"/api/v1/scans/{scan_id}/logs",)
+    response = client.get(
+        f"/api/v1/scans/{scan_id}/logs",
+    )
     assert response.status == "404 NOT FOUND"
 
     # insert fake scan results
@@ -96,7 +103,9 @@ def test_valid_create_scan_package_job_and_get(
     models.db.session.add_all(results)
     models.db.session.commit()
 
-    response = client.get(f"/api/v1/scans/{scan_id}/logs",)
+    response = client.get(
+        f"/api/v1/scans/{scan_id}/logs",
+    )
     assert response.status == "200 OK"
     assert response.json == [
         {
@@ -118,16 +127,23 @@ def test_valid_create_scan_package_job_and_get(
 def test_valid_create_scan_package_job_and_get(
     models, client, valid_package_scan_payload
 ):
-    scan_response = client.post("/api/v1/scans", json=valid_package_scan_payload,)
+    scan_response = client.post(
+        "/api/v1/scans",
+        json=valid_package_scan_payload,
+    )
     assert scan_response.status == "202 ACCEPTED"
     assert "id" in scan_response.json
     scan_id = scan_response.json["id"]
 
-    response = client.get(f"/api/v1/scans/{scan_id}",)
+    response = client.get(
+        f"/api/v1/scans/{scan_id}",
+    )
     assert response.status == "200 OK"
 
     delete_scan_results(models, scan_id)
-    response = client.get(f"/api/v1/scans/{scan_id}/logs",)
+    response = client.get(
+        f"/api/v1/scans/{scan_id}/logs",
+    )
     assert response.status == "404 NOT FOUND"
 
     # insert fake scan results
@@ -145,7 +161,9 @@ def test_valid_create_scan_package_job_and_get(
     models.db.session.add_all(results)
     models.db.session.commit()
 
-    response = client.get(f"/api/v1/scans/{scan_id}/logs",)
+    response = client.get(
+        f"/api/v1/scans/{scan_id}/logs",
+    )
     assert response.status == "200 OK"
     assert response.json == [
         {

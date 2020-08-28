@@ -125,7 +125,10 @@ class PackageVersionScoreComponent(ScoreComponent):
         node_data = g.nodes[node_id].get(component.graph_node_attr_name, None)
         name = getattr(node_data, "name", None) if node_data else None
         version = getattr(node_data, "version", None) if node_data else None
-        return dict(package=name, version=version,)
+        return dict(
+            package=name,
+            version=version,
+        )
 
 
 class NPMSIOScoreComponent(ScoreComponent):
@@ -157,11 +160,17 @@ class NPMSIOScoreComponent(ScoreComponent):
             isinstance(package_version_and_scores, tuple)
             and len(package_version_and_scores) == 2
         ):
-            return dict(npmsio_score=None, npmsio_scored_package_version=None,)
+            return dict(
+                npmsio_score=None,
+                npmsio_scored_package_version=None,
+            )
 
         package_version, scores = package_version_and_scores
         if not scores:
-            return dict(npmsio_score=None, npmsio_scored_package_version=None,)
+            return dict(
+                npmsio_score=None,
+                npmsio_scored_package_version=None,
+            )
 
         if package_version in scores:  # this exact version was scored
             return dict(
@@ -182,7 +191,10 @@ class NPMSIOScoreComponent(ScoreComponent):
                 npmsio_score=scores[closest_version],
                 npmsio_scored_package_version=closest_version,
             )
-        return dict(npmsio_score=None, npmsio_scored_package_version=None,)
+        return dict(
+            npmsio_score=None,
+            npmsio_scored_package_version=None,
+        )
 
 
 class NPMRegistryScoreComponent(ScoreComponent):

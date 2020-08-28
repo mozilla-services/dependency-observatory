@@ -259,7 +259,8 @@ def parse_command(task_name: str, task_command: str, task_data: Dict) -> Optiona
 
 
 def serialize_repo_task(
-    task_data: Dict[str, Any], task_names_to_process: AbstractSet[str],
+    task_data: Dict[str, Any],
+    task_names_to_process: AbstractSet[str],
 ) -> Optional[Dict[str, Any]]:
     # filter for node list_metadata output to parse and flatten deps
     task_name = get_in(task_data, ["name"], None)
@@ -269,7 +270,13 @@ def serialize_repo_task(
     task_command = get_in(task_data, ["command"], None)
 
     task_result = extract_fields(
-        task_data, ["command", "exit_code", "name", "working_dir",],
+        task_data,
+        [
+            "command",
+            "exit_code",
+            "name",
+            "working_dir",
+        ],
     )
 
     updates = parse_command(task_name, task_command, task_data)
@@ -576,7 +583,10 @@ def deserialize_scan_job_results(
                         # is fully qualified semver for npm (or file: or github: url), semver for yarn
                         name, version = dep.rsplit("@", 1)
                         child: PackageVersion = deserialize_npm_package_version(
-                            dict(name=name, version=version,)
+                            dict(
+                                name=name,
+                                version=version,
+                            )
                         )
                         yield child
                         links.append((parent, child))

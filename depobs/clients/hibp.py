@@ -19,7 +19,8 @@ log = logging.getLogger(__name__)
 
 
 async def fetch_hibp_breach_data(
-    config: AIOHTTPClientConfig, emails: Iterable[str],
+    config: AIOHTTPClientConfig,
+    emails: Iterable[str],
 ) -> AsyncGenerator[Result[Dict[str, Dict]], None]:
     """
     Fetches breach information for one or more email accounts
@@ -40,7 +41,9 @@ async def fetch_hibp_breach_data(
         results = await asyncio.gather(
             *[
                 async_query_with_backoff(
-                    s, "GET", f"{config['base_url']}breachedaccount/{email}",
+                    s,
+                    "GET",
+                    f"{config['base_url']}breachedaccount/{email}",
                 )
                 for email in emails
             ]
@@ -54,7 +57,9 @@ async def fetch_hibp_breach_data(
             breach_details = await asyncio.gather(
                 *[
                     async_query_with_backoff(
-                        s, "GET", f"{config['base_url']}breach/{breach['Name']}",
+                        s,
+                        "GET",
+                        f"{config['base_url']}breach/{breach['Name']}",
                     )
                     for breach in result
                 ]

@@ -9,7 +9,10 @@ import depobs.util.graph_traversal as m
 
 outer_in_dag_iter_failing_testcases = {
     "no_nodes_no_edges": m.nx.empty_graph(n=0, create_using=m.nx.DiGraph),
-    "self_loop": (m.nx.DiGraph([(0, 0)]), [set([0])],),
+    "self_loop": (
+        m.nx.DiGraph([(0, 0)]),
+        [set([0])],
+    ),
     "two_node_loop": m.nx.DiGraph([(0, 1), (1, 0)]),
     "three_node_loop": m.nx.DiGraph([(0, 1), (1, 2), (2, 0)]),
     "two_two_node_loops": m.nx.DiGraph([(0, 1), (1, 0), (0, 2), (2, 0)]),
@@ -31,7 +34,10 @@ def test_outer_in_dag_iter_bad_input(bad_graph, expected_exception):
 
 
 outer_in_dag_iter_testcases = {
-    "one_node_no_edges": (m.nx.trivial_graph(create_using=m.nx.DiGraph), [set([0])],),
+    "one_node_no_edges": (
+        m.nx.trivial_graph(create_using=m.nx.DiGraph),
+        [set([0])],
+    ),
     "five_node_path_graph": (
         m.nx.path_graph(5, create_using=m.nx.DiGraph),
         [set([i]) for i in range(4, -1, -1)],
@@ -92,18 +98,38 @@ def test_outer_in_graph_iter_bad_input(bad_graph, expected_exception):
 
 graph_iter_testcases = {
     **outer_in_dag_iter_testcases,
-    "two_node_loop": (m.nx.DiGraph([(0, 1), (1, 0)]), [set([0, 1])],),
-    "three_node_loop": (m.nx.DiGraph([(0, 1), (1, 2), (2, 0)]), [set([0, 1, 2])],),
+    "two_node_loop": (
+        m.nx.DiGraph([(0, 1), (1, 0)]),
+        [set([0, 1])],
+    ),
+    "three_node_loop": (
+        m.nx.DiGraph([(0, 1), (1, 2), (2, 0)]),
+        [set([0, 1, 2])],
+    ),
     "path_to_three_node_loop": (
-        m.nx.DiGraph([(4, 3), (3, 2), (0, 1), (1, 2), (2, 0),]),
-        [set([0, 1, 2]), set([3]), set([4]),],
+        m.nx.DiGraph(
+            [
+                (4, 3),
+                (3, 2),
+                (0, 1),
+                (1, 2),
+                (2, 0),
+            ]
+        ),
+        [
+            set([0, 1, 2]),
+            set([3]),
+            set([4]),
+        ],
     ),
     "two_two_node_loops": (
         m.nx.DiGraph([(0, 1), (1, 0), (0, 2), (2, 0)]),
         [set([0, 1, 2])],
     ),
     "nested_three_and_two_node_loops": (
-        m.nx.DiGraph([(0, 1), (1, 2), (2, 0), (0, 1), (1, 0), (0, 2), (2, 0)],),
+        m.nx.DiGraph(
+            [(0, 1), (1, 2), (2, 0), (0, 1), (1, 0), (0, 2), (2, 0)],
+        ),
         [set([0, 1, 2])],
     ),
 }
@@ -174,14 +200,29 @@ node_dep_ids_iter_testcases = {
     # graphs from outer_in_graph_iter_testcases
     "two_node_loop": (
         m.nx.DiGraph([(0, 1), (1, 0)]),
-        [(1, set([0]), set()), (0, set([1]), set()),],
+        [
+            (1, set([0]), set()),
+            (0, set([1]), set()),
+        ],
     ),
     "three_node_loop": (
         m.nx.DiGraph([(0, 1), (1, 2), (2, 0)]),
-        [(2, set([0]), set([1])), (1, set([2]), set([0])), (0, set([1]), set([2])),],
+        [
+            (2, set([0]), set([1])),
+            (1, set([2]), set([0])),
+            (0, set([1]), set([2])),
+        ],
     ),
     "path_to_three_node_loop": (
-        m.nx.DiGraph([(4, 3), (3, 2), (0, 1), (1, 2), (2, 0),]),
+        m.nx.DiGraph(
+            [
+                (4, 3),
+                (3, 2),
+                (0, 1),
+                (1, 2),
+                (2, 0),
+            ]
+        ),
         [
             (2, set([0]), set([1])),
             (1, set([2]), set([0])),
@@ -192,10 +233,16 @@ node_dep_ids_iter_testcases = {
     ),
     "two_two_node_loops": (
         m.nx.DiGraph([(0, 1), (1, 0), (0, 2), (2, 0)]),
-        [(2, set([0]), set([1])), (1, set([0]), set([2])), (0, set([1, 2]), set()),],
+        [
+            (2, set([0]), set([1])),
+            (1, set([0]), set([2])),
+            (0, set([1, 2]), set()),
+        ],
     ),
     "nested_three_and_two_node_loops": (
-        m.nx.DiGraph([(0, 1), (1, 2), (2, 0), (0, 1), (1, 0), (0, 2), (2, 0)],),
+        m.nx.DiGraph(
+            [(0, 1), (1, 2), (2, 0), (0, 1), (1, 0), (0, 2), (2, 0)],
+        ),
         [(2, {0}, {1}), (1, {0, 2}, set()), (0, {1, 2}, set())],
     ),
 }

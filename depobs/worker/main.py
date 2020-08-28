@@ -22,7 +22,10 @@ assert all(getattr(tasks, task_name) for task_name in TASK_NAMES)
 
 @app.cli.command("run")
 @click.option(
-    "--task-name", required=True, type=click.Choice(TASK_NAMES), multiple=True,
+    "--task-name",
+    required=True,
+    type=click.Choice(TASK_NAMES),
+    multiple=True,
 )
 @with_appcontext
 def listen_and_run(task_name: List[str]) -> None:

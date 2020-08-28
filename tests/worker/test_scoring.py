@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import itertools
 from typing import Any, Dict, Iterator, Iterable, List, Optional, Tuple
 
 import pytest
@@ -67,7 +68,8 @@ def create_single_node_digraph_with_attrs(attrs: Dict) -> m.nx.DiGraph:
 
 
 def create_digraph(
-    nodes: Iterable[Tuple[int, Dict]], edges: Iterable[Tuple[int, int]] = None,
+    nodes: Iterable[Tuple[int, Dict]],
+    edges: Iterable[Tuple[int, int]] = None,
 ) -> m.nx.DiGraph:
     if edges is None:
         edges = []
@@ -83,7 +85,9 @@ score_package_component_testcases = {
         create_single_node_digraph_with_attrs({}),
         0,
         [],
-        {"scoring_date": "replace_with_mocked_value",},
+        {
+            "scoring_date": "replace_with_mocked_value",
+        },
     ],
     "null_package_version": [
         create_single_node_digraph_with_attrs({"package_version": None}),
@@ -109,37 +113,62 @@ score_package_component_testcases = {
         create_single_node_digraph_with_attrs({"npmsio_score": None}),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": None, "npmsio_scored_package_version": None,},
+        {
+            "npmsio_score": None,
+            "npmsio_scored_package_version": None,
+        },
     ],
     "npmsio_score_empty_tuple": [
         create_single_node_digraph_with_attrs({"npmsio_score": ()}),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": None, "npmsio_scored_package_version": None,},
+        {
+            "npmsio_score": None,
+            "npmsio_scored_package_version": None,
+        },
     ],
     "npmsio_score_null_package_version": [
         create_single_node_digraph_with_attrs({"npmsio_score": (None, None)}),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": None, "npmsio_scored_package_version": None,},
+        {
+            "npmsio_score": None,
+            "npmsio_scored_package_version": None,
+        },
     ],
     "npmsio_score_empty_scores": [
         create_single_node_digraph_with_attrs({"npmsio_score": ("0.1.0", {})}),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": None, "npmsio_scored_package_version": None,},
+        {
+            "npmsio_score": None,
+            "npmsio_scored_package_version": None,
+        },
     ],
     "npmsio_score_zero_exact_match": [
         create_single_node_digraph_with_attrs(
-            {"npmsio_score": ("0.1.0", {"0.1.0": 0, "2.3.4": 0.5,})}
+            {
+                "npmsio_score": (
+                    "0.1.0",
+                    {
+                        "0.1.0": 0,
+                        "2.3.4": 0.5,
+                    },
+                )
+            }
         ),
         0,
         [m.NPMSIOScoreComponent],
-        {"npmsio_score": 0.0, "npmsio_scored_package_version": "0.1.0",},
+        {
+            "npmsio_score": 0.0,
+            "npmsio_scored_package_version": "0.1.0",
+        },
     ],
     "npmsio_score_halfish_major_version_match": [
         create_single_node_digraph_with_attrs(
-            {"npmsio_score": ("0.1.0", {"0.2.1": 0.53, "0.4.1": 0.2}),}
+            {
+                "npmsio_score": ("0.1.0", {"0.2.1": 0.53, "0.4.1": 0.2}),
+            }
         ),
         0,
         [m.NPMSIOScoreComponent],
@@ -157,7 +186,9 @@ score_package_component_testcases = {
         create_single_node_digraph_with_attrs({"registry_entry": None}),
         0,
         [m.NPMRegistryScoreComponent],
-        {"release_date": None,},
+        {
+            "release_date": None,
+        },
     ],
     "npm_reg_null_published_at": [
         create_single_node_digraph_with_attrs(
@@ -166,7 +197,9 @@ score_package_component_testcases = {
         ),
         0,
         [m.NPMRegistryScoreComponent],
-        {"release_date": None,},
+        {
+            "release_date": None,
+        },
     ],
     "npm_reg_published_at": [
         create_single_node_digraph_with_attrs(
@@ -175,7 +208,9 @@ score_package_component_testcases = {
         ),
         0,
         [m.NPMRegistryScoreComponent],
-        {"release_date": m.datetime(year=2030, month=1, day=1),},
+        {
+            "release_date": m.datetime(year=2030, month=1, day=1),
+        },
     ],
     "npm_reg_null_contributors": [
         create_single_node_digraph_with_attrs(
@@ -184,14 +219,18 @@ score_package_component_testcases = {
         ),
         0,
         [m.NPMRegistryScoreComponent],
-        {"contributors": None,},
+        {
+            "contributors": None,
+        },
     ],
     "npm_reg_empty_contributors": [
         # published_at, maintainers, contributors as returned by models.get_npm_registry_data
         create_single_node_digraph_with_attrs({"registry_entry": (None, None, [])}),
         0,
         [m.NPMRegistryScoreComponent],
-        {"contributors": 0,},
+        {
+            "contributors": 0,
+        },
     ],
     "npm_reg_two_contributors": [
         # published_at, maintainers, contributors as returned by models.get_npm_registry_data
@@ -200,27 +239,36 @@ score_package_component_testcases = {
                 "registry_entry": (
                     None,
                     None,
-                    ["contributor1@example.com", "contributor2@example.com",],
+                    [
+                        "contributor1@example.com",
+                        "contributor2@example.com",
+                    ],
                 )
             }
         ),
         0,
         [m.NPMRegistryScoreComponent],
-        {"contributors": 2,},
+        {
+            "contributors": 2,
+        },
     ],
     "npm_reg_null_maintainers": [
         # published_at, maintainers, contributors as returned by models.get_npm_registry_data
         create_single_node_digraph_with_attrs({"registry_entry": (None, None, None)}),
         0,
         [m.NPMRegistryScoreComponent],
-        {"authors": None,},
+        {
+            "authors": None,
+        },
     ],
     "npm_reg_empty_maintainers": [
         # published_at, maintainers, contributors as returned by models.get_npm_registry_data
         create_single_node_digraph_with_attrs({"registry_entry": (None, [], None)}),
         0,
         [m.NPMRegistryScoreComponent],
-        {"authors": 0,},
+        {
+            "authors": 0,
+        },
     ],
     "npm_reg_two_maintainers": [
         # published_at, maintainers, contributors as returned by models.get_npm_registry_data
@@ -228,14 +276,19 @@ score_package_component_testcases = {
             {
                 "registry_entry": (
                     None,
-                    ["contributor1@example.com", "contributor2@example.com",],
+                    [
+                        "contributor1@example.com",
+                        "contributor2@example.com",
+                    ],
                     None,
                 )
             }
         ),
         0,
         [m.NPMRegistryScoreComponent],
-        {"authors": 2,},
+        {
+            "authors": 2,
+        },
     ],
     "null_advisories": [
         create_single_node_digraph_with_attrs({"advisories": None}),
@@ -315,24 +368,54 @@ score_package_component_testcases = {
         create_digraph([(0, {})]),
         0,
         [m.DependencyCountScoreComponent],
-        {"all_deps": 0, "immediate_deps": 0,},
+        {
+            "all_deps": 0,
+            "immediate_deps": 0,
+        },
     ],
     "three_immediate_deps": [
         create_digraph(
-            nodes=[(0, {}), (1, {}), (2, {}), (3, {}),], edges=[(0, 1), (0, 2), (0, 3),]
+            nodes=[
+                (0, {}),
+                (1, {}),
+                (2, {}),
+                (3, {}),
+            ],
+            edges=[
+                (0, 1),
+                (0, 2),
+                (0, 3),
+            ],
         ),
         0,
         [m.DependencyCountScoreComponent],
-        {"all_deps": 3, "immediate_deps": 3,},
+        {
+            "all_deps": 3,
+            "immediate_deps": 3,
+        },
     ],
     "one_immediate_three_transitive_deps": [
         create_digraph(
-            nodes=[(0, {}), (1, {}), (2, {}), (3, {}), (4, {}),],
-            edges=[(0, 1), (1, 2), (1, 3), (1, 4),],
+            nodes=[
+                (0, {}),
+                (1, {}),
+                (2, {}),
+                (3, {}),
+                (4, {}),
+            ],
+            edges=[
+                (0, 1),
+                (1, 2),
+                (1, 3),
+                (1, 4),
+            ],
         ),
         0,
         [m.DependencyCountScoreComponent],
-        {"all_deps": 4, "immediate_deps": 1,},
+        {
+            "all_deps": 4,
+            "immediate_deps": 1,
+        },
     ],
 }
 
@@ -403,7 +486,7 @@ score_package_graph_testcases = {
                 npmsio_score=0.0,
                 npmsio_scored_package_version="0.1.0",
                 graph_id=-1,
-            ).json_with_dependencies(depth=0)
+            )
         ],
     ),
     "three_node_path_graph": (
@@ -429,73 +512,76 @@ score_package_graph_testcases = {
             get_advisories_by_package_version_id=lambda: {0: [], 1: [], 2: []},
         ),
         [
-            {
-                **_default_report_json,
-                "graph_id": -1,
-                "npmsio_score": 0.25,
-                "npmsio_scored_package_version": "2.0.0",
-                "score": 25.0,
-                "score_code": "E",
-                "package": "test-grandchild-pkg",
-                "version": "2.1.0",
-            },
-            {
-                **_default_report_json,
-                "graph_id": -1,
-                "all_deps": 1,
-                "dependencies": [
-                    {
-                        **_default_report_json,
-                        "graph_id": -1,
-                        "npmsio_score": 0.25,
-                        "npmsio_scored_package_version": "2.0.0",
-                        "score": 25.0,
-                        "score_code": "E",
-                        "package": "test-grandchild-pkg",
-                        "version": "2.1.0",
-                    },
-                ],
-                "immediate_deps": 1,
-                "npmsio_score": 0.9,
-                "npmsio_scored_package_version": "0.0.3",
-                "score": 100.0,
-                "score_code": "A",
-                "package": "test-child-pkg",
-                "version": "0.0.3",
-            },
-            {
-                **_default_report_json,
-                "graph_id": -1,
-                "all_deps": 2,
-                "authors": None,
-                "dependencies": [
-                    {
-                        **_default_report_json,
-                        "graph_id": -1,
-                        "all_deps": 1,
-                        "immediate_deps": 1,
-                        "npmsio_score": 0.9,
-                        "npmsio_scored_package_version": "0.0.3",
-                        "score": 100.0,
-                        "score_code": "A",
-                        "package": "test-child-pkg",
-                        "version": "0.0.3",
-                    },
-                ],
-                "immediate_deps": 1,
-                "npmsio_score": 0.34,
-                "npmsio_scored_package_version": "0.1.3",
-                "score": 44.0,
-                "score_code": "D",
-                "package": "test-root-pkg",
-                "version": "0.1.0",
-            },
+            m.PackageReport(
+                **{
+                    **_default_report_json,
+                    "graph_id": -1,
+                    "npmsio_score": 0.25,
+                    "npmsio_scored_package_version": "2.0.0",
+                    "package": "test-grandchild-pkg",
+                    "version": "2.1.0",
+                }
+            ),
+            m.PackageReport(
+                **{
+                    **_default_report_json,
+                    "graph_id": -1,
+                    "all_deps": 1,
+                    "dependencies": [
+                        m.PackageReport(
+                            **{
+                                **_default_report_json,
+                                "graph_id": -1,
+                                "npmsio_score": 0.25,
+                                "npmsio_scored_package_version": "2.0.0",
+                                "package": "test-grandchild-pkg",
+                                "version": "2.1.0",
+                            }
+                        ),
+                    ],
+                    "immediate_deps": 1,
+                    "npmsio_score": 0.9,
+                    "npmsio_scored_package_version": "0.0.3",
+                    "package": "test-child-pkg",
+                    "version": "0.0.3",
+                }
+            ),
+            m.PackageReport(
+                **{
+                    **_default_report_json,
+                    "graph_id": -1,
+                    "all_deps": 2,
+                    "authors": None,
+                    "dependencies": [
+                        m.PackageReport(
+                            **{
+                                **_default_report_json,
+                                "graph_id": -1,
+                                "all_deps": 1,
+                                "immediate_deps": 1,
+                                "npmsio_score": 0.9,
+                                "npmsio_scored_package_version": "0.0.3",
+                                "package": "test-child-pkg",
+                                "version": "0.0.3",
+                            }
+                        ),
+                    ],
+                    "immediate_deps": 1,
+                    "npmsio_score": 0.34,
+                    "npmsio_scored_package_version": "0.1.3",
+                    "package": "test-root-pkg",
+                    "version": "0.1.0",
+                }
+            ),
         ],
     ),
     "two_node_loop": (
         m.PackageGraph(
             id=-1,
-            package_links_by_id={0: (0, 1), 1: (1, 0),},
+            package_links_by_id={
+                0: (0, 1),
+                1: (1, 0),
+            },
             distinct_package_versions_by_id={
                 0: m.PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
                 1: m.PackageVersion(id=1, name="test-child-pkg", version="0.0.3"),
@@ -505,82 +591,85 @@ score_package_graph_testcases = {
                 1: ("0.0.3", {"0.0.3": 0.8}),
             },
             get_npm_registry_data_by_package_version_id=lambda: {0: None, 1: None},
-            get_advisories_by_package_version_id=lambda: {0: [], 1: [],},
+            get_advisories_by_package_version_id=lambda: {
+                0: [],
+                1: [],
+            },
         ),
         [
-            {
-                **_default_report_json,
-                "graph_id": -1,
-                "all_deps": 1,
-                "immediate_deps": 1,
-                "npmsio_score": 0.8,
-                "npmsio_scored_package_version": "0.0.3",
-                "score": 90.0,
-                "score_code": "B",
-                "package": "test-child-pkg",
-                "version": "0.0.3",
-                "dependencies": [
-                    {
-                        **_default_report_json,
-                        "graph_id": -1,
-                        "all_deps": 1,
-                        "immediate_deps": 1,
-                        "npmsio_score": 0.2,
-                        "npmsio_scored_package_version": "0.1.3",
-                        "score": 30.0,
-                        "score_code": "E",
-                        "package": "test-root-pkg",
-                        "version": "0.1.0",
-                    }
-                ],
-            },
-            {
-                **_default_report_json,
-                "graph_id": -1,
-                "all_deps": 1,
-                "immediate_deps": 1,
-                "npmsio_score": 0.2,
-                "npmsio_scored_package_version": "0.1.3",
-                "score": 30.0,
-                "score_code": "E",
-                "package": "test-root-pkg",
-                "version": "0.1.0",
-                "dependencies": [
-                    {
-                        **_default_report_json,
-                        "graph_id": -1,
-                        "all_deps": 1,
-                        "immediate_deps": 1,
-                        "npmsio_score": 0.8,
-                        "npmsio_scored_package_version": "0.0.3",
-                        "score": 90.0,
-                        "score_code": "B",
-                        "package": "test-child-pkg",
-                        "version": "0.0.3",
-                    }
-                ],
-            },
+            m.PackageReport(
+                **{
+                    **_default_report_json,
+                    "graph_id": -1,
+                    "all_deps": 1,
+                    "immediate_deps": 1,
+                    "npmsio_score": 0.8,
+                    "npmsio_scored_package_version": "0.0.3",
+                    "package": "test-child-pkg",
+                    "version": "0.0.3",
+                    "dependencies": [
+                        m.PackageReport(
+                            **{
+                                **_default_report_json,
+                                "graph_id": -1,
+                                "all_deps": 1,
+                                "immediate_deps": 1,
+                                "npmsio_score": 0.2,
+                                "npmsio_scored_package_version": "0.1.3",
+                                "package": "test-root-pkg",
+                                "version": "0.1.0",
+                            }
+                        )
+                    ],
+                }
+            ),
+            m.PackageReport(
+                **{
+                    **_default_report_json,
+                    "graph_id": -1,
+                    "all_deps": 1,
+                    "immediate_deps": 1,
+                    "npmsio_score": 0.2,
+                    "npmsio_scored_package_version": "0.1.3",
+                    "package": "test-root-pkg",
+                    "version": "0.1.0",
+                    "dependencies": [
+                        m.PackageReport(
+                            **{
+                                **_default_report_json,
+                                "graph_id": -1,
+                                "all_deps": 1,
+                                "immediate_deps": 1,
+                                "npmsio_score": 0.8,
+                                "npmsio_scored_package_version": "0.0.3",
+                                "package": "test-child-pkg",
+                                "version": "0.0.3",
+                            }
+                        )
+                    ],
+                }
+            ),
         ],
     ),
 }
 
 
 @pytest.mark.parametrize(
-    "db_graph, expected_package_reports_with_deps_json",
+    "db_graph, expected_package_reports",
     score_package_graph_testcases.values(),
     ids=score_package_graph_testcases.keys(),
 )
 @pytest.mark.unit
 def test_score_package_graph(
     db_graph: m.PackageGraph,
-    expected_package_reports_with_deps_json: List[Dict[str, Any]],
+    expected_package_reports: List[m.PackageReport],
     mocker,
 ):
     dt_mock = mocker.patch("depobs.worker.scoring.datetime")
-    for r in expected_package_reports_with_deps_json:
-        r["scoring_date"] = dt_mock.now()
-        for dep in r.get("dependencies", []):
-            dep["scoring_date"] = dt_mock.now()
+    for r in expected_package_reports:
+        r.scoring_date = dt_mock.now()
+        for dep in r.dependencies:
+            dep.scoring_date = dt_mock.now()
 
     reports = list(m.score_package_graph(db_graph).values())
 
@@ -588,14 +677,18 @@ def test_score_package_graph(
     assert (
         len(db_graph.distinct_package_ids)
         == len(reports)
-        == len(expected_package_reports_with_deps_json)
+        == len(expected_package_reports)
     )
 
     # should have correct direct and indirect dep counts
-    for report, expected_report_json in zip(
-        reports, expected_package_reports_with_deps_json
+    for report, expected_report in itertools.zip_longest(
+        reports, expected_package_reports
     ):
-        assert report.json_with_dependencies() == expected_report_json
+        assert report.report_json == expected_report.report_json
+        for dep, expected_dep in itertools.zip_longest(
+            report.dependencies, expected_report.dependencies
+        ):
+            assert dep.report_json == expected_dep.report_json
 
 
 compare_package_graph_testcases = {
@@ -707,7 +800,10 @@ compare_package_graph_testcases = {
                 0: ("0.1.0", {"0.1.3": 0.34}),
                 1: ("0.3.0", {"2.0.0": 0.25}),
             },
-            get_npm_registry_data_by_package_version_id=lambda: {0: None, 1: None,},
+            get_npm_registry_data_by_package_version_id=lambda: {
+                0: None,
+                1: None,
+            },
             get_advisories_by_package_version_id=lambda: {0: [], 1: []},
         ),
         m.PackageGraph(
@@ -765,8 +861,18 @@ def test_compare_package_graph(
 
 count_advisories_by_severity_testcases = {
     "none": ([], m.Counter()),
-    "empty_str_ignored": ([m.Advisory(severity=""),], m.Counter(),),
-    "none_ignored": ([m.Advisory(severity=None),], m.Counter(),),
+    "empty_str_ignored": (
+        [
+            m.Advisory(severity=""),
+        ],
+        m.Counter(),
+    ),
+    "none_ignored": (
+        [
+            m.Advisory(severity=None),
+        ],
+        m.Counter(),
+    ),
     "one_critical_upper_case_counted": (
         [m.Advisory(severity="CRITICAL")],
         m.Counter({m.AdvisorySeverity.CRITICAL: 1}),

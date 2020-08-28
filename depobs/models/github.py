@@ -89,8 +89,7 @@ class Resource:
 
     @property
     def result_path(self: "Resource") -> JSONPath:
-        """path in the JSON response to get results
-        """
+        """path in the JSON response to get results"""
         result_path_item = "nodes" if self.parent else "edges"
         return list(self.page_path) + [result_path_item]
 

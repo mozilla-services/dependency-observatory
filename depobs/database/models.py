@@ -46,7 +46,7 @@ from sqlalchemy.types import DateTime
 from sqlalchemy.schema import Table
 from sqlalchemy import func
 
-from depobs.database.mixins import PackageReportColumnsMixin
+from depobs.database.schemas import PackageReportSchema
 from depobs.website.schemas import JobParamsSchema
 
 log = logging.getLogger(__name__)
@@ -94,10 +94,30 @@ class Dependency(db.Model):
     used_by_id = Column(Integer, ForeignKey("reports.id"), primary_key=True)
 
 
-class PackageReport(PackageReportColumnsMixin, db.Model):
+class PackageReport(db.Model):
     __tablename__ = "reports"
 
     id = Column("id", Integer, primary_key=True)
+    package = Column(String(200))
+    version = Column(String(200))
+    release_date = Column(DateTime)
+    scoring_date = Column(DateTime)
+    top_score = Column(Integer)
+    npmsio_score = Column(Float)
+    npmsio_scored_package_version = Column(String)
+    directVulnsCritical_score = Column(Integer)
+    directVulnsHigh_score = Column(Integer)
+    directVulnsMedium_score = Column(Integer)
+    directVulnsLow_score = Column(Integer)
+    indirectVulnsCritical_score = Column(Integer)
+    indirectVulnsHigh_score = Column(Integer)
+    indirectVulnsMedium_score = Column(Integer)
+    indirectVulnsLow_score = Column(Integer)
+    authors = Column(Integer)
+    contributors = Column(Integer)
+    immediate_deps = Column(Integer)
+    all_deps = Column(Integer)
+    graph_id = Column(Integer, nullable=True)
 
     @staticmethod
     def score_vulns(
@@ -184,11 +204,15 @@ class PackageReport(PackageReportColumnsMixin, db.Model):
                 else_=0,
             )
             + case(
-                [(cls.directVulnsHigh_score > 0, -15 * cls.directVulnsHigh_score),],
+                [
+                    (cls.directVulnsHigh_score > 0, -15 * cls.directVulnsHigh_score),
+                ],
                 else_=0,
             )
             + case(
-                [(cls.directVulnsMedium_score > 0, -7 * cls.directVulnsMedium_score),],
+                [
+                    (cls.directVulnsMedium_score > 0, -7 * cls.directVulnsMedium_score),
+                ],
                 else_=0,
             )
             + case(
@@ -201,7 +225,9 @@ class PackageReport(PackageReportColumnsMixin, db.Model):
                 else_=0,
             )
             + case(
-                [(cls.indirectVulnsHigh_score > 0, -7 * cls.indirectVulnsHigh_score),],
+                [
+                    (cls.indirectVulnsHigh_score > 0, -7 * cls.indirectVulnsHigh_score),
+                ],
                 else_=0,
             )
             + case(
@@ -251,49 +277,7 @@ class PackageReport(PackageReportColumnsMixin, db.Model):
 
     @property
     def report_json(self) -> Dict:
-        return dict(
-            score=self.score,
-            score_code=self.score_code,
-            id=self.id,
-            graph_id=self.graph_id,
-            package=self.package,
-            version=self.version,
-            release_date=self.release_date,
-            scoring_date=self.scoring_date,
-            top_score=self.top_score,
-            npmsio_score=self.npmsio_score,
-            npmsio_scored_package_version=self.npmsio_scored_package_version,
-            directVulnsCritical_score=self.directVulnsCritical_score,
-            directVulnsHigh_score=self.directVulnsHigh_score,
-            directVulnsMedium_score=self.directVulnsMedium_score,
-            directVulnsLow_score=self.directVulnsLow_score,
-            indirectVulnsCritical_score=self.indirectVulnsCritical_score,
-            indirectVulnsHigh_score=self.indirectVulnsHigh_score,
-            indirectVulnsMedium_score=self.indirectVulnsMedium_score,
-            indirectVulnsLow_score=self.indirectVulnsLow_score,
-            authors=self.authors,
-            contributors=self.contributors,
-            immediate_deps=self.immediate_deps,
-            all_deps=self.all_deps,
-        )
-
-    def json_with_dependencies(self, depth: int = 1) -> Dict:
-        return {
-            "dependencies": [
-                rep.json_with_dependencies(depth - 1) for rep in self.dependencies
-            ]
-            if depth > 0
-            else [],
-            **self.report_json,
-        }
-
-    def json_with_parents(self, depth: int = 1) -> Dict:
-        return {
-            "parents": [rep.json_with_parents(depth - 1) for rep in self.parents]
-            if depth > 0
-            else [],
-            **self.report_json,
-        }
+        return PackageReportSchema().dump(self)
 
 
 class PackageVersion(db.Model):
@@ -896,30 +880,40 @@ class Scan(db.Model):
     graph_id = Column(Integer, nullable=True)
 
     @cached_property
-    def name(self,) -> str:
+    def name(
+        self,
+    ) -> str:
         assert isinstance(self.params, dict)
         return self.params["name"]
 
     @cached_property
-    def package_name(self,) -> str:
+    def package_name(
+        self,
+    ) -> str:
         assert isinstance(self.params, dict)
         assert self.name == "scan_score_npm_package"
         return self.params["args"][0]
 
     @cached_property
-    def package_version(self,) -> Optional[str]:
+    def package_version(
+        self,
+    ) -> Optional[str]:
         assert isinstance(self.params, dict)
         if len(self.params["args"]) > 1:
             return self.params["args"][1]
         return None
 
-    def dep_file_urls(self,) -> Generator[ScanFileURL, None, None]:
+    def dep_file_urls(
+        self,
+    ) -> Generator[ScanFileURL, None, None]:
         assert isinstance(self.params, dict)
         for file_config in self.params["kwargs"]["dep_file_urls"]:
             yield file_config
 
     @cached_property
-    def report_url(self,) -> str:
+    def report_url(
+        self,
+    ) -> str:
         """
         Returns the report URL for the scan type and args
         """
@@ -934,7 +928,9 @@ class Scan(db.Model):
         raise NotImplementedError("report_url not implemented")
 
     @cached_property
-    def package_graph(self,) -> Optional[PackageGraph]:
+    def package_graph(
+        self,
+    ) -> Optional[PackageGraph]:
         if self.graph_id:
             return get_graph_by_id(self.graph_id)
         return None
@@ -1161,7 +1157,8 @@ def get_npm_registry_entries_to_scan(
 
 
 def get_NPMRegistryEntry(
-    package: str, version: Optional[str] = None,
+    package: str,
+    version: Optional[str] = None,
 ) -> sqlalchemy.orm.query.Query:
     """
     Returns NPMRegistryEntry models for the given package name and
@@ -1290,7 +1287,10 @@ def get_score_code_counts() -> sqlalchemy.orm.query.Query:
 
 def get_statistics() -> Dict[str, Union[int, Dict[str, int]]]:
     pkg_version_count = (
-        db.session.query(PackageVersion.name, PackageVersion.version,)
+        db.session.query(
+            PackageVersion.name,
+            PackageVersion.version,
+        )
         .distinct()
         .count()
     )
@@ -1587,13 +1587,18 @@ def package_name_and_version_to_scan(
     """
     return Scan(
         params=JobParamsSchema().dump(
-            {"name": "scan_score_npm_package", "args": [package_name, package_version],}
+            {
+                "name": "scan_score_npm_package",
+                "args": [package_name, package_version],
+            }
         ),
         status="queued",
     )
 
 
-def dependency_files_to_scan(dep_file_urls: List[ScanFileURL],) -> Scan:
+def dependency_files_to_scan(
+    dep_file_urls: List[ScanFileURL],
+) -> Scan:
     """
     Return a scan model for the npm dependency files.
     """

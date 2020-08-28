@@ -279,15 +279,24 @@ def index_page() -> Any:
 
 def schema_to_dep_files_scan(scan_config) -> models.Scan:
     dep_files: List[models.ScanFileURL] = [
-        {"filename": "package.json", "url": scan_config.manifest_url,}
+        {
+            "filename": "package.json",
+            "url": scan_config.manifest_url,
+        }
     ]
     if scan_config.lockfile_url:
         dep_files.append(
-            {"filename": "package-lock.json", "url": scan_config.lockfile_url,}
+            {
+                "filename": "package-lock.json",
+                "url": scan_config.lockfile_url,
+            }
         )
     if scan_config.shrinkwrap_url:
         dep_files.append(
-            {"filename": "npm-shrinkwrap.json", "url": scan_config.shrinkwrap_url,}
+            {
+                "filename": "npm-shrinkwrap.json",
+                "url": scan_config.shrinkwrap_url,
+            }
         )
     return models.dependency_files_to_scan(dep_files)
 
@@ -302,7 +311,10 @@ def schema_to_package_scan(scan_config) -> models.Scan:
     else:
         raise NotImplementedError()
 
-    return models.package_name_and_version_to_scan(scan_config.package_name, version,)
+    return models.package_name_and_version_to_scan(
+        scan_config.package_name,
+        version,
+    )
 
 
 @api.route("/api/v1/scans", methods=["POST"])
@@ -333,7 +345,10 @@ def queue_scan() -> Tuple[Dict, int]:
     if scan_config.scan_type not in current_app.config["WEB_JOB_NAMES"]:  # type: ignore
         raise BadRequest(description="scan type not allowed or does not exist for app")
 
-    scan = models.save_scan_with_status(loader(scan_config), "queued",)
+    scan = models.save_scan_with_status(
+        loader(scan_config),
+        "queued",
+    )
     log.info(f"queued scan {scan.id}")
     return ScanSchema().dump(scan), 202
 

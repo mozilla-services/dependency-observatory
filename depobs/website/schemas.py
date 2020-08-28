@@ -14,19 +14,33 @@ class ScanScoreNPMDepFilesRequestParams:
     """
 
     scan_type: str = field(
-        metadata={"validate": marshmallow.validate.Equal("scan_score_npm_dep_files"),}
+        metadata={
+            "validate": marshmallow.validate.Equal("scan_score_npm_dep_files"),
+        }
     )
     package_manager: str = field(
         metadata={"validate": marshmallow.validate.Equal("npm")}
     )
     manifest_url: str = field(
-        metadata={"validate": marshmallow.validate.URL(schemes={"http", "https"},),}
+        metadata={
+            "validate": marshmallow.validate.URL(
+                schemes={"http", "https"},
+            ),
+        }
     )
     lockfile_url: Optional[str] = field(
-        metadata={"validate": marshmallow.validate.URL(schemes={"http", "https"},),}
+        metadata={
+            "validate": marshmallow.validate.URL(
+                schemes={"http", "https"},
+            ),
+        }
     )
     shrinkwrap_url: Optional[str] = field(
-        metadata={"validate": marshmallow.validate.URL(schemes={"http", "https"},),}
+        metadata={
+            "validate": marshmallow.validate.URL(
+                schemes={"http", "https"},
+            ),
+        }
     )
 
 
@@ -42,7 +56,9 @@ class ScanScoreNPMPackageRequestParams:
     """
 
     scan_type: str = field(
-        metadata={"validate": marshmallow.validate.Equal("scan_score_npm_package"),}
+        metadata={
+            "validate": marshmallow.validate.Equal("scan_score_npm_package"),
+        }
     )
     package_manager: str = field(
         metadata={"validate": marshmallow.validate.Equal("npm")}

@@ -206,7 +206,8 @@ def update_node_attrs(
 
 
 def nx_digraph_to_graphviz_digraph(
-    g: nx.DiGraph, dot_graph: Optional[graphviz.Digraph] = None,
+    g: nx.DiGraph,
+    dot_graph: Optional[graphviz.Digraph] = None,
 ) -> graphviz.Digraph:
     """
     Adds nodes and dedges from a networkx DiGraph to a graphviz

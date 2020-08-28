@@ -9,7 +9,8 @@ from typing import Optional
 #
 # https://docs.npmjs.com/files/package.json#name
 NPM_PACKAGE_NAME_RE = re.compile(
-    r"""[@a-zA-Z0-9][\.-_@/a-zA-Z0-9]{0,213}""", re.VERBOSE,
+    r"""[@a-zA-Z0-9][\.-_@/a-zA-Z0-9]{0,213}""",
+    re.VERBOSE,
 )
 
 

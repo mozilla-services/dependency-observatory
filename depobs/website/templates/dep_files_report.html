@@ -33,7 +33,7 @@
             </div>
             <div class="card-body pb-1">
                 {%if scan.package_graph and scan.package_graph.distinct_package_reports %}
-                    {% with deps=scan.package_graph.distinct_package_reports_json %}
+                    {% with deps=scan.package_graph.distinct_package_reports %}
                         {% include 'dependencies_table.html' %}
                     {% endwith %}
                 {% else %}

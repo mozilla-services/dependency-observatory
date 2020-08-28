@@ -18,7 +18,12 @@ import depobs.worker.validators as m
             ),
         ),
     ],
-    ids=["name", "namespaced name", "none", "invalid name - shebang",],
+    ids=[
+        "name",
+        "namespaced name",
+        "none",
+        "invalid name - shebang",
+    ],
 )
 @pytest.mark.unit
 def test_get_npm_package_name_validation_error(
@@ -77,7 +82,10 @@ def test_get_npm_package_version_validation_error(
         ("v0.0.0-rc.1", False),
         ("v0.0.0-rc1", False),
         ("1.2.3-alpha.1+exp.sha.5114f85", False),
-        ("#!/usr/bin/env", False,),
+        (
+            "#!/usr/bin/env",
+            False,
+        ),
         ("1.0.0-rc.3", False),
         ("1.0.0-beta", False),
         ("1.0.0-beta2", False),

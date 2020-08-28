@@ -124,14 +124,20 @@ def node_dep_ids_iter(
         for node_id in sorted(node_ids, reverse=True):
             direct_dep_ids: Set[int] = set(g.successors(node_id))
             indirect_dep_ids: Set[int] = (
-                set(
-                    [
-                        dest_id
-                        for dest_id in node_ids
-                        if has_path(g, node_id, dest_id)  # i.e. have a scc in common
-                    ]
+                (
+                    set(
+                        [
+                            dest_id
+                            for dest_id in node_ids
+                            if has_path(
+                                g, node_id, dest_id
+                            )  # i.e. have a scc in common
+                        ]
+                    )
+                    | indirect_node_ids
                 )
-                | indirect_node_ids
-            ) - direct_dep_ids - set([node_id])
+                - direct_dep_ids
+                - set([node_id])
+            )
 
             yield node_id, direct_dep_ids, indirect_dep_ids

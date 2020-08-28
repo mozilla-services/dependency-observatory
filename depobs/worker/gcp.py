@@ -25,7 +25,9 @@ def create_pubsub_topic(project_id: str, topic_id: str) -> None:
 
 
 def subscribe_to_pubsub_topic(
-    project_id: str, topic_id: str, subscription_id: str,
+    project_id: str,
+    topic_id: str,
+    subscription_id: str,
 ) -> Tuple[pubsub_v1.subscriber.client.Client, str]:
     """
     Creates a subscription on a pubsub topic with the provided
