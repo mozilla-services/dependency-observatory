@@ -1,0 +1,24 @@
+<table id="vulns" class="table table-striped table-sm vulnerabilities-table">
+    {% for advisory in advisories %}
+    <tr>
+        <td>
+            <div class="text-center
+                        {%if advisory.severity == 'low' %}
+                        bg-info text-light
+                        {% elif advisory.severity == 'medium' %}
+                        bg-warning text-dark
+                        {% elif advisory.severity == 'high' or advisory.severity == 'critical' %}
+                        bg-danger text-light
+                        {% else  %}
+                        bg-warning text-dark
+                        {% endif %}
+                        ">
+                {{advisory.severity | upper}}
+            </div>
+        </td>
+        <td>
+            <a href="{{advisory.url}}" title="{{advisory.title}}">{{advisory.title}}</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>

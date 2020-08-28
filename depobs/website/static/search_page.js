@@ -24,10 +24,7 @@ function formDataToPackageScanBody(formData) {
     package_name: formData.package_name,
     package_versions_type: formData.package_versions_type,
   };
-  if (
-    formData.package_versions_type === "specific-version" &&
-    formData.package_version
-  ) {
+  if (formData.package_versions_type === "specific-version") {
     console.debug("adding package_version to body");
     body.package_version = formData.package_version;
   }
@@ -162,12 +159,17 @@ function redirectToScanLogs(scanID) {
   window.location.assign(scanLogsURI);
 }
 
+function getFormDataObj() {
+  let formDataObj = Object.fromEntries(new FormData(formEl));
+  return formDataObj;
+}
+
 function onSubmit(event) {
   console.debug(`package scan form submitted! timestamp: ${event.timeStamp}`);
   event.preventDefault();
   updateSearchError(null); // clear error display
 
-  let formDataObj = Object.fromEntries(new FormData(formEl));
+  let formDataObj = getFormDataObj();
   console.debug("have package scan formdata", formDataObj);
 
   if (formDataObj.force_rescan === "on") {
@@ -274,6 +276,11 @@ window.addEventListener("DOMContentLoaded", (event) => {
     "change",
     updatePackageVersionInput
   );
+  // browser can preserve form data
+  let formDataObj = getFormDataObj();
+  if (formDataObj.package_versions_type === "specific-version") {
+    formPackageVersionEl.removeAttribute("disabled");
+  }
   formEl.addEventListener("submit", onSubmit);
 
   depFilesFormEl.addEventListener("submit", onDepFilesFormSubmit);

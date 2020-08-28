@@ -31,12 +31,7 @@ from depobs.database.models import (
     NPMRegistryEntry,
     PackageReport,
     get_package_report,
-    get_npms_io_score,
     get_NPMRegistryEntry,
-    get_maintainers_contributors,
-    get_npm_registry_data,
-    get_vulnerability_counts,
-    store_package_report,
     store_package_reports,
     get_most_recently_inserted_package_from_name_and_version,
     get_latest_graph_including_package_as_parent,
@@ -196,9 +191,11 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
     package_name: str = scan.package_name
     scan_package_version: Optional[str] = scan.package_version
     if scan_package_version == "latest":
-        package_version = None
+        query_package_version = None
+    else:
+        query_package_version = scan.package_version
     versions_query = models.get_npm_registry_entries_to_scan(
-        package_name, package_version
+        package_name, query_package_version
     )
 
     # fetch npm registry entries from DB
