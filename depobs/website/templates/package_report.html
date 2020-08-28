@@ -267,7 +267,7 @@
                 No direct dependencies.
             </div>
             {% else %}
-                {% with deps=package_report.dependencies_json %}
+                {% with deps=package_report.dependencies %}
                     {% include 'dependencies_table.html' %}
                 {% endwith %}
             {% endif %}
@@ -278,12 +278,12 @@
             <span class="h3">Direct Parents </span>
         </div>
         <div class="card-body pb-1">
-            {%if not package_report.parents_json %}
+            {%if not package_report.parents %}
             <div id="no-parents">
                 No known parents.
             </div>
             {% else %}
-                {% with deps=package_report.parents_json %}
+                {% with deps=package_report.parents %}
                     {% include 'dependencies_table.html' %}
                 {% endwith %}
             {% endif %}

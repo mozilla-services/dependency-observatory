@@ -21,35 +21,35 @@
     {% for dep in deps %}
     <tr>
         <td>
-            <a href="{{url_for('views_blueprint.show_package_report', package_manager='npm', package_name=dep['package'], package_version=dep['version'])}}" title="See package / version details">
-                {{dep['package']}}
+            <a href="{{url_for('views_blueprint.show_package_report', package_manager='npm', package_name=dep.package, package_version=dep['version'])}}" title="See package / version details">
+                {{dep.package}}
             </a>
         </td>
         <td>
-            <a href="{{url_for('views_blueprint.show_package_report', package_manager='npm', package_name=dep['package'], package_version=dep['version'])}}" title="See package / version details">
-                {{dep['version']}}
+            <a href="{{url_for('views_blueprint.show_package_report', package_manager='npm', package_name=dep.package, package_version=dep['version'])}}" title="See package / version details">
+                {{dep.version}}
             </a>
         </td>
         <td>
-            {{dep['score_code']}} {% if dep['score'] %}({{dep['score'] | round(0) | int}}){% endif %}
+            {{dep.score_code}} {% if dep.score %}({{dep.score | round(0) | int}}){% endif %}
         </td>
         <td>
-            {{dep['immediate_deps']}}
+            {{dep.immediate_deps}}
         </td>
         <td>
-            {{dep['all_deps']}}
+            {{dep.all_deps}}
         </td>
         <td>
-            {{dep['directVulnsCritical_score'] + dep['indirectVulnsCritical_score']}}
+            {{dep.directVulnsCritical_score + dep.indirectVulnsCritical_score}}
         </td>
         <td>
-            {{dep['directVulnsHigh_score'] + dep['indirectVulnsHigh_score']}}
+            {{dep.directVulnsHigh_score + dep.indirectVulnsHigh_score}}
         </td>
         <td>
-            {{dep['directVulnsMedium_score'] + dep['indirectVulnsMedium_score']}}
+            {{dep.directVulnsMedium_score + dep.indirectVulnsMedium_score}}
         </td>
         <td>
-            {{dep['directVulnsLow_score'] + dep['indirectVulnsLow_score']}}
+            {{dep.directVulnsLow_score + dep.indirectVulnsLow_score}}
         </td>
     </tr>
     {% endfor %}
