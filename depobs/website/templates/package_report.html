@@ -231,25 +231,25 @@
         </div>
         <div class="card-body pb-1">
             <table id="vulns" class="table table-striped table-sm vulnerabilities-table">
-                {% for vuln in get_direct_vulns(package_report['package'], package_report['version']).get('vulnerabilities', []) %}
+                {% for advisory in direct_vulnerabilities %}
                 <tr>
                     <td>
                         <div class="text-center
-                                    {%if vuln['severity'] == 'low' %}
+                                    {%if advisory.severity == 'low' %}
                                     bg-info text-light
-                                    {% elif vuln['severity'] == 'medium' %}
+                                    {% elif advisory.severity == 'medium' %}
                                     bg-warning text-dark
-                                    {% elif vuln['severity'] == 'high' or vuln['severity'] == 'critical' %}
+                                    {% elif advisory.severity == 'high' or advisory.severity == 'critical' %}
                                     bg-danger text-light
                                     {% else  %}
                                     bg-warning text-dark
                                     {% endif %}
                                     ">
-                            {{vuln['severity'] | upper}}
+                            {{advisory.severity | upper}}
                         </div>
                     </td>
                     <td>
-                        <a href="{{vuln['url']}}" title="{{vuln['title']}}">{{vuln['title']}}</a>
+                        <a href="{{advisory.url}}" title="{{advisory.title}}">{{advisory.title}}</a>
                     </td>
                 </tr>
                 {% endfor %}

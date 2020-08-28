@@ -132,7 +132,13 @@ def show_package_report() -> Any:
         "package_report.html",
         package_report=package_report,
         package_report_fields=scoring.all_score_component_fields,
-        get_direct_vulns=models.get_vulnerabilities_report,
+        direct_vulnerabilities=models.get_advisories_by_package_version_ids_query(
+            models.get_package_version_id_query(
+                models.PackageVersion(
+                    name=package_report.package, version=package_report.version
+                )
+            ).one()
+        ),
     )
 
 
