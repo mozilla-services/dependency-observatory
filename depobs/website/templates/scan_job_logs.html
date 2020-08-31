@@ -33,24 +33,18 @@
 
                 <br>If the problem persists, please <a class="error-issue-link" target="_blank" rel="noreferrer" rel="noopener" href="https://github.com/mozilla-services/dependency-observatory/issues/new?title=error making request&body=scan failed id: {{scan.id}}">click here</a> to file an issue
             </div>
+        {%elif scan.status == 'succeeded' %}
+            <h2>
+                <a id="report-url" href="{{ scan.report_url }}">
+                    scan report
+                </a>
+            </h2>
         {% else %}
-            {%if refresh %}
-                <div>This page will refresh every five seconds until the scan finishes.</div>
-                {% if scan.status == 'succeeded' %}
-                    <meta http-equiv="refresh" content="5; url={{ scan.report_url }}">
-                {% else %}
-                    <meta http-equiv="refresh" content="5">
-                {% endif %}
-            {% endif %}
-
-            {%if scan.status == 'succeeded' %}
-                <h2>
-                    <a href="{{ scan.report_url }}">
-                        scan report
-                    </a>
-                </h2>
-            {% endif %}
         {% endif %}
+
+        <div id="page-refresh-message" class="d-none">
+            This page will refresh every five seconds until the scan finishes and redirect to the report if it complete successfully.
+        </div>
     </div>
 
     <h3>Logs</h3>
@@ -61,5 +55,7 @@
 {% endfor %}</code></pre>
         </dd>
     </dl>
+
+    <script src="/static/scan_job_logs_page.js"></script>
 </div>
 {% endblock %}

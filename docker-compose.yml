@@ -42,7 +42,7 @@ services:
     image: mozilla/dependency-observatory-js-dev-env
     volumes:
       - ./depobs/website/static:/app/static
-    command: " --write /app/static/search_page.js /app/static/do.css /app/static/statistics_page.js /app/static/dep_files_report_page.js"
+    command: " --write /app/static/search_page.js /app/static/do.css /app/static/statistics_page.js /app/static/dep_files_report_page.js /app/static/scan_job_logs_page.js"
 
   # images we build for the worker to run
   node-10:
