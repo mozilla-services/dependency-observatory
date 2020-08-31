@@ -44,7 +44,7 @@ six==1.15.0
 snug==2.0.0
 toml==0.10.1
 typed-ast==1.4.1
-typing-extensions==3.7.4.2
+typing-extensions==3.7.4.3
 uwsgi==2.0.19.1
 wcwidth==0.2.5
 yarl==1.5.1
