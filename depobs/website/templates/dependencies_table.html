@@ -21,12 +21,12 @@
     {% for dep in deps %}
     <tr>
         <td>
-            <a href="{{url_for('views_blueprint.show_package_report', package_manager='npm', package_name=dep.package, package_version=dep['version'])}}" title="See package / version details">
+            <a href="{{url_for('views_blueprint.show_package_changelog', package_manager='npm', package_name=dep.package)}}" title="See package changelog">
                 {{dep.package}}
             </a>
         </td>
         <td>
-            <a href="{{url_for('views_blueprint.show_package_report', package_manager='npm', package_name=dep.package, package_version=dep['version'])}}" title="See package / version details">
+            <a href="{{url_for('views_blueprint.show_package_report', package_manager='npm', package_name=dep.package, package_version=dep['version'])}}" title="See package version details">
                 {{dep.version}}
             </a>
         </td>
