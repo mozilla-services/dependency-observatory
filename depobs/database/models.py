@@ -14,6 +14,7 @@ from typing import (
     TypedDict,
     Union,
 )
+from urllib.parse import urlsplit, urlunsplit
 
 import flask
 from flask_migrate import Migrate
@@ -804,6 +805,15 @@ class NPMRegistryEntry(db.Model):
     # readmeFilename: The name of the file from which the readme data was taken.
     #
     # files e.g. ['index.js', 'lib', 'tests']
+
+    @cached_property
+    def normalized_repo_url(self) -> Optional[str]:
+        (scheme, netloc, path, query, fragment_identifier) = urlsplit(
+            self.repository_url
+        )
+        if netloc == "github.com":
+            return urlunsplit(("https", "github.com", path.replace(".git", ""), "", ""))
+        return None
 
     @declared_attr
     def __table_args__(cls) -> Iterable[Index]:
