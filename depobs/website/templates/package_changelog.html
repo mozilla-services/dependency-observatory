@@ -42,46 +42,85 @@
     </div>
     <div class="card card-primary mt-4" id="package-versions-card">
         <div class="card-header bg-primary text-center text-md-left text-white">
-            <span class="h3">Package Versions</span>
+            <span class="h3">Package Versions and Diffs</span>
         </div>
         <div class="card-body pb-1">
             <table id="package-versions-table" class="table table-striped table-sm">
                 <tr>
                     <th>
-                        Package Report URL
+                        Package Report
                     </th>
                     <th>
-                        npm URL
+                        npm page
                     </th>
                     <th>
-                        Source URL
+                        source commit
                     </th>
                     <th>
-                        Git HEAD Reference
+                        source diff
                     </th>
                     <th>
-                        Tarball URL
+                        tarball URL and shasum
+                    </th>
+                    <th>
+                        tarball diff
                     </th>
                 </tr>
-                {% for version, source_url, git_head, tarball_url in versions %}
+                {% for reg_entry in registry_entries %}
                 <tr>
                     <td>
-                        <a target="_blank" href="/package_report?package_name={{package_name}}&package_version={{version}}&package_manager=npm">{{version}}</a>
+                        <a target="_blank" href="/package_report?package_name={{reg_entry.package_name}}&package_version={{reg_entry.package_version}}&package_manager=npm">{{reg_entry.package_version}}</a>
                     </td>
                     <td>
-                        <a target="_blank" rel="noreferrer" rel="noopener" href="https://www.npmjs.com/package/{{package_name}}/v/{{version}}">{{version}}</a>
+                        <a target="_blank" rel="noreferrer" rel="noopener" href="https://www.npmjs.com/package/{{reg_entry.package_name}}/v/{{reg_entry.package_version}}">{{reg_entry.package_version}}</a>
                     </td>
                     <td>
-                        <a target="_blank" rel="noreferrer" rel="noopener" href="{{source_url}}">{{source_url}}</a>
+                        {%if reg_entry.normalized_repo_url %}
+                        <a target="_blank" rel="noreferrer" rel="noopener" href="{{reg_entry.normalized_repo_url}}/commit/{{reg_entry.git_head}}">
+                            {{reg_entry.git_head}}
+                        </a>
+                        {% else %}
+                        <!-- TODO: link non-github.com netlocs -->
+                        {{reg_entry.git_head}}
+                        {%endif%}
                     </td>
                     <td>
-                        <!-- TODO normalize and link to .repository.url ref if possible -->
-                        {{git_head}}
+                        <!-- source diff -->
                     </td>
                     <td>
-                        <a target="_blank" rel="noreferrer" rel="noopener" href="{{tarball_url}}">{{tarball_url}}</a>
+                        <a target="_blank" rel="noreferrer" rel="noopener" href="{{reg_entry.tarball}}">{{reg_entry.tarball}}</a>
+                        <pre>{{reg_entry.shasum}}</pre>
+                    </td>
+                    <td>
+                        <!-- tarball diff -->
                     </td>
                 </tr>
+
+                {%if loop.nextitem %}
+                    <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>
+                            <!-- source diff -->
+                            {%if reg_entry.normalized_repo_url %}
+                            <a target="_blank" rel="noreferrer" rel="noopener" href="{{reg_entry.normalized_repo_url}}/compare/{{loop.nextitem.git_head}}..{{reg_entry.git_head}}">
+                                source diff
+                            </a>
+                            {% else %}
+                            <!-- TODO: link non-github.com netlocs -->
+                            {%endif%}
+                        </td>
+                        <td></td>
+                        <td>
+                            <!-- tarball diff -->
+                            <!-- TODO: implement more diffing or workaround intrinsic limitations -->
+                            <a target="_blank" rel="noreferrer" rel="noopener" href="https://diff.intrinsic.com/{{package_name}}/{{loop.nextitem.package_version}}/{{reg_entry.package_version}}">
+                                {{loop.nextitem.package_version}}/{{reg_entry.package_version}}
+                            </a>
+                        </td>
+                    </tr>
+                {% endif %}
                 {% endfor %}
             </table>
         </div>

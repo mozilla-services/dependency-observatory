@@ -156,8 +156,10 @@ def show_package_changelog() -> Any:
         "package_changelog.html",
         package_name=report.package_name,
         npmsio_score=models.get_npmsio_score_query(report.package_name).one_or_none(),
-        versions=list(
-            models.get_npm_registry_entries_to_scan(report.package_name, None).all()
+        registry_entries=list(
+            models.get_NPMRegistryEntry(report.package_name, None)
+            .order_by(models.NPMRegistryEntry.published_at.desc())
+            .all()
         ),
     )
 
