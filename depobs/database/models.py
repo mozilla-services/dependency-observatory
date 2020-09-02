@@ -1073,7 +1073,7 @@ def get_child_package_ids_from_parent_package_id(
 
 
 def get_npms_io_score(
-    package: str, version: Optional[str] = None
+    package_name: str, package_version: Optional[str] = None
 ) -> sqlalchemy.orm.query.Query:
     """
     Returns npms.io score and version for the given package name and
@@ -1093,11 +1093,11 @@ def get_npms_io_score(
     """
     query = (
         db.session.query(NPMSIOScore.score, NPMSIOScore.package_version)
-        .filter_by(package_name=package)
+        .filter_by(package_name=package_name)
         .order_by(NPMSIOScore.analyzed_at.desc())
     )
-    if version:
-        query = query.filter_by(package_version=version)
+    if package_version:
+        query = query.filter_by(package_version=package_version)
     return query
 
 
