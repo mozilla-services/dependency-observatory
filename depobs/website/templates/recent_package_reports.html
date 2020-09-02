@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-12 col-md-10 offset-md-1 col-xl-8 offset-xl-2">
+        <h1 class="h6 margin-bottom">
+            Welcome to Mozilla's Dependency Observatory. This service is in <strong>alpha</strong> state and may contain inaccurate results.
+        </h1>
+
+	<div class="card-deck mb-3 text-center">
+		<div class="card mb-6 shadow-sm">
+		    <div class="card-header">
+			<h4 class="my-0 font-weight-normal">Recently Scanned Packages</h4>
+		    </div>
+		    <div class="card-body">
+			<h1 class="card-title pricing-card-title"></h1>
+
+			{% with deps=reports %}
+                            {% include 'dependencies_table.html' %}
+			{% endwith %}
+		    </div>
+		</div>
+
+	</div>
+    </div>
+</div>
+
+{% endblock %}
