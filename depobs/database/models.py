@@ -454,12 +454,12 @@ class PackageGraph(db.Model):
             package_version: PackageVersion,
         ) -> Dict[str, float]:
             return {
-                scored_version: score
-                for (score, scored_version) in (
-                    get_npmsio_score_and_version_query(
+                score_model.package_version: score_model.score
+                for score_model in (
+                    get_npmsio_score_query(
                         package_version.name, package_version.version
                     ).all()
-                    or get_npmsio_score_and_version_query(package_version.name).all()
+                    or get_npmsio_score_query(package_version.name).all()
                 )
             }
 
