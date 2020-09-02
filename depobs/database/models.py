@@ -14,6 +14,7 @@ from typing import (
     TypedDict,
     Union,
 )
+from urllib.parse import urlsplit, urlunsplit
 
 import flask
 from flask_migrate import Migrate
@@ -454,12 +455,12 @@ class PackageGraph(db.Model):
             package_version: PackageVersion,
         ) -> Dict[str, float]:
             return {
-                scored_version: score
-                for (score, scored_version) in (
-                    get_npms_io_score(
+                score_model.package_version: score_model.score
+                for score_model in (
+                    get_npmsio_score_query(
                         package_version.name, package_version.version
                     ).all()
-                    or get_npms_io_score(package_version.name).all()
+                    or get_npmsio_score_query(package_version.name).all()
                 )
             }
 
@@ -805,6 +806,15 @@ class NPMRegistryEntry(db.Model):
     #
     # files e.g. ['index.js', 'lib', 'tests']
 
+    @cached_property
+    def normalized_repo_url(self) -> Optional[str]:
+        (scheme, netloc, path, query, fragment_identifier) = urlsplit(
+            self.repository_url
+        )
+        if netloc == "github.com":
+            return urlunsplit(("https", "github.com", path.replace(".git", ""), "", ""))
+        return None
+
     @declared_attr
     def __table_args__(cls) -> Iterable[Index]:
         return (
@@ -970,19 +980,27 @@ def get_package_score_reports(
     )
 
 
-def get_most_recently_scored_package_report(
+def get_most_recently_scored_package_report_query(
     package_name: str,
     package_version: Optional[str] = None,
     scored_after: Optional[datetime] = None,
-) -> Optional[PackageReport]:
-    "Get the most recently scored PackageReport with package_name, optional package_version, and optionally scored_after the scored_after datetime or None"
+) -> sqlalchemy.orm.query.Query:
+    """
+    Get the most recently scored PackageReport with package_name, optional package_version, and optionally scored_after the scored_after datetime or None
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_most_recently_scored_package_report_query("foo", "0.0.1"))
+    'SELECT reports.id AS reports_id, reports.package AS reports_package, reports.version AS reports_version, reports.release_date AS reports_release_date, reports.scoring_date AS reports_scoring_date, reports.npmsio_score AS reports_npmsio_score, reports.npmsio_scored_package_version AS reports_npmsio_scored_package_version, reports."directVulnsCritical_score" AS "reports_directVulnsCritical_score", reports."directVulnsHigh_score" AS "reports_directVulnsHigh_score", reports."directVulnsMedium_score" AS "reports_directVulnsMedium_score", reports."directVulnsLow_score" AS "reports_directVulnsLow_score", reports."indirectVulnsCritical_score" AS "reports_indirectVulnsCritical_score", reports."indirectVulnsHigh_score" AS "reports_indirectVulnsHigh_score", reports."indirectVulnsMedium_score" AS "reports_indirectVulnsMedium_score", reports."indirectVulnsLow_score" AS "reports_indirectVulnsLow_score", reports.authors AS reports_authors, reports.contributors AS reports_contributors, reports.immediate_deps AS reports_immediate_deps, reports.all_deps AS reports_all_deps, reports.graph_id AS reports_graph_id \\nFROM reports \\nWHERE reports.package = %(package_1)s AND reports.version = %(version_1)s ORDER BY reports.scoring_date DESC \\n LIMIT %(param_1)s'
+
+    """
     query = db.session.query(PackageReport).filter_by(package=package_name)
     if package_version is not None:
         query = query.filter_by(version=package_version)
     if scored_after is not None:
         query = query.filter(PackageReport.scoring_date >= scored_after)
     log.debug(f"Query is {query}")
-    return query.order_by(PackageReport.scoring_date.desc()).limit(1).one_or_none()
+    return query.order_by(PackageReport.scoring_date.desc()).limit(1)
 
 
 def get_most_recently_inserted_package_from_name_and_version(
@@ -1064,42 +1082,42 @@ def get_child_package_ids_from_parent_package_id(
     ]
 
 
-def get_npms_io_score(
-    package: str, version: Optional[str] = None
+def get_npmsio_score_query(
+    package_name: str, package_version: Optional[str] = None
 ) -> sqlalchemy.orm.query.Query:
     """
-    Returns NPMRegistryEntry models for the given package name and
-    optional version ordered by most recently inserted.
+    Returns the npms.io score model for the given package name and
+    optional version ordered by most recently analyzed.
 
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
-    ...     just_name_query = str(get_npms_io_score("package_foo"))
-    ...     name_and_version_query = str(get_npms_io_score("package_foo", "version_1"))
+    ...     just_name_query = str(get_npmsio_score_query("package_foo"))
+    ...     name_and_version_query = str(get_npmsio_score_query("package_foo", "version_1"))
 
     >>> just_name_query
-    'SELECT npmsio_scores.score AS npmsio_scores_score, npmsio_scores.package_version AS npmsio_scores_package_version \\nFROM npmsio_scores \\nWHERE npmsio_scores.package_name = %(package_name_1)s ORDER BY npmsio_scores.analyzed_at DESC'
+    'SELECT npmsio_scores.id AS npmsio_scores_id, npmsio_scores.package_name AS npmsio_scores_package_name, npmsio_scores.package_version AS npmsio_scores_package_version, npmsio_scores.analyzed_at AS npmsio_scores_analyzed_at, npmsio_scores.source_url AS npmsio_scores_source_url, npmsio_scores.score AS npmsio_scores_score, npmsio_scores.quality AS npmsio_scores_quality, npmsio_scores.popularity AS npmsio_scores_popularity, npmsio_scores.maintenance AS npmsio_scores_maintenance, npmsio_scores.branding AS npmsio_scores_branding, npmsio_scores.carefulness AS npmsio_scores_carefulness, npmsio_scores.health AS npmsio_scores_health, npmsio_scores.tests AS npmsio_scores_tests, npmsio_scores.community_interest AS npmsio_scores_community_interest, npmsio_scores.dependents_count AS npmsio_scores_dependents_count, npmsio_scores.downloads_count AS npmsio_scores_downloads_count, npmsio_scores.downloads_acceleration AS npmsio_scores_downloads_acceleration, npmsio_scores.commits_frequency AS npmsio_scores_commits_frequency, npmsio_scores.issues_distribution AS npmsio_scores_issues_distribution, npmsio_scores.open_issues AS npmsio_scores_open_issues, npmsio_scores.releases_frequency AS npmsio_scores_releases_frequency \\nFROM npmsio_scores \\nWHERE npmsio_scores.package_name = %(package_name_1)s ORDER BY npmsio_scores.analyzed_at DESC'
 
     >>> name_and_version_query
-    'SELECT npmsio_scores.score AS npmsio_scores_score, npmsio_scores.package_version AS npmsio_scores_package_version \\nFROM npmsio_scores \\nWHERE npmsio_scores.package_name = %(package_name_1)s AND npmsio_scores.package_version = %(package_version_1)s ORDER BY npmsio_scores.analyzed_at DESC'
+    'SELECT npmsio_scores.id AS npmsio_scores_id, npmsio_scores.package_name AS npmsio_scores_package_name, npmsio_scores.package_version AS npmsio_scores_package_version, npmsio_scores.analyzed_at AS npmsio_scores_analyzed_at, npmsio_scores.source_url AS npmsio_scores_source_url, npmsio_scores.score AS npmsio_scores_score, npmsio_scores.quality AS npmsio_scores_quality, npmsio_scores.popularity AS npmsio_scores_popularity, npmsio_scores.maintenance AS npmsio_scores_maintenance, npmsio_scores.branding AS npmsio_scores_branding, npmsio_scores.carefulness AS npmsio_scores_carefulness, npmsio_scores.health AS npmsio_scores_health, npmsio_scores.tests AS npmsio_scores_tests, npmsio_scores.community_interest AS npmsio_scores_community_interest, npmsio_scores.dependents_count AS npmsio_scores_dependents_count, npmsio_scores.downloads_count AS npmsio_scores_downloads_count, npmsio_scores.downloads_acceleration AS npmsio_scores_downloads_acceleration, npmsio_scores.commits_frequency AS npmsio_scores_commits_frequency, npmsio_scores.issues_distribution AS npmsio_scores_issues_distribution, npmsio_scores.open_issues AS npmsio_scores_open_issues, npmsio_scores.releases_frequency AS npmsio_scores_releases_frequency \\nFROM npmsio_scores \\nWHERE npmsio_scores.package_name = %(package_name_1)s AND npmsio_scores.package_version = %(package_version_1)s ORDER BY npmsio_scores.analyzed_at DESC'
 
     """
     query = (
-        db.session.query(NPMSIOScore.score, NPMSIOScore.package_version)
-        .filter_by(package_name=package)
+        db.session.query(NPMSIOScore)
+        .filter_by(package_name=package_name)
         .order_by(NPMSIOScore.analyzed_at.desc())
     )
-    if version:
-        query = query.filter_by(package_version=version)
+    if package_version:
+        query = query.filter_by(package_version=package_version)
     return query
 
 
-def get_package_names_with_missing_npms_io_scores() -> sqlalchemy.orm.query.Query:
+def get_package_names_with_missing_npmsio_scores() -> sqlalchemy.orm.query.Query:
     """
     Returns PackageVersion names not in npmsio_scores.
 
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
-    ...     str(get_package_names_with_missing_npms_io_scores())
+    ...     str(get_package_names_with_missing_npmsio_scores())
     ...
     'SELECT DISTINCT package_versions.name AS anon_1 \\nFROM package_versions LEFT OUTER JOIN npmsio_scores ON package_versions.name = npmsio_scores.package_name \\nWHERE npmsio_scores.id IS NULL ORDER BY package_versions.name ASC'
     """

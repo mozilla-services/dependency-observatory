@@ -256,7 +256,7 @@ async def fetch_missing_npm_data():
     await asyncio.gather(
         fetch_and_save_npmsio_scores(
             row[0]
-            for row in models.get_package_names_with_missing_npms_io_scores()
+            for row in models.get_package_names_with_missing_npmsio_scores()
             if row is not None
         ),
         fetch_and_save_registry_entries(
