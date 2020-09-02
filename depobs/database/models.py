@@ -1076,8 +1076,8 @@ def get_npms_io_score(
     package: str, version: Optional[str] = None
 ) -> sqlalchemy.orm.query.Query:
     """
-    Returns NPMRegistryEntry models for the given package name and
-    optional version ordered by most recently inserted.
+    Returns npms.io score and version for the given package name and
+    optional version ordered by most recently analyzed.
 
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
