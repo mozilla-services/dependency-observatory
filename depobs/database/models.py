@@ -456,10 +456,10 @@ class PackageGraph(db.Model):
             return {
                 scored_version: score
                 for (score, scored_version) in (
-                    get_npmsio_score(
+                    get_npmsio_score_and_version_query(
                         package_version.name, package_version.version
                     ).all()
-                    or get_npmsio_score(package_version.name).all()
+                    or get_npmsio_score_and_version_query(package_version.name).all()
                 )
             }
 
@@ -1072,17 +1072,17 @@ def get_child_package_ids_from_parent_package_id(
     ]
 
 
-def get_npmsio_score(
+def get_npmsio_score_and_version_query(
     package_name: str, package_version: Optional[str] = None
 ) -> sqlalchemy.orm.query.Query:
     """
-    Returns npms.io score and version for the given package name and
+    Returns npms.io score entry version for the given package name and
     optional version ordered by most recently analyzed.
 
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
-    ...     just_name_query = str(get_npmsio_score("package_foo"))
-    ...     name_and_version_query = str(get_npmsio_score("package_foo", "version_1"))
+    ...     just_name_query = str(get_npmsio_score_and_version_query("package_foo"))
+    ...     name_and_version_query = str(get_npmsio_score_and_version_query("package_foo", "version_1"))
 
     >>> just_name_query
     'SELECT npmsio_scores.score AS npmsio_scores_score, npmsio_scores.package_version AS npmsio_scores_package_version \\nFROM npmsio_scores \\nWHERE npmsio_scores.package_name = %(package_name_1)s ORDER BY npmsio_scores.analyzed_at DESC'
