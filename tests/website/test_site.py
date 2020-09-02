@@ -79,7 +79,6 @@ def test_found_package_report_returns_200(models, client):
             npmsio_score=0,
             npmsio_scored_package_version=None,
             release_date=None,
-            top_score=0,
             directVulnsCritical_score=0,
             directVulnsHigh_score=0,
             directVulnsLow_score=0,

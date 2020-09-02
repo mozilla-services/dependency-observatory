@@ -35,7 +35,6 @@ _default_report_json = {
     "npmsio_score": 0,
     "npmsio_scored_package_version": None,
     "release_date": None,
-    "top_score": None,
 }
 
 
