@@ -970,19 +970,27 @@ def get_package_score_reports(
     )
 
 
-def get_most_recently_scored_package_report(
+def get_most_recently_scored_package_report_query(
     package_name: str,
     package_version: Optional[str] = None,
     scored_after: Optional[datetime] = None,
-) -> Optional[PackageReport]:
-    "Get the most recently scored PackageReport with package_name, optional package_version, and optionally scored_after the scored_after datetime or None"
+) -> sqlalchemy.orm.query.Query:
+    """
+    Get the most recently scored PackageReport with package_name, optional package_version, and optionally scored_after the scored_after datetime or None
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_most_recently_scored_package_report_query("foo", "0.0.1"))
+    'SELECT reports.id AS reports_id, reports.package AS reports_package, reports.version AS reports_version, reports.release_date AS reports_release_date, reports.scoring_date AS reports_scoring_date, reports.npmsio_score AS reports_npmsio_score, reports.npmsio_scored_package_version AS reports_npmsio_scored_package_version, reports."directVulnsCritical_score" AS "reports_directVulnsCritical_score", reports."directVulnsHigh_score" AS "reports_directVulnsHigh_score", reports."directVulnsMedium_score" AS "reports_directVulnsMedium_score", reports."directVulnsLow_score" AS "reports_directVulnsLow_score", reports."indirectVulnsCritical_score" AS "reports_indirectVulnsCritical_score", reports."indirectVulnsHigh_score" AS "reports_indirectVulnsHigh_score", reports."indirectVulnsMedium_score" AS "reports_indirectVulnsMedium_score", reports."indirectVulnsLow_score" AS "reports_indirectVulnsLow_score", reports.authors AS reports_authors, reports.contributors AS reports_contributors, reports.immediate_deps AS reports_immediate_deps, reports.all_deps AS reports_all_deps, reports.graph_id AS reports_graph_id \\nFROM reports \\nWHERE reports.package = %(package_1)s AND reports.version = %(version_1)s ORDER BY reports.scoring_date DESC \\n LIMIT %(param_1)s'
+
+    """
     query = db.session.query(PackageReport).filter_by(package=package_name)
     if package_version is not None:
         query = query.filter_by(version=package_version)
     if scored_after is not None:
         query = query.filter(PackageReport.scoring_date >= scored_after)
     log.debug(f"Query is {query}")
-    return query.order_by(PackageReport.scoring_date.desc()).limit(1).one_or_none()
+    return query.order_by(PackageReport.scoring_date.desc()).limit(1)
 
 
 def get_most_recently_inserted_package_from_name_and_version(

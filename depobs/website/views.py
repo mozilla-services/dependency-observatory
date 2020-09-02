@@ -81,9 +81,9 @@ def get_most_recently_scored_package_report_or_raise(
             days=current_app.config["DEFAULT_SCORED_AFTER_DAYS"]
         )
 
-    package_report = models.get_most_recently_scored_package_report(
+    package_report = models.get_most_recently_scored_package_report_query(
         package_name, package_version, scored_after
-    )
+    ).one_or_none()
     if package_report is None:
         raise NotFound(
             description=f"PackageReport {package_name}@{package_version} scored after {scored_after} not found."
