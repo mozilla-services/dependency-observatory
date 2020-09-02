@@ -24,7 +24,14 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td>{{versions | length}} versions</td>
+                                    <td>NPMS IO Score</td>
+                                    <td id="npmsio_score">
+                                        {%if npmsio_score %}{{ npmsio_score.score | round(2)}}{%endif%}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Versions</td>
+                                    <td>{{versions | length}}</td>
                                 </tr>
                             </table>
                         </div>
