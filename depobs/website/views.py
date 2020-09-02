@@ -154,7 +154,7 @@ def show_package_changelog() -> Any:
     )
     return render_template(
         "package_changelog.html",
-        name=report.package_name,
+        package_name=report.package_name,
         versions=list(
             models.get_npm_registry_entries_to_scan(report.package_name, None).all()
         ),

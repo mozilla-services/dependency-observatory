@@ -18,8 +18,8 @@
                                 <tr>
                                     <td>Package</td>
                                     <td id="package">
-                                        <a target="_blank" rel="noreferrer" rel="noopener" href="https://www.npmjs.com/package/{{name}}" title="">
-                                            {{name}}
+                                        <a target="_blank" rel="noreferrer" rel="noopener" href="https://www.npmjs.com/package/{{package_name}}" title="">
+                                            {{package_name}}
                                         </a>
                                     </td>
                                 </tr>
@@ -59,10 +59,10 @@
                 {% for version, source_url, git_head, tarball_url in versions %}
                 <tr>
                     <td>
-                        <a target="_blank" href="/package_report?package_name={{name}}&package_version={{version}}&package_manager=npm">{{version}}</a>
+                        <a target="_blank" href="/package_report?package_name={{package_name}}&package_version={{version}}&package_manager=npm">{{version}}</a>
                     </td>
                     <td>
-                        <a target="_blank" rel="noreferrer" rel="noopener" href="https://www.npmjs.com/package/{{name}}/v/{{version}}">{{version}}</a>
+                        <a target="_blank" rel="noreferrer" rel="noopener" href="https://www.npmjs.com/package/{{package_name}}/v/{{version}}">{{version}}</a>
                     </td>
                     <td>
                         <a target="_blank" rel="noreferrer" rel="noopener" href="{{source_url}}">{{source_url}}</a>
