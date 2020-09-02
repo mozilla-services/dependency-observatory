@@ -1101,6 +1101,35 @@ def get_npmsio_score_and_version_query(
     return query
 
 
+def get_npmsio_score_query(
+    package_name: str, package_version: Optional[str] = None
+) -> sqlalchemy.orm.query.Query:
+    """
+    Returns the npms.io score model for the given package name and
+    optional version ordered by most recently analyzed.
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     just_name_query = str(get_npmsio_score_query("package_foo"))
+    ...     name_and_version_query = str(get_npmsio_score_query("package_foo", "version_1"))
+
+    >>> just_name_query
+    'SELECT npmsio_scores.id AS npmsio_scores_id, npmsio_scores.package_name AS npmsio_scores_package_name, npmsio_scores.package_version AS npmsio_scores_package_version, npmsio_scores.analyzed_at AS npmsio_scores_analyzed_at, npmsio_scores.source_url AS npmsio_scores_source_url, npmsio_scores.score AS npmsio_scores_score, npmsio_scores.quality AS npmsio_scores_quality, npmsio_scores.popularity AS npmsio_scores_popularity, npmsio_scores.maintenance AS npmsio_scores_maintenance, npmsio_scores.branding AS npmsio_scores_branding, npmsio_scores.carefulness AS npmsio_scores_carefulness, npmsio_scores.health AS npmsio_scores_health, npmsio_scores.tests AS npmsio_scores_tests, npmsio_scores.community_interest AS npmsio_scores_community_interest, npmsio_scores.dependents_count AS npmsio_scores_dependents_count, npmsio_scores.downloads_count AS npmsio_scores_downloads_count, npmsio_scores.downloads_acceleration AS npmsio_scores_downloads_acceleration, npmsio_scores.commits_frequency AS npmsio_scores_commits_frequency, npmsio_scores.issues_distribution AS npmsio_scores_issues_distribution, npmsio_scores.open_issues AS npmsio_scores_open_issues, npmsio_scores.releases_frequency AS npmsio_scores_releases_frequency \\nFROM npmsio_scores \\nWHERE npmsio_scores.package_name = %(package_name_1)s ORDER BY npmsio_scores.analyzed_at DESC'
+
+    >>> name_and_version_query
+    'SELECT npmsio_scores.id AS npmsio_scores_id, npmsio_scores.package_name AS npmsio_scores_package_name, npmsio_scores.package_version AS npmsio_scores_package_version, npmsio_scores.analyzed_at AS npmsio_scores_analyzed_at, npmsio_scores.source_url AS npmsio_scores_source_url, npmsio_scores.score AS npmsio_scores_score, npmsio_scores.quality AS npmsio_scores_quality, npmsio_scores.popularity AS npmsio_scores_popularity, npmsio_scores.maintenance AS npmsio_scores_maintenance, npmsio_scores.branding AS npmsio_scores_branding, npmsio_scores.carefulness AS npmsio_scores_carefulness, npmsio_scores.health AS npmsio_scores_health, npmsio_scores.tests AS npmsio_scores_tests, npmsio_scores.community_interest AS npmsio_scores_community_interest, npmsio_scores.dependents_count AS npmsio_scores_dependents_count, npmsio_scores.downloads_count AS npmsio_scores_downloads_count, npmsio_scores.downloads_acceleration AS npmsio_scores_downloads_acceleration, npmsio_scores.commits_frequency AS npmsio_scores_commits_frequency, npmsio_scores.issues_distribution AS npmsio_scores_issues_distribution, npmsio_scores.open_issues AS npmsio_scores_open_issues, npmsio_scores.releases_frequency AS npmsio_scores_releases_frequency \\nFROM npmsio_scores \\nWHERE npmsio_scores.package_name = %(package_name_1)s AND npmsio_scores.package_version = %(package_version_1)s ORDER BY npmsio_scores.analyzed_at DESC'
+
+    """
+    query = (
+        db.session.query(NPMSIOScore)
+        .filter_by(package_name=package_name)
+        .order_by(NPMSIOScore.analyzed_at.desc())
+    )
+    if package_version:
+        query = query.filter_by(package_version=package_version)
+    return query
+
+
 def get_package_names_with_missing_npmsio_scores() -> sqlalchemy.orm.query.Query:
     """
     Returns PackageVersion names not in npmsio_scores.
