@@ -102,7 +102,6 @@ class PackageReport(db.Model):
     version = Column(String(200))
     release_date = Column(DateTime)
     scoring_date = Column(DateTime)
-    top_score = Column(Integer)
     npmsio_score = Column(Float)
     npmsio_scored_package_version = Column(String)
     directVulnsCritical_score = Column(Integer)
@@ -962,7 +961,7 @@ def get_package_score_reports(
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
     ...     str(get_package_score_reports([PackageVersion(name="foo", version="0.0.1"), PackageVersion(name="bar", version="0.1.1"),]))
-    'SELECT reports.id AS reports_id, reports.package AS reports_package, reports.version AS reports_version, reports.release_date AS reports_release_date, reports.scoring_date AS reports_scoring_date, reports.top_score AS reports_top_score, reports.npmsio_score AS reports_npmsio_score, reports.npmsio_scored_package_version AS reports_npmsio_scored_package_version, reports."directVulnsCritical_score" AS "reports_directVulnsCritical_score", reports."directVulnsHigh_score" AS "reports_directVulnsHigh_score", reports."directVulnsMedium_score" AS "reports_directVulnsMedium_score", reports."directVulnsLow_score" AS "reports_directVulnsLow_score", reports."indirectVulnsCritical_score" AS "reports_indirectVulnsCritical_score", reports."indirectVulnsHigh_score" AS "reports_indirectVulnsHigh_score", reports."indirectVulnsMedium_score" AS "reports_indirectVulnsMedium_score", reports."indirectVulnsLow_score" AS "reports_indirectVulnsLow_score", reports.authors AS reports_authors, reports.contributors AS reports_contributors, reports.immediate_deps AS reports_immediate_deps, reports.all_deps AS reports_all_deps, reports.graph_id AS reports_graph_id \\nFROM reports \\nWHERE (reports.package, reports.version) IN ((%(param_1)s, %(param_2)s), (%(param_3)s, %(param_4)s))'
+    'SELECT reports.id AS reports_id, reports.package AS reports_package, reports.version AS reports_version, reports.release_date AS reports_release_date, reports.scoring_date AS reports_scoring_date, reports.npmsio_score AS reports_npmsio_score, reports.npmsio_scored_package_version AS reports_npmsio_scored_package_version, reports."directVulnsCritical_score" AS "reports_directVulnsCritical_score", reports."directVulnsHigh_score" AS "reports_directVulnsHigh_score", reports."directVulnsMedium_score" AS "reports_directVulnsMedium_score", reports."directVulnsLow_score" AS "reports_directVulnsLow_score", reports."indirectVulnsCritical_score" AS "reports_indirectVulnsCritical_score", reports."indirectVulnsHigh_score" AS "reports_indirectVulnsHigh_score", reports."indirectVulnsMedium_score" AS "reports_indirectVulnsMedium_score", reports."indirectVulnsLow_score" AS "reports_indirectVulnsLow_score", reports.authors AS reports_authors, reports.contributors AS reports_contributors, reports.immediate_deps AS reports_immediate_deps, reports.all_deps AS reports_all_deps, reports.graph_id AS reports_graph_id \\nFROM reports \\nWHERE (reports.package, reports.version) IN ((%(param_1)s, %(param_2)s), (%(param_3)s, %(param_4)s))'
     """
     return db.session.query(PackageReport).filter(
         sqlalchemy.sql.expression.tuple_(
@@ -1329,7 +1328,7 @@ def get_advisories_by_package_version_ids_query(
     >>> with create_app().app_context():
     ...     str(get_advisories_by_package_version_ids_query([932]))
     ...
-    'SELECT advisories.id AS advisories_id, advisories.language AS advisories_language, advisories.package_name AS advisories_package_name, advisories.npm_advisory_id AS advisories_npm_advisory_id, advisories.url AS advisories_url, advisories.severity AS advisories_severity, advisories.cwe AS advisories_cwe, advisories.exploitability AS advisories_exploitability, advisories.title AS advisories_title \\nFROM advisories \\nWHERE advisories.vulnerable_package_version_ids @> %(vulnerable_package_version_ids_1)s'
+    'SELECT advisories.id AS advisories_id, advisories.language AS advisories_language, advisories.package_name AS advisories_package_name, advisories.npm_advisory_id AS advisories_npm_advisory_id, advisories.url AS advisories_url, advisories.severity AS advisories_severity, advisories.cwe AS advisories_cwe, advisories.exploitability AS advisories_exploitability, advisories.title AS advisories_title \\nFROM advisories \\nWHERE advisories.vulnerable_package_version_ids && %(vulnerable_package_version_ids_1)s'
     """
     return db.session.query(Advisory).filter(
         Advisory.vulnerable_package_version_ids.overlap(
