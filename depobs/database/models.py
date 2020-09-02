@@ -1643,3 +1643,21 @@ def get_scan_by_id(scan_id: int) -> Scan:
     'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status, scans.graph_id AS scans_graph_id \\nFROM scans \\nWHERE scans.id = %(id_1)s'
     """
     return db.session.query(Scan).filter_by(id=scan_id)
+
+
+def get_recent_package_reports_query(
+    limit: Optional[int] = 10,
+) -> sqlalchemy.orm.query.Query:
+    """
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_recent_package_reports_query())
+    'SELECT reports.id AS reports_id, reports.package AS reports_package, reports.version AS reports_version, reports.release_date AS reports_release_date, reports.scoring_date AS reports_scoring_date, reports.npmsio_score AS reports_npmsio_score, reports.npmsio_scored_package_version AS reports_npmsio_scored_package_version, reports."directVulnsCritical_score" AS "reports_directVulnsCritical_score", reports."directVulnsHigh_score" AS "reports_directVulnsHigh_score", reports."directVulnsMedium_score" AS "reports_directVulnsMedium_score", reports."directVulnsLow_score" AS "reports_directVulnsLow_score", reports."indirectVulnsCritical_score" AS "reports_indirectVulnsCritical_score", reports."indirectVulnsHigh_score" AS "reports_indirectVulnsHigh_score", reports."indirectVulnsMedium_score" AS "reports_indirectVulnsMedium_score", reports."indirectVulnsLow_score" AS "reports_indirectVulnsLow_score", reports.authors AS reports_authors, reports.contributors AS reports_contributors, reports.immediate_deps AS reports_immediate_deps, reports.all_deps AS reports_all_deps, reports.graph_id AS reports_graph_id \\nFROM reports ORDER BY reports.scoring_date DESC \\n LIMIT %(param_1)s'
+
+    """
+    return (
+        db.session.query(PackageReport)
+        .order_by(PackageReport.scoring_date.desc())
+        .limit(limit)
+    )

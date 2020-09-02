@@ -512,3 +512,12 @@ def get_scoring_graph(graph_id: int, package_report_field: str):
 
     log.debug(f"rendering score component graph: {dot_graph!r}")
     return dot_graph.pipe(format="svg").decode("utf-8")
+
+
+@api.route("/recent_package_reports", methods=["GET", "HEAD"])
+def show_recent_package_reports() -> Any:
+    """Returns the ten most recent package and dep files scans."""
+    return render_template(
+        "recent_package_reports.html",
+        reports=models.get_recent_package_reports_query(),
+    )
