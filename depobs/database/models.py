@@ -456,10 +456,10 @@ class PackageGraph(db.Model):
             return {
                 scored_version: score
                 for (score, scored_version) in (
-                    get_npms_io_score(
+                    get_npmsio_score(
                         package_version.name, package_version.version
                     ).all()
-                    or get_npms_io_score(package_version.name).all()
+                    or get_npmsio_score(package_version.name).all()
                 )
             }
 
@@ -1072,7 +1072,7 @@ def get_child_package_ids_from_parent_package_id(
     ]
 
 
-def get_npms_io_score(
+def get_npmsio_score(
     package_name: str, package_version: Optional[str] = None
 ) -> sqlalchemy.orm.query.Query:
     """
@@ -1081,8 +1081,8 @@ def get_npms_io_score(
 
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
-    ...     just_name_query = str(get_npms_io_score("package_foo"))
-    ...     name_and_version_query = str(get_npms_io_score("package_foo", "version_1"))
+    ...     just_name_query = str(get_npmsio_score("package_foo"))
+    ...     name_and_version_query = str(get_npmsio_score("package_foo", "version_1"))
 
     >>> just_name_query
     'SELECT npmsio_scores.score AS npmsio_scores_score, npmsio_scores.package_version AS npmsio_scores_package_version \\nFROM npmsio_scores \\nWHERE npmsio_scores.package_name = %(package_name_1)s ORDER BY npmsio_scores.analyzed_at DESC'
@@ -1101,13 +1101,13 @@ def get_npms_io_score(
     return query
 
 
-def get_package_names_with_missing_npms_io_scores() -> sqlalchemy.orm.query.Query:
+def get_package_names_with_missing_npmsio_scores() -> sqlalchemy.orm.query.Query:
     """
     Returns PackageVersion names not in npmsio_scores.
 
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
-    ...     str(get_package_names_with_missing_npms_io_scores())
+    ...     str(get_package_names_with_missing_npmsio_scores())
     ...
     'SELECT DISTINCT package_versions.name AS anon_1 \\nFROM package_versions LEFT OUTER JOIN npmsio_scores ON package_versions.name = npmsio_scores.package_name \\nWHERE npmsio_scores.id IS NULL ORDER BY package_versions.name ASC'
     """
