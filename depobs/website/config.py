@@ -86,7 +86,6 @@ SCAN_NPM_TARBALL_ARGS: Dict[
     ],
 ] = dict(
     backoff_limit=4,
-    ttl_seconds_after_finished=3600 * 8,  # keeps jobs for 8 hours
     context_name=os.environ.get("UNTRUSTED_JOB_CONTEXT", None),
     namespace=os.environ.get("UNTRUSTED_JOB_NAMESPACE", "default"),
     language="nodejs",
@@ -109,7 +108,6 @@ SCAN_NPM_DEP_FILES_ARGS: Dict[
     ],
 ] = dict(
     backoff_limit=4,
-    ttl_seconds_after_finished=3600 * 8,  # keeps jobs for 8 hours
     context_name=os.environ.get("UNTRUSTED_JOB_CONTEXT", None),
     namespace=os.environ.get("UNTRUSTED_JOB_NAMESPACE", "default"),
     language="nodejs",
