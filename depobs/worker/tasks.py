@@ -120,7 +120,6 @@ async def scan_tarball_url(
     """
     job_config: k8s.KubeJobConfig = {
         "backoff_limit": config["backoff_limit"],
-        "ttl_seconds_after_finished": config["ttl_seconds_after_finished"],
         "context_name": config["context_name"],
         "name": config["name"],
         "namespace": config["namespace"],
@@ -156,7 +155,6 @@ async def scan_npm_dep_files(
     log.info(f"scan: {scan.id} scanning dep files with config {config}")
     job_config: k8s.KubeJobConfig = {
         "backoff_limit": config["backoff_limit"],
-        "ttl_seconds_after_finished": config["ttl_seconds_after_finished"],
         "context_name": config["context_name"],
         "name": config["name"],
         "namespace": config["namespace"],

@@ -85,8 +85,7 @@ SCAN_NPM_TARBALL_ARGS: Dict[
         str, int, None, Dict[str, Union[str, None]], List[Union[str, Dict[str, str]]]
     ],
 ] = dict(
-    backoff_limit=4,
-    ttl_seconds_after_finished=3600 * 8,  # keeps jobs for 8 hours
+    backoff_limit=1,
     context_name=os.environ.get("UNTRUSTED_JOB_CONTEXT", None),
     namespace=os.environ.get("UNTRUSTED_JOB_NAMESPACE", "default"),
     language="nodejs",
@@ -108,8 +107,7 @@ SCAN_NPM_DEP_FILES_ARGS: Dict[
         str, int, None, Dict[str, Union[str, None]], List[Union[str, Dict[str, str]]]
     ],
 ] = dict(
-    backoff_limit=4,
-    ttl_seconds_after_finished=3600 * 8,  # keeps jobs for 8 hours
+    backoff_limit=1,
     context_name=os.environ.get("UNTRUSTED_JOB_CONTEXT", None),
     namespace=os.environ.get("UNTRUSTED_JOB_NAMESPACE", "default"),
     language="nodejs",
