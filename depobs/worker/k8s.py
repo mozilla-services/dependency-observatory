@@ -46,7 +46,7 @@ class KubeJobConfig(TypedDict):
 
     # number of seconds the job completes or fails to delete it
     # 0 to delete immediately, None to never delete the job
-    ttl_seconds_after_finished: Optional[int]
+    ttl_seconds_after_finished: int
 
     # container image to run
     image_name: str
@@ -124,18 +124,11 @@ def create_job(
     )
 
     # Create the specification of deployment
-    ttl = job_config.get("ttl_seconds_after_finished", None)
-    if ttl is not None:
-        spec = kubernetes.client.V1JobSpec(
-            template=template,
-            backoff_limit=job_config["backoff_limit"],
-            ttl_seconds_after_finished=job_config["ttl_seconds_after_finished"],
-        )
-    else:
-        spec = kubernetes.client.V1JobSpec(
-            template=template,
-            backoff_limit=job_config["backoff_limit"],
-        )
+    spec = kubernetes.client.V1JobSpec(
+        template=template,
+        backoff_limit=job_config["backoff_limit"],
+        ttl_seconds_after_finished=job_config["ttl_seconds_after_finished"],
+    )
 
     # Instantiate the job object
     job_obj = kubernetes.client.V1Job(
