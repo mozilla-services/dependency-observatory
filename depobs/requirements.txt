@@ -36,7 +36,7 @@ psycopg2==2.8.5
 py==1.9.0
 pytest-asyncio==0.14.0
 pytest-mock==3.3.1
-pytest==6.0.1
+pytest==6.0.2
 quiz==0.2.0
 regex==2020.7.14
 requests==2.24.0
