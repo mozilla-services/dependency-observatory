@@ -47,6 +47,7 @@ COPY migrations migrations
 COPY bin bin
 COPY depobs depobs
 COPY version.json .
+COPY tests tests
 
 USER app
 ENTRYPOINT [ "/app/bin/docker-entrypoint.sh" ]
