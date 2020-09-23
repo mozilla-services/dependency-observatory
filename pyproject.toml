@@ -4,11 +4,12 @@ target-version = ["py38"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--doctest-modules"
+addopts = "--doctest-modules --ignore=depobs/worker/wsgi.py"
 testpaths = [
   "depobs",
   "tests",
 ]
+
 filterwarnings = "ignore:\"@coroutine\" decorator is deprecated.*:DeprecationWarning"
 
 # compose mounts . into /app and pytest can't write to its default .pytest_cache dir
