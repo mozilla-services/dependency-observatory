@@ -18,7 +18,7 @@ def create_pubsub_topic(project_id: str, topic_id: str) -> None:
     topic_path = publisher.topic_path(project_id, topic_id)
     log.info(f"creating topic with path {topic_path}")
     try:
-        topic = publisher.create_topic(topic_path)
+        topic = publisher.create_topic(name=topic_path)
         log.info(f"created pubsub topic {topic} at {topic_path}")
     except AlreadyExists as err:
         log.info(f"pubsub topic with path {topic_path} already exists. Error: {err}")
@@ -39,7 +39,7 @@ def subscribe_to_pubsub_topic(
     subscription_path = subscriber.subscription_path(project_id, subscription_id)
     topic_path = subscriber.topic_path(project_id, topic_id)
     try:
-        subscriber.create_subscription(subscription_path, topic_path)
+        subscriber.create_subscription(name=subscription_path, topic=topic_path)
         log.info(
             f"pubsub subscription with path {subscription_path} and topic path {topic_path}"
         )
