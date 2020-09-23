@@ -53,4 +53,4 @@ unit-test:
 	./util/run_tests.sh -m unit
 
 unit-test-coverage:
-	./util/run_tests_with_coverage.sh.sh -m unit
+	./util/run_tests_with_coverage.sh -m unit
