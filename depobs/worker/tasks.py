@@ -69,42 +69,6 @@ class RunRepoTasksConfig(k8s.KubeJobConfig, total=True):
     repo_tasks: List[str]
 
 
-async def run_job_to_completion(
-    job_config: k8s.KubeJobConfig,
-    scan_id: int,
-) -> kubernetes.client.models.v1_job.V1Job:
-    job_name = job_config["name"]
-    log.info(f"scan {scan_id} starting job {job_name} with config {job_config}")
-    status = None
-    with k8s.run_job(job_config) as job:
-        log.info(f"scan {scan_id} started job {job}")
-        await asyncio.sleep(1)
-        job = k8s.read_job(
-            job_config["namespace"], job_name, context_name=job_config["context_name"]
-        )
-        log.info(f"scan {scan_id} got initial job status {job.status}")
-        while True:
-            if job.status.failed:
-                log.error(f"scan {scan_id} k8s job {job_name} failed")
-                return job
-            if job.status.succeeded:
-                log.info(f"scan {scan_id} k8s job {job_name} succeeded")
-                return job
-            if not job.status.active:
-                log.error(
-                    f"scan {scan_id} k8s job {job_name} stopped/not active (did not fail or succeed)"
-                )
-                return job
-
-            await asyncio.sleep(5)
-            job = k8s.read_job(
-                job_config["namespace"],
-                job_name,
-                context_name=job_config["context_name"],
-            )
-            log.info(f"scan {scan_id} got job status {job.status}")
-
-
 async def scan_tarball_url(
     config: RunRepoTasksConfig,
     tarball_url: str,
@@ -116,7 +80,7 @@ async def scan_tarball_url(
     Takes a run_repo_tasks config, tarball url, and optional package
     name and version.
 
-    Returns the k8s job when it finishes
+    Returns the k8s job after it is created
     """
     job_config: k8s.KubeJobConfig = {
         "backoff_limit": config["backoff_limit"],
@@ -140,7 +104,8 @@ async def scan_tarball_url(
         "service_account_name": config["service_account_name"],
         "volume_mounts": config["volume_mounts"],
     }
-    return await run_job_to_completion(job_config, scan_id)
+    log.info(f"scan {scan_id} starting job {config['name']} with config {job_config}")
+    return k8s.create_job(job_config)
 
 
 async def scan_npm_dep_files(
@@ -150,7 +115,7 @@ async def scan_npm_dep_files(
     """
     Takes a run_repo_tasks config and scan_id.
 
-    Returns the k8s job when it finishes
+    Returns the k8s job after it is created
     """
     log.info(f"scan: {scan.id} scanning dep files with config {config}")
     job_config: k8s.KubeJobConfig = {
@@ -173,7 +138,8 @@ async def scan_npm_dep_files(
         "service_account_name": config["service_account_name"],
         "volume_mounts": config["volume_mounts"],
     }
-    return await run_job_to_completion(job_config, scan.id)
+    log.info(f"scan {scan.id} starting job {config['name']} with config {job_config}")
+    return k8s.create_job(job_config)
 
 
 def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, None]:
