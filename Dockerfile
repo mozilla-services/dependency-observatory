@@ -42,7 +42,8 @@ COPY depobs/requirements.txt depobs/
 RUN pip install --upgrade --no-cache-dir -r depobs/requirements.txt
 COPY setup.cfg .
 COPY pyproject.toml .
-COPY uwsgi.ini .
+COPY web-uwsgi.ini .
+COPY worker-uwsgi.ini .
 COPY migrations migrations
 COPY bin bin
 COPY depobs depobs

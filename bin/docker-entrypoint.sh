@@ -28,10 +28,12 @@ if [ "$1" = 'init-gcloud-creds' ]; then
 fi
 
 if [ "$1" = 'web' ]; then
-    PROCS="$PROCS" THREADS="$THREADS" uwsgi --ini /app/uwsgi.ini
+    PROCS="$PROCS" THREADS="$THREADS" uwsgi --ini /app/web-uwsgi.ini
 elif [ "$1" = 'web-dev' ]; then
     python depobs/website/do.py
 elif [ "$1" = 'worker' ]; then
+    PROCS="$PROCS" THREADS="$THREADS" uwsgi --ini /app/worker-uwsgi.ini
+elif [ "$1" = 'worker-dev' ]; then
     python depobs/worker/main.py run \
 	   --task-name save_pubsub \
 	   --task-name run_next_scan
