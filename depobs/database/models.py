@@ -1476,23 +1476,18 @@ def save_json_results(json_results: List[Dict]) -> None:
     db.session.commit()
 
 
-def get_next_queued_scan() -> sqlalchemy.orm.query.Query:
+def get_next_scans() -> sqlalchemy.orm.query.Query:
     """
-    Returns the next scan with status queued.
+    Returns the next inserted scans:
 
     >>> 'queued' in scan_status_enum.enums
     True
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
-    ...     str(get_next_queued_scan())
     'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status, scans.graph_id AS scans_graph_id \\nFROM scans \\nWHERE scans.status = %(status_1)s ORDER BY scans.inserted_at DESC \\n LIMIT %(param_1)s'
+    ...     str(get_next_scans().filter_by(status="queued"))
     """
-    return (
-        db.session.query(Scan)
-        .filter_by(status="queued")
-        .order_by(Scan.inserted_at.desc())
-        .limit(1)
-    )
+    return db.session.query(Scan).order_by(Scan.inserted_at.desc())
 
 
 def get_scan_job_results(job_name: str) -> sqlalchemy.orm.query.Query:
