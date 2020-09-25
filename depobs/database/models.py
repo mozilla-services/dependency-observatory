@@ -896,9 +896,24 @@ class Scan(db.Model):
         return self.params["name"]
 
     @cached_property
-    def package_name(
+    def package_name(self) -> str:
+        return self.get_package_name()
+
+    def get_package_name(
         self,
     ) -> str:
+        """
+        >>> from depobs.website.do import create_app
+        >>> with create_app().app_context():
+        ...     Scan(params={"name": "scan_score_npm_package", "args": ["test-pkg-name"]}).get_package_name()
+        'test-pkg-name'
+
+        >>> with create_app().app_context():
+        ...     Scan(params={"args": ["test-pkg-name"]}).get_package_name()
+        Traceback (most recent call last):
+        ...
+        KeyError: 'name'
+        """
         assert isinstance(self.params, dict)
         assert self.name == "scan_score_npm_package"
         return self.params["args"][0]
@@ -907,6 +922,25 @@ class Scan(db.Model):
     def package_version(
         self,
     ) -> Optional[str]:
+        return self.get_package_version()
+
+    def get_package_version(
+        self,
+    ) -> Optional[str]:
+        """
+        >>> from depobs.website.do import create_app
+        >>> with create_app().app_context():
+        ...     Scan(params={"name": "scan_score_npm_package", "args": ["test-pkg-name", "0.0.0"]}).get_package_version()
+        '0.0.0'
+
+        >>> with create_app().app_context():
+        ...     Scan(params={"name": "scan_score_npm_package", "args": ["test-pkg-name", "latest"]}).get_package_version()
+        'latest'
+
+        >>> with create_app().app_context():
+        ...     Scan(params={"args": ["test-pkg-name"]}).get_package_version()
+
+        """
         assert isinstance(self.params, dict)
         if len(self.params["args"]) > 1:
             return self.params["args"][1]
