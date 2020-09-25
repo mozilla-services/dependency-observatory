@@ -256,13 +256,4 @@ def run_job(
     """
     api_client = get_api_client(job_config["context_name"])
     job = create_job(job_config)
-    try:
-        yield job
-    finally:
-        kubernetes.client.BatchV1Api(api_client=api_client).delete_namespaced_job(
-            name=job_config["name"],
-            namespace=job_config["namespace"],
-            body=kubernetes.client.V1DeleteOptions(
-                propagation_policy="Foreground", grace_period_seconds=5
-            ),
-        )
+    yield job
