@@ -888,6 +888,12 @@ class Scan(db.Model):
     # resulting scan graph id
     graph_id = Column(Integer, nullable=True)
 
+    # job_names: k8s container names
+    job_names = Column(ARRAY(String), nullable=True)
+
+    # resulting scan graph ids
+    graph_ids = Column(ARRAY(Integer), nullable=True)
+
     @cached_property
     def name(
         self,
@@ -1516,8 +1522,8 @@ def get_next_scans() -> sqlalchemy.orm.query.Query:
     True
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
-    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status, scans.graph_id AS scans_graph_id \\nFROM scans \\nWHERE scans.status = %(status_1)s ORDER BY scans.inserted_at DESC \\n LIMIT %(param_1)s'
     ...     str(get_next_scans().filter_by(status="queued"))
+    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status, scans.graph_id AS scans_graph_id, scans.job_names AS scans_job_names, scans.graph_ids AS scans_graph_ids \\nFROM scans \\nWHERE scans.status = %(status_1)s ORDER BY scans.inserted_at DESC'
     """
     return db.session.query(Scan).order_by(Scan.inserted_at.desc())
 
@@ -1702,7 +1708,7 @@ def get_scan_by_id(scan_id: int) -> Scan:
     ...     query = str(get_scan_by_id(20))
 
     >>> query
-    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status, scans.graph_id AS scans_graph_id \\nFROM scans \\nWHERE scans.id = %(id_1)s'
+    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status, scans.graph_id AS scans_graph_id, scans.job_names AS scans_job_names, scans.graph_ids AS scans_graph_ids \\nFROM scans \\nWHERE scans.id = %(id_1)s'
     """
     return db.session.query(Scan).filter_by(id=scan_id)
 
