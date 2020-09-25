@@ -16,7 +16,7 @@ app = create_app()
 npm_cli = AppGroup("npm")
 
 
-TASK_NAMES = ["save_pubsub", "run_next_scan"]
+TASK_NAMES = ["save_pubsub", "start_next_scan", "finish_next_scan"]
 assert all(getattr(tasks, task_name) for task_name in TASK_NAMES)
 
 
@@ -49,7 +49,8 @@ def scan_npm_package(package_name: str, package_version: str) -> None:
         models.package_name_and_version_to_scan(package_name, package_version), "queued"
     )
     log.info(f"running npm package scan with id {scan.id}")
-    asyncio.run(tasks.run_scan(app, scan))
+    asyncio.run(tasks.start_scan_jobs(app, scan))
+    asyncio.run(tasks.finish_scan(app, scan))
 
 
 @npm_cli.command("package-advisories")
