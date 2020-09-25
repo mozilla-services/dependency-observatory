@@ -953,6 +953,30 @@ class Scan(db.Model):
         for file_config in self.params["kwargs"]["dep_file_urls"]:
             yield file_config
 
+    def get_npm_registry_entries(
+        self,
+    ) -> sqlalchemy.orm.query.Query:
+        """
+        >>> from depobs.website.do import create_app
+        >>> with create_app().app_context():
+        ...     name_only = str(Scan(params={"name": "scan_score_npm_package", "args": ["test-pkg-name"]}).get_npm_registry_entries())
+        ...     latest_version = str(Scan(params={"name": "scan_score_npm_package", "args": ["test-pkg-name", "latest"]}).get_npm_registry_entries())
+        ...     non_latest_version = str(Scan(params={"name": "scan_score_npm_package", "args": ["test-pkg-name", "0.0.0"]}).get_npm_registry_entries())
+
+        >>> name_only
+        'SELECT npm_registry_entries.id AS npm_registry_entries_id, npm_registry_entries.package_name AS npm_registry_entries_package_name, npm_registry_entries.package_version AS npm_registry_entries_package_version, npm_registry_entries.shasum AS npm_registry_entries_shasum, npm_registry_entries.tarball AS npm_registry_entries_tarball, npm_registry_entries.has_shrinkwrap AS npm_registry_entries_has_shrinkwrap, npm_registry_entries.published_at AS npm_registry_entries_published_at, npm_registry_entries.package_modified_at AS npm_registry_entries_package_modified_at, npm_registry_entries.source_url AS npm_registry_entries_source_url \\nFROM npm_registry_entries \\nWHERE npm_registry_entries.package_name = %(package_name_1)s ORDER BY npm_registry_entries.published_at DESC'
+        >>> name_only == latest_version
+        True
+        >>> non_latest_version
+        'SELECT npm_registry_entries.id AS npm_registry_entries_id, npm_registry_entries.package_name AS npm_registry_entries_package_name, npm_registry_entries.package_version AS npm_registry_entries_package_version, npm_registry_entries.shasum AS npm_registry_entries_shasum, npm_registry_entries.tarball AS npm_registry_entries_tarball, npm_registry_entries.has_shrinkwrap AS npm_registry_entries_has_shrinkwrap, npm_registry_entries.published_at AS npm_registry_entries_published_at, npm_registry_entries.package_modified_at AS npm_registry_entries_package_modified_at, npm_registry_entries.source_url AS npm_registry_entries_source_url \\nFROM npm_registry_entries \\nWHERE npm_registry_entries.package_name = %(package_name_1)s AND npm_registry_entries.package_version = %(package_version_1)s ORDER BY npm_registry_entries.published_at DESC'
+        """
+        package_name: str = self.package_name
+        package_version: Optional[str] = self.package_version
+        return get_NPMRegistryEntry(
+            package_name,
+            package_version if package_version != "latest" else None,
+        )
+
     @cached_property
     def report_url(
         self,
