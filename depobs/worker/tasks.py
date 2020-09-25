@@ -188,35 +188,23 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
     """
     package_name: str = scan.package_name
     scan_package_version: Optional[str] = scan.package_version
-    if scan_package_version == "latest":
-        query_package_version = None
-    else:
-        query_package_version = scan.package_version
-    versions_query = models.get_npm_registry_entries_to_scan(
-        package_name, query_package_version
-    )
 
     # fetch npm registry entries from DB
-    for (
-        package_version,
-        source_url,
-        git_head,
-        tarball_url,
-    ) in versions_query:
-        if package_version is None:
+    for entry in scan.get_npm_registry_entries():
+        if entry.package_version is None:
             log.warn(
                 f"scan: {scan.id} skipping npm registry entry with null version {package_name}"
             )
             continue
-        elif not validators.is_npm_release_package_version(package_version):
+        elif not validators.is_npm_release_package_version(entry.package_version):
             log.warn(
-                f"scan: {scan.id} {package_name} skipping npm registry entry with pre-release version {package_version!r}"
+                f"scan: {scan.id} {package_name} skipping npm registry entry with pre-release version {entry.package_version!r}"
             )
             continue
 
-        log.info(f"scan: {scan.id} scanning {package_name}@{package_version}")
+        log.info(f"scan: {scan.id} scanning {package_name}@{entry.package_version}")
         # we need a source_url and git_head or a tarball url to install
-        if tarball_url:
+        if entry.tarball:
             job_name = f"scan-{scan.id}-pkg-{hex(randrange(1 << 32))[2:]}"
             config: RunRepoTasksConfig = copy.deepcopy(
                 current_app.config["SCAN_NPM_TARBALL_ARGS"]
@@ -224,23 +212,27 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
             config["name"] = job_name
 
             log.info(
-                f"scan: {scan.id} scanning {package_name}@{package_version} with {tarball_url} with config {config}"
+                f"scan: {scan.id} scanning {package_name}@{entry.package_version} with {entry.tarball} with config {config}"
             )
             # start an npm container, install the tarball, run list and audit
-            # assert tarball_url == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{package_version}.tgz
+            # assert entry.tarball == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{entry.package_version}.tgz
             yield asyncio.create_task(
                 scan_tarball_url(
-                    config, tarball_url, scan.id, package_name, package_version
+                    config,
+                    entry.tarball,
+                    scan.id,
+                    package_name,
+                    entry.package_version,
                 ),
                 name=job_name,
             )
-        elif source_url and git_head:
+        elif entry.source_url and entry.git_head:
             # TODO: port scanner find_dep_files and run_repo_tasks pipelines as used in analyze_package.sh
             log.info(
-                f"scan: {scan.id} scanning {package_name}@{package_version} from {source_url}#{git_head} not implemented"
+                f"scan: {scan.id} scanning {package_name}@{entry.package_version} from {entry.source_url}#{entry.git_head} not implemented"
             )
             log.error(
-                f"scan: {scan.id} Installing from VCS source and ref not implemented to scan {package_name}@{package_version}"
+                f"scan: {scan.id} Installing from VCS source and ref not implemented to scan {package_name}@{entry.package_version}"
             )
 
         if scan_package_version == "latest":
