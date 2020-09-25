@@ -25,6 +25,7 @@ from sqlalchemy import (
     Boolean,
     Column,
     DateTime,
+    Enum,
     Float,
     ForeignKey,
     ForeignKeyConstraint,
@@ -41,14 +42,16 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref, column_property, deferred, relationship
 from sqlalchemy.sql import case, expression, func
 from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.dialects.postgresql import ARRAY, ENUM, JSONB
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.types import DateTime
 from sqlalchemy.schema import Table
 from sqlalchemy import func
 
+from depobs.database.enums import LanguageEnum, PackageManagerEnum, ScanStatusEnum
 from depobs.database.schemas import PackageReportSchema
 from depobs.website.schemas import JobParamsSchema
+
 
 log = logging.getLogger(__name__)
 
@@ -78,14 +81,6 @@ class utcnow(expression.FunctionElement):
 @compiles(utcnow, "postgresql")
 def pg_utcnow(element: Any, compiler: Any, **kw: Dict) -> str:
     return "TIMEZONE('utc', CURRENT_TIMESTAMP)"
-
-
-lang_enum = ENUM("node", "rust", "python", name="language_enum")
-package_manager_enum = ENUM("npm", "yarn", name="package_manager_enum")
-# scans transition from queued -> started -> {succeeded, failed}
-scan_status_enum = ENUM(
-    "queued", "started", "failed", "succeeded", name="scan_status_enum"
-)
 
 
 class Dependency(db.Model):
@@ -288,7 +283,9 @@ class PackageVersion(db.Model):
     # has a name, resolved version, and language
     name = Column(String, nullable=False, primary_key=True)
     version = Column(String, nullable=False, primary_key=True)
-    language = Column(lang_enum, nullable=False, primary_key=True)
+    language = Column(
+        Enum(LanguageEnum, native_enum=True), nullable=False, primary_key=True
+    )
 
     # has an optional distribution URL
     url = deferred(Column(String, nullable=True))
@@ -379,7 +376,9 @@ class PackageGraph(db.Model):
     link_ids = deferred(Column(ARRAY(Integer)))  # ForeignKey("package_links.id"))
 
     # what resolved it
-    package_manager = deferred(Column(package_manager_enum, nullable=True))
+    package_manager = deferred(
+        Column(Enum(PackageManagerEnum, native_enum=True), nullable=True)
+    )
     package_manager_version = deferred(Column(String, nullable=True))
 
     # track when it was inserted
@@ -509,7 +508,9 @@ class Advisory(db.Model):
     __tablename__ = "advisories"
 
     id = Column(Integer, Sequence("advisories_id_seq"), primary_key=True, unique=True)
-    language = Column(lang_enum, nullable=False, primary_key=True)
+    language = Column(
+        Enum(LanguageEnum, native_enum=True), nullable=False, primary_key=True
+    )
 
     # has optional name, npm advisory id, and url
     package_name = Column(
@@ -883,7 +884,7 @@ class Scan(db.Model):
     params = Column("params", JSONB)
 
     # scan status
-    status = Column(scan_status_enum, nullable=False)
+    status = Column(Enum(ScanStatusEnum, native_enum=True), nullable=False)
 
     # resulting scan graph id
     graph_id = Column(Integer, nullable=True)
@@ -1518,7 +1519,7 @@ def get_next_scans() -> sqlalchemy.orm.query.Query:
     """
     Returns the next inserted scans:
 
-    >>> 'queued' in scan_status_enum.enums
+    >>> 'queued' in ScanStatusEnum.__members__
     True
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
