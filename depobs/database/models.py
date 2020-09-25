@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 from functools import cached_property
 import logging
 from typing import (
@@ -1002,6 +1002,15 @@ class Scan(db.Model):
             return get_graph_by_id(self.graph_id)
         return None
 
+    def get_time_since_updated(self) -> datetime.timedelta:
+        """
+        >>> from depobs.website.do import create_app
+        >>> with create_app().app_context():
+        ...     type(Scan(updated_at=datetime.datetime.utcnow()).get_time_since_updated())
+        <class 'datetime.timedelta'>
+        """
+        return datetime.datetime.utcnow() - self.updated_at
+
 
 def get_package_report(
     package: str, version: Optional[str] = None
@@ -1041,7 +1050,7 @@ def get_package_score_reports(
 def get_most_recently_scored_package_report_query(
     package_name: str,
     package_version: Optional[str] = None,
-    scored_after: Optional[datetime] = None,
+    scored_after: Optional[datetime.datetime] = None,
 ) -> sqlalchemy.orm.query.Query:
     """
     Get the most recently scored PackageReport with package_name, optional package_version, and optionally scored_after the scored_after datetime or None
@@ -1064,7 +1073,7 @@ def get_most_recently_scored_package_report_query(
 def get_most_recently_inserted_package_from_name_and_version(
     package_name: str,
     package_version: Optional[str] = None,
-    inserted_after: Optional[datetime] = None,
+    inserted_after: Optional[datetime.datetime] = None,
 ) -> Optional[PackageVersion]:
     query = db.session.query(PackageVersion).filter_by(name=package_name)
     if package_version is not None:
