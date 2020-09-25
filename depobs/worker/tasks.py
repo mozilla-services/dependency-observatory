@@ -800,7 +800,9 @@ async def run_next_scan(app: flask.Flask) -> Optional[models.Scan]:
     """
     # try to read the next queued scan from the scans table if we weren't given one
     log.debug("checking for a scan in the DB to run")
-    maybe_next_scan: Optional[models.Scan] = models.get_next_queued_scan().one_or_none()
+    maybe_next_scan: Optional[models.Scan] = (
+        models.get_next_scans().filter_by(status="queued").limit(1).one_or_none()
+    )
     if maybe_next_scan is None:
         log.debug("could not find a scan in the DB to run")
         await asyncio.sleep(5)
