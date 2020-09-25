@@ -1187,41 +1187,6 @@ def get_package_names_with_missing_npmsio_scores() -> sqlalchemy.orm.query.Query
     )
 
 
-def get_npm_registry_entries_to_scan(
-    package_name: str, package_version: Optional[str] = None
-) -> sqlalchemy.orm.query.Query:
-    """
-    Returns npm registry entries matching the package name and
-    optional package version from most recently published:
-
-    >>> from depobs.website.do import create_app
-    >>> with create_app().app_context():
-    ...     str(get_npm_registry_entries_to_scan('foo', '1.2.0'))
-    ...
-    'SELECT npm_registry_entries.package_version AS npm_registry_entries_package_version, npm_registry_entries.source_url AS npm_registry_entries_source_url, npm_registry_entries.git_head AS npm_registry_entries_git_head, npm_registry_entries.tarball AS npm_registry_entries_tarball \\nFROM npm_registry_entries \\nWHERE npm_registry_entries.package_name = %(package_name_1)s AND npm_registry_entries.package_version = %(package_version_1)s ORDER BY npm_registry_entries.published_at DESC'
-
-    >>> with create_app().app_context():
-    ...     str(get_npm_registry_entries_to_scan('foo'))
-    ...
-    'SELECT npm_registry_entries.package_version AS npm_registry_entries_package_version, npm_registry_entries.source_url AS npm_registry_entries_source_url, npm_registry_entries.git_head AS npm_registry_entries_git_head, npm_registry_entries.tarball AS npm_registry_entries_tarball \\nFROM npm_registry_entries \\nWHERE npm_registry_entries.package_name = %(package_name_1)s ORDER BY npm_registry_entries.published_at DESC'
-
-    """
-    query = (
-        db.session.query(
-            NPMRegistryEntry.package_version,
-            NPMRegistryEntry.source_url,
-            NPMRegistryEntry.git_head,
-            NPMRegistryEntry.tarball,
-        )
-        .filter_by(package_name=package_name)
-        .order_by(NPMRegistryEntry.published_at.desc())
-    )
-    # filter for indicated version (if any)
-    if package_version is not None:
-        query = query.filter_by(package_version=package_version)
-    return query
-
-
 def get_NPMRegistryEntry(
     package: str,
     version: Optional[str] = None,
