@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Union
 
 LOGGING = {
     "version": 1,
@@ -34,6 +34,14 @@ LOGGING = {
         "depobs.database.serializers": {"handlers": ["console"], "level": "INFO"},
         "depobs.util.serialize_util": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.views": {"handlers": ["console"], "level": "INFO"},
+        "depobs.worker.advisories": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.breaches": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
         "depobs.worker.gcp": {
             "handlers": ["console"],
             "level": "INFO",
@@ -43,6 +51,18 @@ LOGGING = {
             "level": "INFO",
         },
         "depobs.worker.main": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.package_data": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.pubsub": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.scans": {
             "handlers": ["console"],
             "level": "INFO",
         },
@@ -74,66 +94,67 @@ JOB_STATUS_PUBSUB_TOPIC = os.environ.get("JOB_STATUS_PUBSUB_TOPIC", None)
 # GCP pubsub subscription id
 JOB_STATUS_PUBSUB_SUBSCRIPTION = os.environ.get("JOB_STATUS_PUBSUB_SUBSCRIPTION", None)
 
-WEB_JOB_NAMES = {
-    "scan_score_npm_package",
-    "scan_score_npm_dep_files",
+
+_job_config_defaults: Dict[
+    str,
+    Union[
+        str,
+        int,
+        None,
+        Dict[str, Union[str, None]],
+        List[Union[str, List[Dict[str, str]]]],
+        Any,
+    ],
+] = dict(
+    backoff_limit=1,
+    context_name=os.environ.get("UNTRUSTED_JOB_CONTEXT", None),
+    namespace=os.environ.get("UNTRUSTED_JOB_NAMESPACE", "default"),
+    language="nodejs",
+    package_manager="npm",
+    image_name="mozilla/dependency-observatory:node-12",
+    service_account_name=os.environ.get("UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME", ""),
+    volume_mounts=[],
+    secrets=[],
+)
+
+SCAN_JOB_CONFIGS = {
+    "scan_score_npm_package": dict(
+        **_job_config_defaults,
+        args=["write_manifest", "install", "list_metadata", "audit"],
+        env=dict(
+            GCP_PUBSUB_TOPIC=JOB_STATUS_PUBSUB_TOPIC,
+            GCP_PROJECT_ID=GCP_PROJECT_ID,
+            # see: https://github.com/mozilla-services/dependency-observatory/issues/280#issuecomment-641588717
+            INSTALL_TARGET=".",
+            LANGUAGE="nodejs",
+            PACKAGE_MANAGER="npm",
+        ),
+    ),
+    "scan_score_npm_dep_files": dict(
+        **_job_config_defaults,
+        args=[
+            "write_dep_files",
+            "install",
+            "list_metadata",
+            "audit",
+        ],
+        env=dict(
+            GCP_PUBSUB_TOPIC=JOB_STATUS_PUBSUB_TOPIC,
+            GCP_PROJECT_ID=GCP_PROJECT_ID,
+            INSTALL_TARGET=".",
+            LANGUAGE="nodejs",
+            PACKAGE_MANAGER="npm",
+        ),
+    ),
 }
-
-SCAN_NPM_TARBALL_ARGS: Dict[
-    str,
-    Union[
-        str, int, None, Dict[str, Union[str, None]], List[Union[str, Dict[str, str]]]
-    ],
-] = dict(
-    backoff_limit=1,
-    context_name=os.environ.get("UNTRUSTED_JOB_CONTEXT", None),
-    namespace=os.environ.get("UNTRUSTED_JOB_NAMESPACE", "default"),
-    language="nodejs",
-    package_manager="npm",
-    image_name="mozilla/dependency-observatory:node-12",
-    repo_tasks=["write_manifest", "install", "list_metadata", "audit"],
-    service_account_name=os.environ.get("UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME", ""),
-    env=dict(
-        GCP_PUBSUB_TOPIC=JOB_STATUS_PUBSUB_TOPIC,
-        GCP_PROJECT_ID=GCP_PROJECT_ID,
-    ),
-    volume_mounts=[],
-    secrets=[],
-)
-
-SCAN_NPM_DEP_FILES_ARGS: Dict[
-    str,
-    Union[
-        str, int, None, Dict[str, Union[str, None]], List[Union[str, Dict[str, str]]]
-    ],
-] = dict(
-    backoff_limit=1,
-    context_name=os.environ.get("UNTRUSTED_JOB_CONTEXT", None),
-    namespace=os.environ.get("UNTRUSTED_JOB_NAMESPACE", "default"),
-    language="nodejs",
-    package_manager="npm",
-    image_name="mozilla/dependency-observatory:node-12",
-    repo_tasks=[
-        "write_dep_files",
-        "install",
-        "list_metadata",
-        "audit",
-    ],
-    service_account_name=os.environ.get("UNTRUSTED_JOB_SERVICE_ACCOUNT_NAME", ""),
-    env=dict(
-        GCP_PUBSUB_TOPIC=JOB_STATUS_PUBSUB_TOPIC,
-        GCP_PROJECT_ID=GCP_PROJECT_ID,
-    ),
-    volume_mounts=[],
-    secrets=[],
-)
+WEB_JOB_NAMES = frozenset(SCAN_JOB_CONFIGS.keys())
 
 # for local dev override set job creds
 if (
     os.environ.get("FLASK_ENV", "") == "development"
     and "GOOGLE_APPLICATION_CREDENTIALS" in os.environ
 ):
-    for job_config in [SCAN_NPM_TARBALL_ARGS, SCAN_NPM_DEP_FILES_ARGS]:
+    for job_config in SCAN_JOB_CONFIGS.values():
         assert isinstance(job_config["env"], dict)
         job_config["env"]["GOOGLE_APPLICATION_CREDENTIALS"] = os.environ[
             "GOOGLE_APPLICATION_CREDENTIALS"
