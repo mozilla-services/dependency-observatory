@@ -38,7 +38,7 @@ pytest-asyncio==0.14.0
 pytest-mock==3.3.1
 pytest==6.0.2
 quiz==0.2.1
-regex==2020.7.14
+regex==2020.9.27
 requests==2.24.0
 six==1.15.0
 snug==2.0.0
