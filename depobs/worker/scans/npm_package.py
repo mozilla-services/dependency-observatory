@@ -1,5 +1,4 @@
 import asyncio
-import copy
 import logging
 from random import randrange
 from typing import (
@@ -31,16 +30,15 @@ from depobs.worker.tasks.fetch_npm_package_data import (
     fetch_and_save_npmsio_scores,
     fetch_and_save_registry_entries,
 )
-from depobs.worker.scan_util import RunRepoTasksConfig, run_job_to_completion
+from depobs.worker.scan_util import run_job_to_completion
 
 
 log = logging.getLogger(__name__)
 
 
 async def scan_tarball_url(
-    config: RunRepoTasksConfig,
-    tarball_url: str,
-    scan_id: int,
+    job_name: str,
+    scan: models.Scan,
     package_name: str,
     package_version: Optional[str] = None,
 ) -> kubernetes.client.models.v1_job.V1Job:
@@ -50,29 +48,29 @@ async def scan_tarball_url(
 
     Returns the k8s job when it finishes
     """
+    config = dict(
+        **current_app.config["SCAN_JOB_CONFIGS"][scan.name],
+        name=job_name,
+    )
     job_config: k8s.KubeJobConfig = {
         "backoff_limit": config["backoff_limit"],
         "context_name": config["context_name"],
-        "name": config["name"],
+        "name": job_name,
         "namespace": config["namespace"],
         "image_name": config["image_name"],
         "args": config["repo_tasks"],
         "env": {
             **config["env"],
-            "LANGUAGE": config["language"],
-            "PACKAGE_MANAGER": config["package_manager"],
             "PACKAGE_NAME": package_name,
             "PACKAGE_VERSION": package_version or "unknown-package-version",
-            # see: https://github.com/mozilla-services/dependency-observatory/issues/280#issuecomment-641588717
-            "INSTALL_TARGET": ".",
-            "JOB_NAME": config["name"],
-            "SCAN_ID": str(scan_id),
+            "JOB_NAME": job_name,
+            "SCAN_ID": str(scan.id),
         },
         "secrets": config["secrets"],
         "service_account_name": config["service_account_name"],
         "volume_mounts": config["volume_mounts"],
     }
-    return await run_job_to_completion(job_config, scan_id)
+    return await run_job_to_completion(job_config, scan.id)
 
 
 def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, None]:
@@ -104,22 +102,13 @@ def scan_package_tarballs(scan: models.Scan) -> Generator[asyncio.Task, None, No
         log.info(f"scan: {scan.id} scanning {package_name}@{entry.package_version}")
         # we need a source_url and git_head or a tarball url to install
         if entry.tarball:
-            job_name = f"scan-{scan.id}-pkg-{hex(randrange(1 << 32))[2:]}"
-            config: RunRepoTasksConfig = copy.deepcopy(
-                current_app.config["SCAN_NPM_TARBALL_ARGS"]
-            )
-            config["name"] = job_name
-
-            log.info(
-                f"scan: {scan.id} scanning {package_name}@{entry.package_version} with {entry.tarball} with config {config}"
-            )
             # start an npm container, install the tarball, run list and audit
             # assert entry.tarball == f"https://registry.npmjs.org/{package_name}/-/{package_name}-{entry.package_version}.tgz
+            job_name = f"scan-{scan.id}-pkg-{hex(randrange(1 << 32))[2:]}"
             yield asyncio.create_task(
                 scan_tarball_url(
-                    config,
-                    entry.tarball,
-                    scan.id,
+                    job_name,
+                    scan,
                     package_name,
                     entry.package_version,
                 ),
