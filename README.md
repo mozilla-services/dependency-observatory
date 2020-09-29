@@ -1,6 +1,6 @@
 # Dependency Observatory
 
-[![CircleCI](https://circleci.com/gh/mozilla-services/dependency-observatory.svg?style=svg)](https://circleci.com/gh/mozilla-services/dependency-observatory)
+[![CircleCI](https://circleci.com/gh/mozilla-services/dependency-observatory.svg?style=svg)](https://circleci.com/gh/mozilla-services/dependency-observatory) [![Coverage Status](https://coveralls.io/repos/github/mozilla-services/dependency-observatory/badge.svg?branch=main)](https://coveralls.io/github/mozilla-services/dependency-observatory?branch=main)
 
 Dependency Observatory is a web service for collecting data about open
 source software dependencies (or package) and assessing how risky they
