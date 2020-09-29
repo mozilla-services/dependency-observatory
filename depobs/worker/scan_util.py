@@ -1,8 +1,5 @@
 import asyncio
 import logging
-from typing import (
-    List,
-)
 
 import kubernetes
 
@@ -11,18 +8,6 @@ from depobs.worker import k8s
 
 
 log = logging.getLogger(__name__)
-
-
-class RunRepoTasksConfig(k8s.KubeJobConfig, total=True):
-    # Language to run commands for
-    language: str
-
-    # Package manager to run commands for
-    package_manager: str
-
-    # Run install, list_metadata, or audit tasks in the order
-    # provided
-    repo_tasks: List[str]
 
 
 class ScanTypeConfig:

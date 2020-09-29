@@ -1,8 +1,8 @@
 import asyncio
-import copy
 import json
 import logging
 from random import randrange
+from typing import Dict
 
 from flask import current_app
 import kubernetes
@@ -18,7 +18,7 @@ from depobs.worker import k8s
 from depobs.worker.tasks.fetch_npm_package_data import (
     fetch_missing_npm_data,
 )
-from depobs.worker.scan_util import RunRepoTasksConfig, run_job_to_completion
+from depobs.worker.scan_util import run_job_to_completion
 
 
 log = logging.getLogger(__name__)
@@ -31,8 +31,8 @@ async def scan_score_npm_dep_files(
     Scan and score dependencies from a manifest file and one or more optional lockfiles
     """
     log.info(f"scan: {scan.id} {scan.name} starting")
-    config: RunRepoTasksConfig = copy.deepcopy(
-        current_app.config["SCAN_NPM_DEP_FILES_ARGS"]
+    config = dict(
+        **current_app.config["SCAN_JOB_CONFIGS"][scan.name],
     )
     job_name = config["name"] = f"scan-{scan.id}-depfiles-{hex(randrange(1 << 32))[2:]}"
     task: asyncio.Task = asyncio.create_task(
@@ -86,7 +86,7 @@ async def scan_score_npm_dep_files(
 
 
 async def scan_npm_dep_files(
-    config: RunRepoTasksConfig,
+    config: Dict,
     scan: models.Scan,
 ) -> kubernetes.client.models.v1_job.V1Job:
     """
@@ -104,9 +104,6 @@ async def scan_npm_dep_files(
         "args": config["repo_tasks"],
         "env": {
             **config["env"],
-            "LANGUAGE": config["language"],
-            "PACKAGE_MANAGER": config["package_manager"],
-            "INSTALL_TARGET": ".",
             "JOB_NAME": config["name"],
             "SCAN_ID": str(scan.id),
             "DEP_FILE_URLS_JSON": json.dumps(list(scan.dep_file_urls())),
