@@ -12,6 +12,7 @@ from depobs.worker.tasks.get_github_advisories import (
     get_github_advisories_for_package,
 )
 from depobs.worker.tasks.get_maintainer_hibp_breaches import get_maintainer_breaches
+from depobs.worker.tasks.save_pubsub_messages import save_pubsub
 
 
 log = logging.getLogger(__name__)
