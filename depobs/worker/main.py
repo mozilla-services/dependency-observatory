@@ -7,6 +7,8 @@ from flask.cli import AppGroup, with_appcontext
 
 from depobs.database import models
 from depobs.website.do import create_app
+from depobs.worker.background_task_runner import run_background_tasks
+from depobs.worker.scans import run_scan, run_next_scan
 from depobs.worker.tasks.get_github_advisories import (
     get_github_advisories,
     get_github_advisories_for_package,
@@ -21,15 +23,17 @@ app = create_app()
 npm_cli = AppGroup("npm")
 
 
-TASK_NAMES = ["save_pubsub", "run_next_scan"]
-assert all(getattr(tasks, task_name) for task_name in TASK_NAMES)
+TASKS = {
+    "save_pubsub": save_pubsub,
+    "run_next_scan": run_next_scan,
+}
 
 
 @app.cli.command("run")
 @click.option(
     "--task-name",
     required=True,
-    type=click.Choice(TASK_NAMES),
+    type=click.Choice(TASKS.keys()),
     multiple=True,
 )
 @with_appcontext
@@ -38,9 +42,7 @@ def listen_and_run(task_name: List[str]) -> None:
     Run one or more background tasks
     """
     log.info(f"starting background tasks: {task_name}")
-    asyncio.run(
-        tasks.run_background_tasks(app, [getattr(tasks, name) for name in task_name])
-    )
+    asyncio.run(run_background_tasks(app, [TASKS[name] for name in task_name]))
 
 
 @npm_cli.command("scan")
@@ -54,7 +56,7 @@ def scan_npm_package(package_name: str, package_version: str) -> None:
         models.package_name_and_version_to_scan(package_name, package_version), "queued"
     )
     log.info(f"running npm package scan with id {scan.id}")
-    asyncio.run(tasks.run_scan(app, scan))
+    asyncio.run(run_scan(app, scan))
 
 
 @npm_cli.command("package-advisories")
