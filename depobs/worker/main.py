@@ -7,7 +7,8 @@ from flask.cli import AppGroup, with_appcontext
 
 from depobs.database import models
 from depobs.website.do import create_app
-from depobs.worker import tasks
+from depobs.worker.tasks.get_maintainer_hibp_breaches import get_maintainer_breaches
+
 
 log = logging.getLogger(__name__)
 
@@ -71,11 +72,13 @@ def get_ecosystem_advisories() -> None:
 @npm_cli.command("breaches")
 @click.argument("package_name", envvar="PACKAGE_NAME")
 @click.argument("package_version", envvar="PACKAGE_VERSION", required=False)
-def get_maintainer_breaches(package_name: str, package_version: str = None) -> None:
+def get_maintainer_hibp_breaches(
+    package_name: str, package_version: str = None
+) -> None:
     """
     Get HaveIBeenPwned breaches for maintainers of a specific package
     """
-    tasks.get_maintainer_breaches(package_name, package_version)
+    get_maintainer_breaches(package_name, package_version)
 
 
 def main():
