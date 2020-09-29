@@ -51,6 +51,6 @@ do
        break
     fi
 done
-response=$(curl -sSw '\n' "${api_url}/package_report?package_manager=npm&package_name=ip-reputation-js-client&package_version=latest" | jq '')
+response=$(curl -sSw '\n' "${api_url}/package_report?package_manager=npm&package_name=ip-reputation-js-client&package_version=latest")
 echo "scan succeeded. Report response:"
 echo "$response"
