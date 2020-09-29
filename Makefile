@@ -60,3 +60,6 @@ test:
 
 test-coverage:
 	./util/run_tests_with_coverage.sh
+
+autoflake:
+	autoflake --in-place --remove-all-unused-imports --remove-duplicate-keys --remove-unused-variables -r depobs/
