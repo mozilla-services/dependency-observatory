@@ -38,8 +38,9 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
 
 WORKDIR /app
 
+COPY depobs/requirements-dev.txt depobs/
 COPY depobs/requirements.txt depobs/
-RUN pip install --upgrade --no-cache-dir -r depobs/requirements.txt
+RUN pip install --upgrade --no-cache-dir -r depobs/requirements.txt -r depobs/requirements-dev.txt
 COPY setup.cfg .
 COPY pyproject.toml .
 COPY web-uwsgi.ini .
