@@ -254,6 +254,6 @@ def run_job(
 
     Deletes the job when then context manager exits
     """
-    api_client = get_api_client(job_config["context_name"])
+    get_api_client(job_config["context_name"])
     job = create_job(job_config)
     yield job

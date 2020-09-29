@@ -1,5 +1,5 @@
 import functools
-from typing import AbstractSet, Dict, Sequence, Optional, Callable, Tuple, Union
+from typing import Callable, Dict, Optional, Sequence, Tuple, Union
 
 import quiz
 

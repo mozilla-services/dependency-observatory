@@ -7,8 +7,6 @@ import logging
 import requests
 from random import randrange
 from typing import (
-    AbstractSet,
-    Any,
     AsyncGenerator,
     Callable,
     Dict,
@@ -17,9 +15,6 @@ from typing import (
     List,
     Optional,
     Set,
-    Tuple,
-    TypedDict,
-    Union,
 )
 
 import flask
@@ -28,9 +23,6 @@ import kubernetes
 
 import depobs.database.models as models
 from depobs.database.models import (
-    NPMRegistryEntry,
-    PackageReport,
-    get_package_report,
     get_NPMRegistryEntry,
     store_package_reports,
     get_most_recently_inserted_package_from_name_and_version,
@@ -75,7 +67,6 @@ async def run_job_to_completion(
 ) -> kubernetes.client.models.v1_job.V1Job:
     job_name = job_config["name"]
     log.info(f"scan {scan_id} starting job {job_name} with config {job_config}")
-    status = None
     with k8s.run_job(job_config) as job:
         log.info(f"scan {scan_id} started job {job}")
         await asyncio.sleep(1)

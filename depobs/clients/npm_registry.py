@@ -3,7 +3,7 @@ import asyncio
 import aiohttp
 import backoff
 import math
-from typing import Any, AsyncGenerator, Dict, Iterable, Optional, TypedDict
+from typing import AsyncGenerator, Dict, Iterable, Optional
 import logging
 
 from depobs.clients.aiohttp_client import (

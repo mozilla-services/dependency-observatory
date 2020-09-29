@@ -1,7 +1,7 @@
 import logging
-from typing import Callable, Dict, Generator, Optional, Tuple
+from typing import Callable, Tuple
 
-from google.api_core.exceptions import AlreadyExists, GoogleAPICallError, RetryError
+from google.api_core.exceptions import AlreadyExists
 from google.cloud import pubsub_v1
 
 

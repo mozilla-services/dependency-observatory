@@ -1,11 +1,8 @@
 from dataclasses import asdict
-import json
 import logging
 from typing import (
     AbstractSet,
     Any,
-    AnyStr,
-    AsyncGenerator,
     Dict,
     Generator,
     Iterable,
@@ -31,7 +28,6 @@ from depobs.util.serialize_util import (
     extract_fields,
     extract_nested_fields,
     get_in,
-    iter_jsonlines,
     parse_stdout_as_json,
     parse_stdout_as_jsonlines,
 )

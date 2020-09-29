@@ -1,20 +1,14 @@
 from collections import ChainMap
 from dataclasses import dataclass, field
 import enum
-import functools
 import logging
 from typing import (
-    AbstractSet,
     Any,
     Dict,
     List,
     Optional,
-    Callable,
-    Union,
     Generator,
     Sequence,
-    Tuple,
-    Type,
 )
 from uuid import uuid4, UUID
 
@@ -32,7 +26,6 @@ from depobs.util.serialize_util import (
     get_in as get_in_dict,
     extract_fields,
     JSONPath,
-    JSONPathElement,
 )
 
 

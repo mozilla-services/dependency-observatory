@@ -16,10 +16,8 @@ from typing import (
 )
 from urllib.parse import urlsplit, urlunsplit
 
-import flask
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-import networkx as nx
 import sqlalchemy
 from sqlalchemy import (
     Boolean,
@@ -28,24 +26,20 @@ from sqlalchemy import (
     Enum,
     Float,
     ForeignKey,
-    ForeignKeyConstraint,
     LargeBinary,
     Numeric,
     Index,
     Integer,
     Sequence,
     String,
-    Table,
-    UniqueConstraint,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
-from sqlalchemy.orm import backref, column_property, deferred, relationship
+from sqlalchemy.orm import deferred, relationship
 from sqlalchemy.sql import case, expression, func
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.types import DateTime
-from sqlalchemy.schema import Table
 from sqlalchemy import func
 
 from depobs.database.enums import LanguageEnum, PackageManagerEnum, ScanStatusEnum

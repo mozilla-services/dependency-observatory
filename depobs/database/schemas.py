@@ -1,7 +1,6 @@
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Union
+from dataclasses import dataclass
+from typing import Optional
 
-import marshmallow
 import marshmallow_dataclass
 
 

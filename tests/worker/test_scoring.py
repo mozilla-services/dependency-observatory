@@ -5,6 +5,7 @@ from typing import Any, Dict, Iterator, Iterable, List, Optional, Tuple
 
 import pytest
 
+from depobs.database.models import PackageVersion
 import depobs.worker.scoring as m
 
 
@@ -95,14 +96,14 @@ score_package_component_testcases = {
         {"package": None, "version": None},
     ],
     "empty_package_version": [
-        create_single_node_digraph_with_attrs({"package_version": m.PackageVersion()}),
+        create_single_node_digraph_with_attrs({"package_version": PackageVersion()}),
         0,
         [m.PackageVersionScoreComponent],
         {"package": None, "version": None},
     ],
     "package_version": [
         create_single_node_digraph_with_attrs(
-            {"package_version": m.PackageVersion(**{"name": "foo", "version": "0.0.0"})}
+            {"package_version": PackageVersion(**{"name": "foo", "version": "0.0.0"})}
         ),
         0,
         [m.PackageVersionScoreComponent],
@@ -460,7 +461,7 @@ score_package_graph_testcases = {
             id=-1,
             package_links_by_id={0: (0, 0)},
             distinct_package_versions_by_id={
-                0: m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
+                0: PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
             },
             get_npmsio_scores_by_package_version_id=lambda: {
                 0: ("0.1.0", {"0.1.0": 0})
@@ -494,9 +495,9 @@ score_package_graph_testcases = {
             # m.nx.path_graph(3, create_using=m.nx.DiGraph),
             package_links_by_id={0: (0, 1), 1: (1, 2)},
             distinct_package_versions_by_id={
-                0: m.PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
-                1: m.PackageVersion(id=1, name="test-child-pkg", version="0.0.3"),
-                2: m.PackageVersion(id=2, name="test-grandchild-pkg", version="2.1.0"),
+                0: PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
+                1: PackageVersion(id=1, name="test-child-pkg", version="0.0.3"),
+                2: PackageVersion(id=2, name="test-grandchild-pkg", version="2.1.0"),
             },
             get_npmsio_scores_by_package_version_id=lambda: {
                 0: ("0.1.0", {"0.1.3": 0.34}),
@@ -582,8 +583,8 @@ score_package_graph_testcases = {
                 1: (1, 0),
             },
             distinct_package_versions_by_id={
-                0: m.PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
-                1: m.PackageVersion(id=1, name="test-child-pkg", version="0.0.3"),
+                0: PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
+                1: PackageVersion(id=1, name="test-child-pkg", version="0.0.3"),
             },
             get_npmsio_scores_by_package_version_id=lambda: {
                 0: ("0.1.0", {"0.1.3": 0.2}),
@@ -696,7 +697,7 @@ compare_package_graph_testcases = {
             id=-1,
             package_links_by_id={0: (0, 0)},
             distinct_package_versions_by_id={
-                0: m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
+                0: PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
             },
             get_npmsio_scores_by_package_version_id=lambda: {
                 0: ("0.1.0", {"0.1.0": 0})
@@ -708,7 +709,7 @@ compare_package_graph_testcases = {
             id=-2,
             package_links_by_id={0: (0, 0)},
             distinct_package_versions_by_id={
-                0: m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
+                0: PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
             },
             get_npmsio_scores_by_package_version_id=lambda: {
                 0: ("0.1.0", {"0.1.0": 0})
@@ -728,7 +729,7 @@ compare_package_graph_testcases = {
             id=-1,
             package_links_by_id={0: (0, 0)},
             distinct_package_versions_by_id={
-                0: m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.1"),
+                0: PackageVersion(id=0, name="test-solo-pkg", version="0.1.1"),
             },
             get_npmsio_scores_by_package_version_id=lambda: {
                 0: ("0.1.0", {"0.1.0": 0})
@@ -740,7 +741,7 @@ compare_package_graph_testcases = {
             id=-2,
             package_links_by_id={0: (0, 0)},
             distinct_package_versions_by_id={
-                0: m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
+                0: PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
             },
             get_npmsio_scores_by_package_version_id=lambda: {
                 0: ("0.1.0", {"0.1.0": 0})
@@ -760,7 +761,7 @@ compare_package_graph_testcases = {
             id=-1,
             package_links_by_id={0: (0, 0)},
             distinct_package_versions_by_id={
-                0: m.PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
+                0: PackageVersion(id=0, name="test-solo-pkg", version="0.1.0"),
             },
             get_npmsio_scores_by_package_version_id=lambda: {
                 0: ("0.1.0", {"0.1.0": 0})
@@ -772,7 +773,7 @@ compare_package_graph_testcases = {
             id=-2,
             package_links_by_id={0: (0, 0)},
             distinct_package_versions_by_id={
-                0: m.PackageVersion(id=0, name="test-solo-pkg-1", version="0.1.0"),
+                0: PackageVersion(id=0, name="test-solo-pkg-1", version="0.1.0"),
             },
             get_npmsio_scores_by_package_version_id=lambda: {
                 0: ("0.1.0", {"0.1.0": 0})
@@ -792,8 +793,8 @@ compare_package_graph_testcases = {
             id=-1,
             package_links_by_id={0: (0, 1)},
             distinct_package_versions_by_id={
-                0: m.PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
-                1: m.PackageVersion(id=1, name="test-grandchild-pkg", version="0.3.0"),
+                0: PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
+                1: PackageVersion(id=1, name="test-grandchild-pkg", version="0.3.0"),
             },
             get_npmsio_scores_by_package_version_id=lambda: {
                 0: ("0.1.0", {"0.1.3": 0.34}),
@@ -809,9 +810,9 @@ compare_package_graph_testcases = {
             id=-1,
             package_links_by_id={0: (0, 1), 1: (1, 2)},
             distinct_package_versions_by_id={
-                0: m.PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
-                1: m.PackageVersion(id=1, name="test-child-pkg", version="0.2.0"),
-                2: m.PackageVersion(id=2, name="test-grandchild-pkg", version="0.3.0"),
+                0: PackageVersion(id=0, name="test-root-pkg", version="0.1.0"),
+                1: PackageVersion(id=1, name="test-child-pkg", version="0.2.0"),
+                2: PackageVersion(id=2, name="test-grandchild-pkg", version="0.3.0"),
             },
             get_npmsio_scores_by_package_version_id=lambda: {
                 0: ("0.1.0", {"0.1.3": 0.34}),

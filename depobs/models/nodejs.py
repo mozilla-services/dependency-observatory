@@ -1,15 +1,12 @@
 import bisect
 import itertools
 import logging
-from dataclasses import asdict, dataclass, field
-import enum
-from typing import Dict, Tuple, Sequence, List, Optional, Generator, Union
+from dataclasses import dataclass, field
+from typing import Dict, Generator, List, Optional, Union
 
 from depobs.util.serialize_util import (
-    extract_fields,
     get_in,
     JSONPath,
-    JSONPathElement,
 )
 
 log = logging.getLogger(__name__)

@@ -1,13 +1,9 @@
-import os
-import sys
 import asyncio
 import backoff
 from collections import ChainMap
 from contextlib import contextmanager
 import logging
 from typing import (
-    AbstractSet,
-    Any,
     AsyncGenerator,
     Callable,
     Dict,
@@ -15,7 +11,6 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Sequence,
     Tuple,
     TypedDict,
 )
@@ -219,7 +214,7 @@ async def worker(
                 # write non-empty responses to stdout
                 assert response
                 to_write.put_nowait(RequestResponseExchange(request, response))
-            except Exception as err:
+            except Exception:
                 log.error(f"{name} error running {request.log_id}\n:{exc_to_str()}")
 
             # Notify the queue that the "work item" has been processed.
