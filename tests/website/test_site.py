@@ -89,6 +89,13 @@ def test_found_package_report_returns_200(models, client):
             indirectVulnsMedium_score=0,
         ),
     )
+    assert (
+        models.PackageReport.query.filter_by(
+            package="dep-obs-internal-wokka-wokka",
+            version="0.0.2",
+        ).count()
+        > 0
+    )
 
     response = client.get(
         "/package_report?package_name=dep-obs-internal-wokka-wokka&package_version=0.0.2&package_manager=npm"

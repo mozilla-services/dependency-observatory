@@ -128,17 +128,20 @@ def show_package_report() -> Any:
                 package_manager=report.package_manager,
             )
         )
+    package_version = models.get_package_version_id_query(
+        models.PackageVersion(
+            name=package_report.package, version=package_report.version
+        )
+    ).one_or_none()
     return render_template(
         "package_report.html",
         package_report=package_report,
         package_report_fields=scoring.all_score_component_fields,
         direct_vulnerabilities=models.get_advisories_by_package_version_ids_query(
-            models.get_package_version_id_query(
-                models.PackageVersion(
-                    name=package_report.package, version=package_report.version
-                )
-            ).one()
-        ),
+            package_version
+        )
+        if package_version
+        else [],
     )
 
 
