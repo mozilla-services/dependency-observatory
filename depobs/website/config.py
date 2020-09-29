@@ -50,7 +50,39 @@ LOGGING = {
             "handlers": ["console"],
             "level": "INFO",
         },
-        "depobs.worker.tasks": {"handlers": ["console"], "level": "INFO"},
+        "depobs.worker.background_task_runner": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.scan_util": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.scans.npm_dep_files": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.scans.npm_package": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.tasks.fetch_npm_package_data": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.tasks.get_github_advisories": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.tasks.get_maintainer_hibp_breaches": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
+        "depobs.worker.tasks.run_scan": {"handlers": ["console"], "level": "INFO"},
+        "depobs.worker.tasks.save_pubsub_messages": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
         "depobs.util.dataviz_util": {"handlers": ["console"], "level": "INFO"},
     },
 }
