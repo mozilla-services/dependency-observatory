@@ -7,6 +7,10 @@ from flask.cli import AppGroup, with_appcontext
 
 from depobs.database import models
 from depobs.website.do import create_app
+from depobs.worker.tasks.get_github_advisories import (
+    get_github_advisories,
+    get_github_advisories_for_package,
+)
 from depobs.worker.tasks.get_maintainer_hibp_breaches import get_maintainer_breaches
 
 
@@ -58,7 +62,7 @@ def get_package_advisories(package_name: str) -> None:
     """
     Get GitHub Advisories for a specific package
     """
-    tasks.get_github_advisories_for_package(package_name)
+    get_github_advisories_for_package(package_name)
 
 
 @npm_cli.command("advisories")
@@ -66,7 +70,7 @@ def get_ecosystem_advisories() -> None:
     """
     Get GitHub Advisories for the NPM ecosystem
     """
-    tasks.get_github_advisories()
+    get_github_advisories()
 
 
 @npm_cli.command("breaches")
