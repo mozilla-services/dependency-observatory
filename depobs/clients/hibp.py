@@ -1,10 +1,9 @@
 import asyncio
-from urllib import parse
 
 import aiohttp
 import backoff
 import logging
-from typing import Any, AsyncGenerator, Dict, Iterable, Optional
+from typing import AsyncGenerator, Dict, Iterable
 
 from depobs.clients.aiohttp_client import (
     AIOHTTPClientConfig,
@@ -12,7 +11,6 @@ from depobs.clients.aiohttp_client import (
     is_not_found_exception,
     request_json,
 )
-from depobs.util.serialize_util import grouper
 from depobs.util.type_util import Result
 
 log = logging.getLogger(__name__)

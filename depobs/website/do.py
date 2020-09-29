@@ -4,7 +4,6 @@ import logging.config
 
 from flask import Flask, request
 from dockerflow.flask import Dockerflow
-from dockerflow.logging import JsonLogFormatter
 
 # enable mozlog request logging
 from depobs.website.config import LOGGING

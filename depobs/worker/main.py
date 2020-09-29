@@ -3,7 +3,6 @@ import logging
 from typing import List
 
 import click
-from flask import Flask, current_app
 from flask.cli import AppGroup, with_appcontext
 
 from depobs.database import models

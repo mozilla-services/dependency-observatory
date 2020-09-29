@@ -1,14 +1,10 @@
 from datetime import datetime, timedelta
 import logging
-from random import randrange
-import time
 from typing import Any, Dict, List, Optional, Tuple, Type
-from io import BytesIO, StringIO
 from collections import OrderedDict
 
 from flask import (
     Blueprint,
-    Response,
     current_app,
     g,
     jsonify,
@@ -16,18 +12,15 @@ from flask import (
     render_template,
     request,
     url_for,
-    Response,
 )
 import altair as alt
 import graphviz
 from marshmallow import ValidationError
 import networkx as nx
-import urllib3
-from werkzeug.exceptions import BadGateway, BadRequest, NotFound, NotImplemented
+from werkzeug.exceptions import BadRequest, NotFound
 
 from depobs.website.schemas import (
     JSONResultSchema,
-    JobParamsSchema,
     PackageReportParamsSchema,
     ScanSchema,
     ScanScoreNPMDepFilesRequestParamsSchema,
@@ -40,8 +33,6 @@ from depobs.util.datavis_util import (
     package_score_reports_to_scores_histogram,
     package_score_reports_to_score_grades_histogram,
 )
-from depobs.worker import k8s
-from depobs.worker import tasks
 from depobs.worker import scoring
 
 

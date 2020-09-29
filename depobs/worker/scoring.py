@@ -1,5 +1,5 @@
 from datetime import datetime
-from collections import ChainMap, Counter
+from collections import Counter
 from datetime import datetime
 import enum
 import logging
@@ -13,7 +13,6 @@ from depobs.database.models import (
     PackageVersionID,
     PackageGraph,
     PackageReport,
-    PackageVersion,
 )
 from depobs.util.graph_traversal import node_dep_ids_iter
 from depobs.util import graph_util

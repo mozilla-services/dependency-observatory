@@ -6,10 +6,8 @@ from typing import (
     Dict,
     Generator,
     Iterable,
-    List,
     Optional,
     Sequence,
-    Set,
     Union,
 )
 

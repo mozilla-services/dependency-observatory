@@ -1,6 +1,5 @@
 import logging
-from dataclasses import asdict, dataclass, field
-import enum
+from dataclasses import dataclass, field
 from typing import Dict, Tuple, Sequence, List, Optional
 
 from depobs.util.serialize_util import extract_fields, get_in

@@ -17,7 +17,7 @@ jobs:
           name: install python deps
           command: |
             pip config --user set global.progress_bar off
-            pip install --user "$(grep black depobs/requirements.txt)"
+            pip install --user "$(grep black depobs/requirements-dev.txt)"
       - run:
           name: check code is formatted with black and output diff
           command: |
@@ -34,7 +34,7 @@ jobs:
           command: |
             pip config --user set global.progress_bar off
             # unquoted grep so we install mypy and mypy extensions
-            pip install --user $(grep mypy depobs/requirements.txt)
+            pip install --user $(grep mypy depobs/requirements-dev.txt)
       - run:
           name: check code is properly typed
           command: |
@@ -58,7 +58,7 @@ jobs:
           name: install python deps
           command: |
             pip config --user set global.progress_bar off
-            pip install --user -r depobs/requirements.txt
+            pip install --user -r depobs/requirements.txt -r depobs/requirements-dev.txt
       - run:
           name: run unit tests with coverage (no DB)
           command: |

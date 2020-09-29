@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, AsyncGenerator, Dict, Iterable, Optional
+from typing import AsyncGenerator, Dict, Iterable, Optional
 
 from depobs.clients.aiohttp_client import (
     AIOHTTPClientConfig,
