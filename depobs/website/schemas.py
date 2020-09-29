@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 import marshmallow
 import marshmallow_dataclass
 
+from depobs.database.enums import ScanStatusEnum
 from depobs.worker import validators
 
 
@@ -145,7 +146,7 @@ class Scan:
     params: Dict[str, Any]
 
     # scan status
-    status: Optional[str]
+    status: Optional[ScanStatusEnum]
 
 
 ScanSchema = marshmallow_dataclass.class_schema(Scan)
