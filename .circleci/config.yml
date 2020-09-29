@@ -51,6 +51,9 @@ jobs:
     steps:
       - checkout
       - run:
+          name: install coveralls
+          command: pip install --user coveralls
+      - run:
           name: write a version.json to CWD
           command: |
             CI=1 ./util/write_version_json.sh > version.json
@@ -71,6 +74,9 @@ jobs:
             coverage report
             coverage html
             mv /tmp/htmlcov/ unit-test-htmlcov
+      - run:
+          name: send results to coveralls
+          command: coveralls
       - store_artifacts:
           path: unit-test-htmlcov
 
