@@ -8,7 +8,7 @@ from flask.cli import AppGroup, with_appcontext
 from depobs.database import models
 from depobs.website.do import create_app
 from depobs.worker.background_task_runner import run_background_tasks
-from depobs.worker.scans import run_scan, run_next_scan
+from depobs.worker.tasks.run_scan import run_scan, run_next_scan
 from depobs.worker.tasks.get_github_advisories import (
     get_github_advisories,
     get_github_advisories_for_package,
