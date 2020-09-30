@@ -63,3 +63,11 @@ test-coverage:
 
 autoflake:
 	autoflake --in-place --remove-all-unused-imports --remove-duplicate-keys --remove-unused-variables -r depobs/
+
+minikube-stop-delete:
+	minikube stop && minikube delete
+
+minikube-start:
+	minikube start --mount=true --mount-string="$$(pwd):/minikube-host"
+
+minikube-restart: minikube-stop-delete minikube-start
