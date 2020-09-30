@@ -1583,7 +1583,7 @@ def get_scan_completed_jobs_query(scan_id: int) -> sqlalchemy.orm.query.Query:
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
     ...     str(get_scan_completed_jobs_query(33))
-    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data, json_results.url AS json_results_url \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id ASC'
+    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data, json_results.url AS json_results_url \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s AND CAST((((json_results.data -> %(data_2)s) -> %(param_3)s) ->> %(param_4)s) AS VARCHAR) = %(param_5)s'
     """
     return (
         db.session.query(JSONResult)
@@ -1639,6 +1639,13 @@ def dependency_files_to_scan(
         ),
         status="queued",
     )
+
+
+def save_scan_with_job_names(scan: Scan, job_names: List[str]) -> Scan:
+    scan.job_names = job_names
+    db.session.add(scan)
+    db.session.commit()
+    return scan
 
 
 def save_scan_with_status(scan: Scan, status: ScanStatusEnum) -> Scan:
