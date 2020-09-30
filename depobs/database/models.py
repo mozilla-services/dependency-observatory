@@ -1626,7 +1626,7 @@ def dependency_files_to_scan(
     )
 
 
-def save_scan_with_status(scan: Scan, status: str) -> Scan:
+def save_scan_with_status(scan: Scan, status: ScanStatusEnum) -> Scan:
     scan.status = status
     db.session.add(scan)
     db.session.commit()
