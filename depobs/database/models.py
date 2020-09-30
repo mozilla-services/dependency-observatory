@@ -1560,20 +1560,35 @@ def get_scan_results_by_id(scan_id: int) -> sqlalchemy.orm.query.Query:
     )
 
 
-def get_scan_completed_jobs_count_query(scan_id: int) -> sqlalchemy.orm.query.Query:
+def get_scan_results_by_job_name(job_name: str) -> sqlalchemy.orm.query.Query:
+    """
+    Returns query for JSONResults from pubsub with the given scan_id:
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_scan_results_by_id(392))
+    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data, json_results.url AS json_results_url \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id ASC'
+    """
+    return (
+        db.session.query(JSONResult)
+        .filter(JSONResult.data["attributes"]["JOB_NAME"].as_string() == job_name)
+        .order_by(JSONResult.id.asc())
+    )
+
+
+def get_scan_completed_jobs_query(scan_id: int) -> sqlalchemy.orm.query.Query:
     """
     Returns query for the number of completed jobs for the given scan_id:
 
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
-    ...     str(get_scan_results_by_id(33))
+    ...     str(get_scan_completed_jobs_query(33))
     'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data, json_results.url AS json_results_url \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id ASC'
     """
     return (
         db.session.query(JSONResult)
         .filter(JSONResult.data["attributes"]["SCAN_ID"].as_string() == str(scan_id))
-        .filter(JSONResult.data[-1]["type"].as_string() == "task_complete")
-        .count()
+        .filter(JSONResult.data["data"][-1]["type"].as_string() == "task_complete")
     )
 
 
