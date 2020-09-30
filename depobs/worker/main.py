@@ -1,14 +1,23 @@
 import asyncio
 import logging
-from typing import List
+import time
+from typing import Any, Callable, Coroutine, Dict, List
 
 import click
+from flask import Flask
 from flask.cli import AppGroup, with_appcontext
 
 from depobs.database import models
 from depobs.website.do import create_app
 from depobs.worker.background_task_runner import run_background_tasks
-from depobs.worker.tasks.run_scan import run_scan, run_next_scan
+from depobs.worker.tasks.start_scan import (
+    start_scan,
+    start_next_scan,
+)
+from depobs.worker.tasks.finish_scan import (
+    finish_scan,
+    finish_next_scan,
+)
 from depobs.worker.tasks.get_github_advisories import (
     get_github_advisories,
     get_github_advisories_for_package,
@@ -22,10 +31,10 @@ log = logging.getLogger(__name__)
 app = create_app()
 npm_cli = AppGroup("npm")
 
-
-TASKS = {
+TASKS: Dict[str, Callable[[Flask, int], Coroutine[Any, Any, None]]] = {
     "save_pubsub": save_pubsub,
-    "run_next_scan": run_next_scan,
+    "start_next_scan": start_next_scan,
+    "finish_next_scan": finish_next_scan,
 }
 
 
@@ -57,7 +66,12 @@ def scan_npm_package(package_name: str, package_version: str) -> None:
         models.ScanStatusEnum["queued"],
     )
     log.info(f"running npm package scan with id {scan.id}")
-    asyncio.run(run_scan(app, scan))
+    asyncio.run(start_scan(scan))
+    log.info(f"started npm package scan")
+    while True:
+        asyncio.run(finish_scan(scan))
+        log.info("waiting for scan to finish")
+        time.sleep(3)
 
 
 @npm_cli.command("package-advisories")

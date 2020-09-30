@@ -7,8 +7,7 @@ from typing import (
 )
 import logging
 
-import flask
-
+from flask import Flask
 
 log = logging.getLogger(__name__)
 
