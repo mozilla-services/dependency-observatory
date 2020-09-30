@@ -54,7 +54,7 @@ LOGGING = {
             "handlers": ["console"],
             "level": "INFO",
         },
-        "depobs.worker.scan_util": {
+        "depobs.worker.scan_config": {
             "handlers": ["console"],
             "level": "INFO",
         },
