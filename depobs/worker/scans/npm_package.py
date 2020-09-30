@@ -58,7 +58,7 @@ async def scan_tarball_url(
         "name": job_name,
         "namespace": config["namespace"],
         "image_name": config["image_name"],
-        "args": config["repo_tasks"],
+        "args": config["args"],
         "env": {
             **config["env"],
             "PACKAGE_NAME": package_name,
