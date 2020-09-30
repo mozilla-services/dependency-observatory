@@ -53,7 +53,8 @@ def scan_npm_package(package_name: str, package_version: str) -> None:
     Scan and score an npm package name and version
     """
     scan = models.save_scan_with_status(
-        models.package_name_and_version_to_scan(package_name, package_version), "queued"
+        models.package_name_and_version_to_scan(package_name, package_version),
+        models.ScanStatusEnum["queued"],
     )
     log.info(f"running npm package scan with id {scan.id}")
     asyncio.run(run_scan(app, scan))

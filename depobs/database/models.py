@@ -1509,18 +1509,23 @@ def save_json_results(json_results: List[Dict]) -> None:
     db.session.commit()
 
 
-def get_next_scans() -> sqlalchemy.orm.query.Query:
+def get_next_scan_with_status_query(
+    status: ScanStatusEnum,
+) -> sqlalchemy.orm.query.Query:
     """
-    Returns the next inserted scans:
+    Returns a query for the next most recently inserted scan with a
+    given status:
 
-    >>> 'queued' in ScanStatusEnum.__members__
-    True
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
-    ...     str(get_next_scans().filter_by(status="queued"))
-    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status, scans.graph_id AS scans_graph_id, scans.job_names AS scans_job_names, scans.graph_ids AS scans_graph_ids \\nFROM scans \\nWHERE scans.status = %(status_1)s ORDER BY scans.inserted_at DESC'
+    ...     str(get_next_scan_with_status_query(status=ScanStatusEnum["queued"]).limit(1))
+    'SELECT scans.id AS scans_id, scans.params AS scans_params, scans.status AS scans_status, scans.graph_id AS scans_graph_id, scans.job_names AS scans_job_names, scans.graph_ids AS scans_graph_ids \\nFROM scans \\nWHERE scans.status = %(status_1)s ORDER BY scans.inserted_at DESC \\n LIMIT %(param_1)s'
     """
-    return db.session.query(Scan).order_by(Scan.inserted_at.desc())
+    return (
+        db.session.query(Scan)
+        .filter_by(status=status)
+        .order_by(Scan.inserted_at.desc())
+    )
 
 
 def get_scan_job_results(job_name: str) -> sqlalchemy.orm.query.Query:
@@ -1621,8 +1626,8 @@ def dependency_files_to_scan(
     )
 
 
-def save_scan_with_status(scan: Scan, status: str) -> Scan:
-    scan.status = status
+def save_scan_with_status(scan: Scan, status: ScanStatusEnum) -> Scan:
+    scan.status = status.name
     db.session.add(scan)
     db.session.commit()
     return scan

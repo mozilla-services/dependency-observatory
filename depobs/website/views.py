@@ -19,6 +19,7 @@ from marshmallow import ValidationError
 import networkx as nx
 from werkzeug.exceptions import BadRequest, NotFound
 
+from depobs.database.enums import ScanStatusEnum
 from depobs.website.schemas import (
     JSONResultSchema,
     PackageReportParamsSchema,
@@ -354,7 +355,7 @@ def queue_scan() -> Tuple[Dict, int]:
 
     scan = models.save_scan_with_status(
         loader(scan_config),
-        "queued",
+        ScanStatusEnum["queued"],
     )
     log.info(f"queued scan {scan.id}")
     return ScanSchema().dump(scan), 202

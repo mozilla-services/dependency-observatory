@@ -101,7 +101,7 @@ async def scan_npm_dep_files(
         "name": config["name"],
         "namespace": config["namespace"],
         "image_name": config["image_name"],
-        "args": config["repo_tasks"],
+        "args": config["args"],
         "env": {
             **config["env"],
             "JOB_NAME": config["name"],

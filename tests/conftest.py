@@ -10,10 +10,6 @@ def app():
             "TESTING": True,
         }
     )
-
-    with app.app_context():
-        pass
-
     yield app
 
 

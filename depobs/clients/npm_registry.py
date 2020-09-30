@@ -70,7 +70,9 @@ async def fetch_npm_registry_metadata(
             logger=log,
         )(request_json)
 
-        for i, group in enumerate(grouper(package_names, config["package_batch_size"])):
+        for i, group in enumerate(
+            grouper(package_names, config["package_batch_size"]), start=1
+        ):
             log.info(f"fetching group {i} of {total_groups}")
             try:
                 # NB: scoped packages OK e.g. https://registry.npmjs.com/@babel/core

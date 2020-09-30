@@ -6,6 +6,7 @@ from typing import (
 
 import flask
 
+from depobs.database.enums import ScanStatusEnum
 import depobs.database.models as models
 
 from depobs.util.traceback_util import exc_to_str
@@ -25,9 +26,9 @@ async def run_next_scan(app: flask.Flask) -> Optional[models.Scan]:
     """
     # try to read the next queued scan from the scans table if we weren't given one
     log.debug("checking for a scan in the DB to run")
-    maybe_next_scan: Optional[models.Scan] = (
-        models.get_next_scans().filter_by(status="queued").limit(1).one_or_none()
-    )
+    maybe_next_scan: Optional[models.Scan] = models.get_next_scan_with_status_query(
+        status=ScanStatusEnum["queued"]
+    ).first()
     if maybe_next_scan is None:
         log.debug("could not find a scan in the DB to run")
         await asyncio.sleep(5)
@@ -61,19 +62,19 @@ async def run_scan(
         "scan_score_npm_package",
     }
     scan_fn = getattr(scans, scan.name)
-    if scan.name != scan_fn.name:
+    if scan.name != scan_fn.__name__:
         raise NotImplementedError(f"Scan of type {scan.name} not implemented")
 
     log.info(
         f"starting a k8s job for {scan.name} scan {scan.id} with params {scan.params} using {scan_fn}"
     )
     with app.app_context():
-        scan = models.save_scan_with_status(scan, "started")
+        scan = models.save_scan_with_status(scan, ScanStatusEnum["started"])
         # scan fails if any of its tarball scan jobs, data fetching, or scoring steps fail
         try:
             await scan_fn(scan)
-            new_scan_status = "succeeded"
+            new_scan_status = ScanStatusEnum["succeeded"]
         except Exception as err:
             log.error(f"{scan.id} error scanning and scoring: {err}\n{exc_to_str()}")
-            new_scan_status = "failed"
+            new_scan_status = ScanStatusEnum["failed"]
         return models.save_scan_with_status(scan, new_scan_status)
