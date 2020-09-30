@@ -62,7 +62,7 @@ async def run_scan(
         "scan_score_npm_package",
     }
     scan_fn = getattr(scans, scan.name)
-    if scan.name != scan_fn.name:
+    if scan.name != scan_fn.__name__:
         raise NotImplementedError(f"Scan of type {scan.name} not implemented")
 
     log.info(
