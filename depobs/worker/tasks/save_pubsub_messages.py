@@ -82,7 +82,7 @@ def run_pubsub_thread(app: flask.Flask, timeout=30):
                 future.cancel()
 
 
-async def save_pubsub(app: flask.Flask) -> None:
+async def save_pubsub(app: flask.Flask, backoff_seconds: int = 5) -> None:
     loop = asyncio.get_running_loop()
 
     # run in the default loop executor
