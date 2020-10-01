@@ -57,6 +57,7 @@ def listen_and_run(task_name: List[str]) -> None:
 @npm_cli.command("scan")
 @click.argument("package_name", envvar="PACKAGE_NAME")
 @click.argument("package_version", envvar="PACKAGE_VERSION")
+@with_appcontext
 def scan_npm_package(package_name: str, package_version: str) -> None:
     """
     Scan and score an npm package name and version
@@ -76,6 +77,7 @@ def scan_npm_package(package_name: str, package_version: str) -> None:
 
 @npm_cli.command("package-advisories")
 @click.argument("package_name", envvar="PACKAGE_NAME")
+@with_appcontext
 def get_package_advisories(package_name: str) -> None:
     """
     Get GitHub Advisories for a specific package
@@ -84,6 +86,7 @@ def get_package_advisories(package_name: str) -> None:
 
 
 @npm_cli.command("advisories")
+@with_appcontext
 def get_ecosystem_advisories() -> None:
     """
     Get GitHub Advisories for the NPM ecosystem
@@ -94,6 +97,7 @@ def get_ecosystem_advisories() -> None:
 @npm_cli.command("breaches")
 @click.argument("package_name", envvar="PACKAGE_NAME")
 @click.argument("package_version", envvar="PACKAGE_VERSION", required=False)
+@with_appcontext
 def get_maintainer_hibp_breaches(
     package_name: str, package_version: str = None
 ) -> None:
