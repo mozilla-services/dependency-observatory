@@ -999,9 +999,20 @@ class Scan(db.Model):
     def package_graph(
         self,
     ) -> Optional[PackageGraph]:
-        if self.graph_id:
-            return get_graph_by_id(self.graph_id)
-        return None
+        """
+        Returns the first package graph from the scan graph_ids
+        """
+        if not self.graph_ids:
+            return None
+        return get_graph_by_id(self.graph_ids[0])
+
+    def generate_package_graphs(
+        self,
+    ) -> Generator[PackageGraph, None, None]:
+        if not self.graph_ids:
+            raise StopIteration
+        for graph_id in self.graph_ids:
+            yield get_graph_by_id(graph_id)
 
     def get_time_since_updated(self) -> datetime.timedelta:
         """
