@@ -30,9 +30,9 @@ diff -w "${fixture_dir}/__version__keys.json" <(curl -sS "${api_url}/__version__
 echo "/__version__ returns expected keys? (should be 0)" "$?"
 
 
-# test scanning
+# test scanning a package
 scan_id=$(curl  -sSw '\n' -X POST -H 'Content-Type: application/json' -H 'Connection: keep-alive' --compressed --data-raw '{"package_manager": "npm", "package_name": "ip-reputation-js-client", "package_versions_type": "latest", "scan_type": "scan_score_npm_package"}' "${api_url}/api/v1/scans" | jq '.id')
-echo "started scan with id ${scan_id}"
+echo "started npm package scan with id ${scan_id}"
 
 
 echo "sleeping for one second between progress checks"
@@ -52,5 +52,31 @@ do
     fi
 done
 response=$(curl -sSw '\n' "${api_url}/package_report?package_manager=npm&package_name=ip-reputation-js-client&package_version=latest")
-echo "scan succeeded. Report response:"
+echo "package scan succeeded. Report response:"
+echo "$response"
+
+
+# test scanning dep files
+scan_id=$(curl  -sSw '\n' -X POST -H 'Content-Type: application/json' -H 'Connection: keep-alive' --compressed --data-raw '{"package_manager": "npm", "scan_type": "scan_score_npm_dep_files", "manifest_url": "https://raw.githubusercontent.com/mozilla-services/ip-reputation-js-client/master/package.json"}' "${api_url}/api/v1/scans" | jq '.id')
+
+echo "started npm dep files scan with id ${scan_id}"
+
+echo "sleeping for one second between progress checks"
+while :
+do
+    sleep 1
+    status=$(curl -sSw '\n' "${api_url}/api/v1/scans/${scan_id}" | jq -r '.status')
+    echo "scan_status: ${status}"
+    if [[ "$status" = 'failed' ]]; then
+        echo "scan task errored with response:"
+        echo "$response"
+        exit 1
+    fi
+
+    if [[ "$status" = 'succeeded' ]]; then
+       break
+    fi
+done
+response=$(curl -sSw '\n' "${api_url}/dep_files_reports/${scan_id}")
+echo "dep file scan succeeded. Report response:"
 echo "$response"

@@ -7,13 +7,14 @@ from typing import (
 )
 import logging
 
-import flask
-
+from flask import Flask
 
 log = logging.getLogger(__name__)
 
 
-async def run_background_tasks(app: flask.Flask, task_fns: Iterable[Callable]) -> None:
+async def run_background_tasks(
+    app: Flask, task_fns: Iterable[Callable], timeout_seconds: int = 5
+) -> None:
     """
     Repeatedly runs one or more tasks with the param task_name until
     the shutdown event fires.
@@ -29,7 +30,7 @@ async def run_background_tasks(app: flask.Flask, task_fns: Iterable[Callable]) -
     log.info(f"starting initial background tasks {tasks}")
     while True:
         done, pending = await asyncio.wait(
-            tasks, timeout=5, return_when=asyncio.FIRST_COMPLETED
+            tasks, timeout=timeout_seconds, return_when=asyncio.FIRST_COMPLETED
         )
         assert all(isinstance(task, asyncio.Task) for task in pending)
         log.debug(

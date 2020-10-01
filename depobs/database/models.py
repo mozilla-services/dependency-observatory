@@ -999,9 +999,20 @@ class Scan(db.Model):
     def package_graph(
         self,
     ) -> Optional[PackageGraph]:
-        if self.graph_id:
-            return get_graph_by_id(self.graph_id)
-        return None
+        """
+        Returns the first package graph from the scan graph_ids
+        """
+        if not self.graph_ids:
+            return None
+        return get_graph_by_id(self.graph_ids[0])
+
+    def generate_package_graphs(
+        self,
+    ) -> Generator[PackageGraph, None, None]:
+        if not self.graph_ids:
+            raise StopIteration
+        for graph_id in self.graph_ids:
+            yield get_graph_by_id(graph_id)
 
     def get_time_since_updated(self) -> datetime.timedelta:
         """
@@ -1560,20 +1571,35 @@ def get_scan_results_by_id(scan_id: int) -> sqlalchemy.orm.query.Query:
     )
 
 
-def get_scan_completed_jobs_count_query(scan_id: int) -> sqlalchemy.orm.query.Query:
+def get_scan_results_by_job_name(job_name: str) -> sqlalchemy.orm.query.Query:
+    """
+    Returns query for JSONResults from pubsub with the given scan_id:
+
+    >>> from depobs.website.do import create_app
+    >>> with create_app().app_context():
+    ...     str(get_scan_results_by_id(392))
+    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data, json_results.url AS json_results_url \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id ASC'
+    """
+    return (
+        db.session.query(JSONResult)
+        .filter(JSONResult.data["attributes"]["JOB_NAME"].as_string() == job_name)
+        .order_by(JSONResult.id.asc())
+    )
+
+
+def get_scan_completed_jobs_query(scan_id: int) -> sqlalchemy.orm.query.Query:
     """
     Returns query for the number of completed jobs for the given scan_id:
 
     >>> from depobs.website.do import create_app
     >>> with create_app().app_context():
-    ...     str(get_scan_results_by_id(33))
-    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data, json_results.url AS json_results_url \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s ORDER BY json_results.id ASC'
+    ...     str(get_scan_completed_jobs_query(33))
+    'SELECT json_results.id AS json_results_id, json_results.data AS json_results_data, json_results.url AS json_results_url \\nFROM json_results \\nWHERE CAST(((json_results.data -> %(data_1)s) ->> %(param_1)s) AS VARCHAR) = %(param_2)s AND CAST((((json_results.data -> %(data_2)s) -> %(param_3)s) ->> %(param_4)s) AS VARCHAR) = %(param_5)s'
     """
     return (
         db.session.query(JSONResult)
         .filter(JSONResult.data["attributes"]["SCAN_ID"].as_string() == str(scan_id))
-        .filter(JSONResult.data[-1]["type"].as_string() == "task_complete")
-        .count()
+        .filter(JSONResult.data["data"][-1]["type"].as_string() == "task_complete")
     )
 
 
@@ -1626,6 +1652,13 @@ def dependency_files_to_scan(
     )
 
 
+def save_scan_with_job_names(scan: Scan, job_names: List[str]) -> Scan:
+    scan.job_names = job_names
+    db.session.add(scan)
+    db.session.commit()
+    return scan
+
+
 def save_scan_with_status(scan: Scan, status: ScanStatusEnum) -> Scan:
     scan.status = status.name
     db.session.add(scan)
@@ -1633,8 +1666,8 @@ def save_scan_with_status(scan: Scan, status: ScanStatusEnum) -> Scan:
     return scan
 
 
-def save_scan_with_graph_id(scan: Scan, graph_id: int) -> Scan:
-    scan.graph_id = graph_id
+def save_scan_with_graph_ids(scan: Scan, graph_ids: List[int]) -> Scan:
+    scan.graph_ids = graph_ids
     db.session.add(scan)
     db.session.commit()
     return scan

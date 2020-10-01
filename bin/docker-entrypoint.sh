@@ -36,7 +36,8 @@ elif [ "$1" = 'worker' ]; then
 elif [ "$1" = 'worker-dev' ]; then
     python depobs/worker/main.py run \
 	   --task-name save_pubsub \
-	   --task-name run_next_scan
+	   --task-name start_next_scan \
+	   --task-name finish_next_scan
 elif [ "$1" = 'e2e-test' ]; then
     # e.g. e2e_test API_URL tests/fixtures/
     shift

@@ -1,6 +1,6 @@
 <h4>status: <span class="badge badge-secondary
-                         {%if scan.status == 'queued' %}badge-secondary
-                         {% elif scan.status == 'started' %}badge-primary
-                         {% elif scan.status == 'succeeded' %}badge-success
-                         {% elif scan.status == 'failed' %}badge-danger
-                         {% endif %}">{{ scan.status }}</span></h4>
+                         {%if scan.status.name == 'queued' %}badge-secondary
+                         {% elif scan.status.name == 'started' %}badge-primary
+                         {% elif scan.status.name == 'succeeded' %}badge-success
+                         {% elif scan.status.name == 'failed' %}badge-danger
+                         {% endif %}">{{ scan.status.name }}</span></h4>

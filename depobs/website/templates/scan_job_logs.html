@@ -25,7 +25,7 @@
             {% endif %}
         </div>
 
-        {%if scan.status == 'failed' %}
+        {%if scan.status.name == 'failed' %}
             <div class="alert alert-warning">
                 <br>An unexpected error occurred.
 
@@ -33,7 +33,7 @@
 
                 <br>If the problem persists, please <a class="error-issue-link" target="_blank" rel="noreferrer" rel="noopener" href="https://github.com/mozilla-services/dependency-observatory/issues/new?title=error making request&body=scan failed id: {{scan.id}}">click here</a> to file an issue
             </div>
-        {%elif scan.status == 'succeeded' %}
+        {%elif scan.status.name == 'succeeded' %}
             <h2>
                 <a id="report-url" href="{{ scan.report_url }}">
                     scan report

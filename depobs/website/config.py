@@ -54,7 +54,7 @@ LOGGING = {
             "handlers": ["console"],
             "level": "INFO",
         },
-        "depobs.worker.scan_util": {
+        "depobs.worker.scan_config": {
             "handlers": ["console"],
             "level": "INFO",
         },
@@ -78,7 +78,8 @@ LOGGING = {
             "handlers": ["console"],
             "level": "INFO",
         },
-        "depobs.worker.tasks.run_scan": {"handlers": ["console"], "level": "INFO"},
+        "depobs.worker.tasks.start_scan": {"handlers": ["console"], "level": "INFO"},
+        "depobs.worker.tasks.finish_scan": {"handlers": ["console"], "level": "INFO"},
         "depobs.worker.tasks.save_pubsub_messages": {
             "handlers": ["console"],
             "level": "INFO",

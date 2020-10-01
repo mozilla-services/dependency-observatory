@@ -8,22 +8,6 @@ from google.cloud import pubsub_v1
 log = logging.getLogger(__name__)
 
 
-def create_pubsub_topic(project_id: str, topic_id: str) -> None:
-    """
-    Creates a pubsub topic with the provided project_id and topic_id
-
-    Catches AlreadyExists 409 errors.
-    """
-    publisher = pubsub_v1.PublisherClient()
-    topic_path = publisher.topic_path(project_id, topic_id)
-    log.info(f"creating topic with path {topic_path}")
-    try:
-        topic = publisher.create_topic(name=topic_path)
-        log.info(f"created pubsub topic {topic} at {topic_path}")
-    except AlreadyExists as err:
-        log.info(f"pubsub topic with path {topic_path} already exists. Error: {err}")
-
-
 def subscribe_to_pubsub_topic(
     project_id: str,
     topic_id: str,
