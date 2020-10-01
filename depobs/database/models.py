@@ -1655,8 +1655,8 @@ def save_scan_with_status(scan: Scan, status: ScanStatusEnum) -> Scan:
     return scan
 
 
-def save_scan_with_graph_id(scan: Scan, graph_id: int) -> Scan:
-    scan.graph_id = graph_id
+def save_scan_with_graph_ids(scan: Scan, graph_ids: List[int]) -> Scan:
+    scan.graph_ids = graph_ids
     db.session.add(scan)
     db.session.commit()
     return scan
