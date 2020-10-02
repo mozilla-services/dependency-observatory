@@ -20,6 +20,7 @@ import networkx as nx
 from werkzeug.exceptions import BadRequest, NotFound
 
 from depobs.database.enums import ScanStatusEnum
+from depobs.website.auth import auth
 from depobs.website.schemas import (
     JSONResultSchema,
     PackageReportParamsSchema,
@@ -371,6 +372,7 @@ def get_scan(scan_id: int) -> Dict:
 
 
 @api.route("/api/v1/scans/<int:scan_id>", methods=["DELETE"])
+@auth.login_required
 def cancel_scan(scan_id: int) -> Dict:
     """
     Cancels the scan and returns it as JSON
