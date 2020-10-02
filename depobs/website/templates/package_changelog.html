@@ -18,7 +18,7 @@
                                 <tr>
                                     <td>Package</td>
                                     <td id="package">
-                                        <a target="_blank" rel="noreferrer" rel="noopener" href="https://www.npmjs.com/package/{{package_name}}" title="">
+                                        <a target="_blank" rel="noreferrer noopener" href="https://www.npmjs.com/package/{{package_name}}" title="">
                                             {{package_name}}
                                         </a>
                                     </td>
@@ -72,11 +72,11 @@
                         <a target="_blank" href="/package_report?package_name={{reg_entry.package_name}}&package_version={{reg_entry.package_version}}&package_manager=npm">{{reg_entry.package_version}}</a>
                     </td>
                     <td>
-                        <a target="_blank" rel="noreferrer" rel="noopener" href="https://www.npmjs.com/package/{{reg_entry.package_name}}/v/{{reg_entry.package_version}}">{{reg_entry.package_version}}</a>
+                        <a target="_blank" rel="noreferrer noopener" href="https://www.npmjs.com/package/{{reg_entry.package_name}}/v/{{reg_entry.package_version}}">{{reg_entry.package_version}}</a>
                     </td>
                     <td>
                         {%if reg_entry.normalized_repo_url %}
-                        <a target="_blank" rel="noreferrer" rel="noopener" href="{{reg_entry.normalized_repo_url}}/commit/{{reg_entry.git_head}}">
+                        <a target="_blank" rel="noreferrer noopener" href="{{reg_entry.normalized_repo_url}}/commit/{{reg_entry.git_head}}">
                             {{reg_entry.git_head}}
                         </a>
                         {% else %}
@@ -88,7 +88,7 @@
                         <!-- source diff -->
                     </td>
                     <td>
-                        <a target="_blank" rel="noreferrer" rel="noopener" href="{{reg_entry.tarball}}">{{reg_entry.tarball}}</a>
+                        <a target="_blank" rel="noreferrer noopener" href="{{reg_entry.tarball}}">{{reg_entry.tarball}}</a>
                         <pre>{{reg_entry.shasum}}</pre>
                     </td>
                     <td>
@@ -104,7 +104,7 @@
                         <td>
                             <!-- source diff -->
                             {%if reg_entry.normalized_repo_url %}
-                            <a target="_blank" rel="noreferrer" rel="noopener" href="{{reg_entry.normalized_repo_url}}/compare/{{loop.nextitem.git_head}}..{{reg_entry.git_head}}">
+                            <a target="_blank" rel="noreferrer noopener" href="{{reg_entry.normalized_repo_url}}/compare/{{loop.nextitem.git_head}}..{{reg_entry.git_head}}">
                                 source diff
                             </a>
                             {% else %}
@@ -115,7 +115,7 @@
                         <td>
                             <!-- tarball diff -->
                             <!-- TODO: implement more diffing or workaround intrinsic limitations -->
-                            <a target="_blank" rel="noreferrer" rel="noopener" href="https://diff.intrinsic.com/{{package_name}}/{{loop.nextitem.package_version}}/{{reg_entry.package_version}}">
+                            <a target="_blank" rel="noreferrer noopener" href="https://diff.intrinsic.com/{{package_name}}/{{loop.nextitem.package_version}}/{{reg_entry.package_version}}">
                                 {{loop.nextitem.package_version}}/{{reg_entry.package_version}}
                             </a>
                         </td>
