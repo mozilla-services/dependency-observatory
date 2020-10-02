@@ -34,6 +34,7 @@ LOGGING = {
         "depobs.database.models": {"handlers": ["console"], "level": "INFO"},
         "depobs.database.serializers": {"handlers": ["console"], "level": "INFO"},
         "depobs.util.serialize_util": {"handlers": ["console"], "level": "INFO"},
+        "depobs.website.auth": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.views": {"handlers": ["console"], "level": "INFO"},
         "depobs.worker.gcp": {
             "handlers": ["console"],
