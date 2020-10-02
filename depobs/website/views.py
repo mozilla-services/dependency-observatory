@@ -370,6 +370,25 @@ def get_scan(scan_id: int) -> Dict:
     return ScanSchema().dump(models.get_scan_by_id(scan_id).one())
 
 
+@api.route("/api/v1/scans/<int:scan_id>", methods=["DELETE"])
+def cancel_scan(scan_id: int) -> Dict:
+    """
+    Cancels the scan and returns it as JSON
+
+    Does not cancel scan jobs.
+    """
+    scan = models.get_scan_by_id(scan_id).one()
+    if scan.status != ScanStatusEnum["queued"]:
+        raise BadRequest(description="Cannot cancel un-queued scan {scan_id}.")
+
+    models.save_scan_with_status(
+        scan,
+        ScanStatusEnum["canceled"],
+    )
+    log.info(f"canceled scan {scan_id}")
+    return ScanSchema().dump(models.get_scan_by_id(scan_id).one())
+
+
 @api.route("/api/v1/scans/<int:scan_id>/logs", methods=["GET"])
 def read_scan_logs(scan_id: int) -> Dict:
     """
