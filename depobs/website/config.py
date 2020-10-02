@@ -1,4 +1,5 @@
 import os
+import secrets
 import sys
 from typing import Any, Dict, List, Union
 
@@ -33,6 +34,7 @@ LOGGING = {
         "depobs.database.models": {"handlers": ["console"], "level": "INFO"},
         "depobs.database.serializers": {"handlers": ["console"], "level": "INFO"},
         "depobs.util.serialize_util": {"handlers": ["console"], "level": "INFO"},
+        "depobs.website.auth": {"handlers": ["console"], "level": "INFO"},
         "depobs.website.views": {"handlers": ["console"], "level": "INFO"},
         "depobs.worker.gcp": {
             "handlers": ["console"],
@@ -271,4 +273,8 @@ GITHUB_CLIENT = {
         # max times to retry a query with jitter and exponential backoff (defaults to 12). Ignores 404s and graphql not found errors
         github_max_retries=12,
     ),
+}
+
+API_TOKENS = {
+    os.environ.get("ADMIN_TOKEN", secrets.token_hex(16)): "admin",
 }

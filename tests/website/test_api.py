@@ -180,3 +180,41 @@ def test_valid_create_scan_package_job_and_get(
     ]
     # clean up
     delete_scan_results(models, scan_id)
+
+
+def test_cancel_scan(app, models, client, valid_package_scan_payload):
+    scan_response = client.post(
+        "/api/v1/scans",
+        json=valid_package_scan_payload,
+    )
+    assert scan_response.status == "202 ACCEPTED"
+    assert "id" in scan_response.json
+    scan_id = scan_response.json["id"]
+
+    response = client.get(
+        f"/api/v1/scans/{scan_id}",
+    )
+    assert response.status == "200 OK"
+
+    # requires auth to cancel scan
+    response = client.delete(
+        f"/api/v1/scans/{scan_id}",
+    )
+    assert response.status == "401 UNAUTHORIZED"
+
+    # cancels queued scan
+    scan = models.get_scan_by_id(scan_id).one()
+    assert scan.status == models.ScanStatusEnum["queued"]
+    response = client.delete(
+        f"/api/v1/scans/{scan_id}",
+        headers={"Authorization": f"Bearer test-api-key"},
+    )
+    assert response.status == "200 OK"
+    assert response.json["status"] == "canceled"
+
+    # does not cancel non-queued scan
+    response = client.delete(
+        f"/api/v1/scans/{scan_id}",
+        headers={"Authorization": f"Bearer test-api-key"},
+    )
+    assert response.status == "400 BAD REQUEST"

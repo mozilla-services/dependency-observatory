@@ -17,5 +17,7 @@ class ScanStatusEnum(enum.Enum):
     started = 2
     failed = 3
     succeeded = 4
+    canceled = 5
 
     # transitions from queued -> started -> {succeeded, failed}
+    # and queued -> canceled

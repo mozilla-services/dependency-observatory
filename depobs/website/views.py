@@ -20,6 +20,7 @@ import networkx as nx
 from werkzeug.exceptions import BadRequest, NotFound
 
 from depobs.database.enums import ScanStatusEnum
+from depobs.website.auth import auth
 from depobs.website.schemas import (
     JSONResultSchema,
     PackageReportParamsSchema,
@@ -367,6 +368,26 @@ def get_scan(scan_id: int) -> Dict:
     Returns the scan as JSON
     """
     log.info(f"fetching scan {scan_id}")
+    return ScanSchema().dump(models.get_scan_by_id(scan_id).one())
+
+
+@api.route("/api/v1/scans/<int:scan_id>", methods=["DELETE"])
+@auth.login_required
+def cancel_scan(scan_id: int) -> Dict:
+    """
+    Cancels the scan and returns it as JSON
+
+    Does not cancel scan jobs.
+    """
+    scan = models.get_scan_by_id(scan_id).one()
+    if scan.status != ScanStatusEnum["queued"]:
+        raise BadRequest(description="Cannot cancel un-queued scan {scan_id}.")
+
+    models.save_scan_with_status(
+        scan,
+        ScanStatusEnum["canceled"],
+    )
+    log.info(f"canceled scan {scan_id}")
     return ScanSchema().dump(models.get_scan_by_id(scan_id).one())
 
 

@@ -8,6 +8,9 @@ def app():
     app = create_app(
         {
             "TESTING": True,
+            "API_TOKENS": {
+                "test-api-key": "admin",
+            },
         }
     )
     yield app
