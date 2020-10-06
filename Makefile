@@ -82,3 +82,8 @@ minikube-start:
 	minikube start --driver=virtualbox --mount=true --mount-string="$$(pwd):/minikube-host"
 
 minikube-restart: minikube-stop-delete minikube-start
+
+falco-install:
+	helm repo add falcosecurity https://falcosecurity.github.io/charts
+	helm repo update
+	helm install --set falco.jsonOutput=true --set falco.jsonIncludeOutputProperty=true --set falco.programOutput.enabled=true falco falcosecurity/falco
