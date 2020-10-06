@@ -79,6 +79,6 @@ minikube-stop-delete:
 	minikube stop && minikube delete
 
 minikube-start:
-	minikube start --mount=true --mount-string="$$(pwd):/minikube-host"
+	minikube start --driver=virtualbox --mount=true --mount-string="$$(pwd):/minikube-host"
 
 minikube-restart: minikube-stop-delete minikube-start
