@@ -23,6 +23,17 @@ recreate:
 port-forward:
 	kubectl -n default port-forward svc/api 8000
 
+api-logs:
+	kubectl logs -f svc/api
+
+falco-logs:
+	kubectl logs -l app=falco -f
+
+db-logs:
+	kubectl logs -f svc/db
+
+worker-logs:
+	kubectl logs -f deployments/worker
 
 api-shell:
 	kubectl exec -it svc/api -- /bin/bash
@@ -68,6 +79,11 @@ minikube-stop-delete:
 	minikube stop && minikube delete
 
 minikube-start:
-	minikube start --mount=true --mount-string="$$(pwd):/minikube-host"
+	minikube start --driver=virtualbox --mount=true --mount-string="$$(pwd):/minikube-host"
 
 minikube-restart: minikube-stop-delete minikube-start
+
+falco-install:
+	helm repo add falcosecurity https://falcosecurity.github.io/charts
+	helm repo update
+	helm install --set falco.jsonOutput=true --set falco.jsonIncludeOutputProperty=true --set falco.programOutput.enabled=true falco falcosecurity/falco

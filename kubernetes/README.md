@@ -4,21 +4,26 @@ changes they make to the code.
 
 ## Running with Kubernetes (k8s)
 
+### Requirements
+
+1. [docker](https://docs.docker.com/get-docker/)
+1. [minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
+1. a GCP account or access to a GCP pubsub account (NB: an emulator exists, but we haven't tested against it)
+1. If you also want to use [falco](https://falco.org/), install:
+
+  * [virtualbox 5.2+](https://www.virtualbox.org/wiki/Downloads) (per [the minikube virtualbox driver docs](https://minikube.sigs.k8s.io/docs/drivers/virtualbox/))
+  * [helm](https://helm.sh/docs/intro/install/#from-apt-debianubuntu)
+
+### Setup
+
 Running the Dependency Observatory API, worker, and PostgreSQL in a
 Kubernetes cluster with minikube:
 
-1. Run `minikube start` (on Linux use `--driver=docker`) to start a local k8s cluster (`minikube stop` to stop it):
-
-```console
-$ minikube start --mount=true --mount-string="$(pwd):/minikube-host"
-😄  minikube v1.10.1 on Ubuntu 18.04
-✨  Automatically selected the docker driver
-...
-🏄  Done! kubectl is now configured to use "minikube"
-```
+1. Run `make minikube-start` to start a local k8s cluster (`make minikube-stop-delete` to stop and remove it):
 
 1. Create a kubernetes secret with GCP Service Account key for the `dev-local`
 Service Account in the depobs-nonprod project.
+
 ```
 kubectl create secret generic dev-local-service-account --from-file=key.json=<path/to/KEYFILE.json>
 ```
@@ -65,16 +70,7 @@ replicaset.apps/db-66c96f6c94       1         1         1       14s
 replicaset.apps/worker-79d8d6d75f   1         1         1       14s
 ```
 
-1. To update images on the k8s cluster (requires linux and minikube running with the docker driver) run the `util/build_and_redeploy_image.sh` script which runs:
-
-```console
-$ eval $(minikube -p minikube docker-env) # use the docker on the minikube image (NB: docker-compose won't work)
-$ docker build -t mozilla/dependency-observatory:latest .
-$ kubectl set image deployments.app/api dependency-observatory-api=mozilla/dependency-observatory:latest
-$ kubectl set image deployments.app/worker dependency-observatory-worker=mozilla/dependency-observatory:latest
-$ kubectl rollout restart deployment api worker
-$ kubectl rollout status deployment api  # to wait for the rollout to complete
-```
+1. To update images on the k8s cluster run `make build-image redeploy`
 
 1. To test CRUD opts on a k8s job run (the api container ID will vary):
 
@@ -98,6 +94,7 @@ Job deleted. status='{'startTime': '2020-06-01T19:25:16Z', 'active': 1}'
 1. To access the web API (api container name will vary):
 
 ```console
+make port-forward
 kubectl -n default port-forward svc/api 8000
 Forwarding from 127.0.0.1:8000 -> 8000
 Forwarding from [::1]:8000 -> 8000
@@ -111,3 +108,7 @@ Handling connection for 8000
   * http://localhost:8000/package_report?package_manager=npm&package_name=foo&package_version=2.0.0 (should 404)
 
 1. search for a npm package name andversion to start a scan and score job
+
+#### Falco
+
+1. run `make falco-install` to install falco
