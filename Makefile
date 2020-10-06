@@ -23,6 +23,17 @@ recreate:
 port-forward:
 	kubectl -n default port-forward svc/api 8000
 
+api-logs:
+	kubectl logs -f svc/api
+
+falco-logs:
+	kubectl logs -l app=falco -f
+
+db-logs:
+	kubectl logs -f svc/db
+
+worker-logs:
+	kubectl logs -f deployments/worker
 
 api-shell:
 	kubectl exec -it svc/api -- /bin/bash
