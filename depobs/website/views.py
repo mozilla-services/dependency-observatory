@@ -87,7 +87,7 @@ def get_most_recently_scored_package_report_or_raise(
 @api.after_request
 def add_standard_headers_to_static_routes(response):
     response.headers.update(STANDARD_HEADERS)
-    response.headers["X-REQUEST-ID"] = g.get("_request_id", None)
+    response.headers["X-REQUEST-ID"] = g.request_id
     return response
 
 
