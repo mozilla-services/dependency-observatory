@@ -23,7 +23,7 @@ marshmallow-dataclass==8.1.0
 marshmallow-enum==1.5.1
 marshmallow==3.8.0
 more-itertools==8.5.0
-multidict==4.7.6
+multidict==5.0.0
 networkx==2.5
 packaging==20.4
 pathspec==0.8.0
