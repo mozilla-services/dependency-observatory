@@ -1,6 +1,6 @@
 # dependency-observatory
 
-FROM python:3.9.0-slim-buster
+FROM python:3.9.1-slim-buster
 
 ENV PYTHONPATH $PYTHONPATH:/app
 ENV PYTHONUNBUFFERED 1
