@@ -30,7 +30,7 @@ pathspec==0.8.1
 pip-api==0.0.17
 pluggy==0.13.1
 psycopg2==2.8.6
-py==1.9.0
+py==1.10.0
 quiz==0.2.1
 regex==2020.11.13
 requests==2.25.0
