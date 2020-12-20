@@ -33,7 +33,7 @@ psycopg2==2.8.6
 py==1.10.0
 quiz==0.2.2
 regex==2020.11.13
-requests==2.25.0
+requests==2.25.1
 six==1.15.0
 snug==2.1.0
 uwsgi==2.0.19.1
