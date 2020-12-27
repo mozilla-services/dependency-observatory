@@ -16,7 +16,7 @@ decorator==4.4.2
 dockerflow==2020.10.0
 gentools==1.1.0
 google-cloud-pubsub==2.2.0
-graphviz==0.15
+graphviz==0.16
 idna==2.10
 kubernetes==12.0.1
 marshmallow-dataclass==8.3.0
