@@ -27,7 +27,7 @@ multidict==5.1.0
 networkx==2.5
 packaging==20.8
 pathspec==0.8.1
-pip-api==0.0.17
+pip-api==0.0.18
 pluggy==0.13.1
 psycopg2==2.8.6
 py==1.10.0
