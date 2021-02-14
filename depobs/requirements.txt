@@ -15,7 +15,7 @@ click==7.1.2
 decorator==4.4.2
 dockerflow==2020.10.0
 gentools==1.1.0
-google-cloud-pubsub==2.2.0
+google-cloud-pubsub==2.3.0
 graphviz==0.15
 idna==2.10
 kubernetes==12.0.1
